@@ -6,6 +6,8 @@ test_that("plate_registered_before_seq", {
 
 
 test_that("save_injecseq_csv", {
+  skip_on_cran()
+  
   .reset_samples_db()
   x <- generate_96() |>
     add_samples(1:20) |>
@@ -25,6 +27,8 @@ test_that("save_injecseq_csv", {
 })
 
 test_that("multiple_plates", { # expect 1 list
+  skip_on_cran()
+
   .reset_samples_db()
   x <- generate_96() |>
     add_samples(1:20) |>
@@ -44,6 +48,8 @@ test_that("multiple_plates", { # expect 1 list
 })
 
 test_that("exploratory_samples_added", {
+   skip_on_cran() 
+
   x <- generate_96() |>
     add_cs_curve(c(1,10, 30, 40 , 100, 200)) |> # 1
     add_samples(1:20) |> # 2
@@ -57,6 +63,7 @@ test_that("exploratory_samples_added", {
 
 
 test_that("writing_increment_id", {
+  skip_on_cran()
 
   # The metadata table is accommodating for the list
   .reset_samples_db()

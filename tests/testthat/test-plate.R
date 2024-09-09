@@ -8,6 +8,8 @@ test_that("generate_96", {
 })
 
 test_that("plate_registration", {
+  skip_on_cran()
+
   x <- generate_96() |> add_blank(TRUE, FALSE)
 
   x <- register_plate(x)
@@ -19,6 +21,7 @@ test_that("plate_registration", {
 })
 
 test_that("reuse_plate", {
+  skip_on_cran()
   x <- generate_96() |> add_blank(TRUE, FALSE) |> register_plate()
   x <- reuse_plate(1, 4)
   .is_registered(x) |> expect_equal(FALSE)
