@@ -26,6 +26,9 @@ combine_injec_lists(
 
 \item{equi_injec_vol}{volume of equilibriation injection}
 }
+\value{
+InjecListObj object
+}
 \description{
 Create Sample List with rigorous design
 }

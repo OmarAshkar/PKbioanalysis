@@ -6,8 +6,8 @@
 \usage{
 plate_app()
 }
-\arguments{
-\item{chrom_res}{A ChromRes object}
+\value{
+A shiny app. No default return value. Can return a PlateObj if reuse_plate_button is clicked
 }
 \description{
 This function creates a shiny app for plate management

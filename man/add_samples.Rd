@@ -19,6 +19,9 @@ add_samples(plate, samples, time = NA, conc = NA, factor = NA, prefix = "S")
 
 \item{prefix}{A prefix to be added before samples names. Default is "S"}
 }
+\value{
+PlateObj
+}
 \description{
 Add unknown samples to a plate
 }

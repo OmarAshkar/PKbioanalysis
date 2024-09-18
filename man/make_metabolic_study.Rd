@@ -20,6 +20,9 @@ make_metabolic_study(
 
 \item{n_noNAD}{number of NAD negative samples. Default is 2}
 }
+\value{
+MultiPlate object
+}
 \description{
 Create a metabolic study layout
 }

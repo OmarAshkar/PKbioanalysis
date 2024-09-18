@@ -11,6 +11,9 @@ plate_metadata(plate, descr)
 
 \item{descr}{character. Description of the plate}
 }
+\value{
+PlateObj
+}
 \description{
 Set plate description
 }

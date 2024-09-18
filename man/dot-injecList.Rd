@@ -10,8 +10,6 @@
 \item{df}{dataframe}
 
 \item{plates}{vector of plate IDs}
-
-\item{m}{matrix}
 }
 \description{
 injection List Object

@@ -9,6 +9,9 @@ add_DB(plate)
 \arguments{
 \item{plate}{PlateObj object}
 }
+\value{
+PlateObj
+}
 \description{
 Add double blank (DB) to a plate
 }

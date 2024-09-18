@@ -38,6 +38,9 @@ make_calibration_study(
 
 \item{n_CS1IS0}{number of CS1IS0 blanks}
 }
+\value{
+PlateObj
+}
 \description{
 Create a calibration study with calibration standards and QCs
 }

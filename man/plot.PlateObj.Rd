@@ -4,10 +4,10 @@
 \alias{plot.PlateObj}
 \title{Plotting 96 well plate}
 \usage{
-\method{plot}{PlateObj}(plate, color = "conc", Instrument = "", caption = "", path = NULL)
+\method{plot}{PlateObj}(x, color = "conc", Instrument = "", caption = "", path = NULL, ...)
 }
 \arguments{
-\item{plate}{PlateObj}
+\item{x}{PlateObj}
 
 \item{color}{character. Coloring variable. Either "conc", "time", "factor", "samples", "TYPE"}
 
@@ -15,7 +15,12 @@
 
 \item{caption}{A string place at plate caption}
 
-\item{path.}{Default is NULL, if not null, must be a path to save plate image}
+\item{path}{Default is NULL, if not null, must be a path to save plate image}
+
+\item{...}{additional arguments passed to ggplot2::ggsave}
+}
+\value{
+ggplot object
 }
 \description{
 Plotting 96 well plate

@@ -14,6 +14,9 @@ add_blank(plate, IS = TRUE, analyte = FALSE)
 
 \item{analyte}{logical. If TRUE, add analyte to the well.}
 }
+\value{
+PlateObj
+}
 \description{
 Add blank to the plate
 Can be either double blank (DB), CS0IS+ or CS1IS-

@@ -53,7 +53,7 @@ test_that("multiple_stds_n_qcs" ,{
   # retun 0, even if there is cs without qc
   generate_96() |>  add_cs_curve(1:10) |> .last_qc() |> expect_equal(0)
 
-  generate_96() |>  add_cs_curve(1:10) |> add_qcs( 3,13,40)  |>
+  generate_96() |>  add_cs_curve(1:10) |> add_qcs( 3,4.5,9)  |>
     .last_qc() |>
     expect_equal(1)
 
@@ -62,8 +62,8 @@ test_that("multiple_stds_n_qcs" ,{
 test_that("Last position", {
   x <- generate_96(empty_rows = c("H"), extra_fill = 4) |>
     add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
-    add_blank(IS = T, analyte = F)  |>
-    add_blank(IS = F, analyte = F)
+    add_blank(IS = TRUE, analyte = FALSE)  |>
+    add_blank(IS = FALSE, analyte = FALSE)
   x$plate[8, 12] |> unname()|> expect_equal("DB")
 })
 

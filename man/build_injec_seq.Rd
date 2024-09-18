@@ -10,8 +10,8 @@ build_injec_seq(
   repeat_std = 1,
   repeat_qc = 1,
   repeat_analyte = 1,
-  blank_after_top_conc = T,
-  blank_at_end = T,
+  blank_after_top_conc = TRUE,
+  blank_at_end = TRUE,
   system_suitability = 0,
   blank_every_n = NULL,
   inject_vol,
@@ -55,6 +55,9 @@ build_injec_seq(
 \item{explore_mode}{options either TRUE or FALSE. Default if FALSE.}
 
 \item{conc_df}{data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.}
+}
+\value{
+InjecListObj object
 }
 \description{
 Create Injection Sequence

@@ -9,11 +9,14 @@ download_sample_list(sample_list, vendor)
 \arguments{
 \item{sample_list}{dataframe of sample list either from db or from write_injec_seq}
 
-\item{vendor}{currently only "masslynx" is supported. See details}
+\item{vendor}{currently only 'masslynx' and 'masshunter' are supported}
+}
+\value{
+dataframe
 }
 \description{
 Download sample list from database to local spreadsheet
 }
 \details{
-For masslynx, the file ending must be ".csv". To import that
+For 'masslynx' and 'masshunter', the exported format will be in csv format, compatible with the respective software.
 }

@@ -32,7 +32,7 @@
 }
 
 # generate edges
-.gen_edges <- function(df = par_df){
+.gen_edges <- function(df){
   edges <- data.frame(from = NULL, to = NULL)
   d <- as.data.frame(df)
 
@@ -51,20 +51,20 @@
   }
 
   dplyr::distinct(edges) |> 
-    dplyr::mutate(color = sample(colors(), n())) |>
+    dplyr::mutate(color = sample(grDevices::colors(), n())) |>
     dplyr::rowwise() |>
-    dplyr::mutate(label = paste0("1:", .conc_ratio(from, to)))
+    dplyr::mutate(label = paste0("1:", .conc_ratio(.data$from, .data$to)))
 
 }
 
 
 # generate nodes
-.gen_nodes <- function(df = par_df){
+.gen_nodes <- function(df){
   df |>
     dplyr::mutate(y = row_number()) |>
-    tidyr::pivot_longer(-y, names_to = "name", values_to = "label") |>
-    dplyr::arrange((name)) |> # ensure priority to first
-    dplyr::distinct(label, .keep_all = T) |>
+    tidyr::pivot_longer(-matches("y"), names_to = "name", values_to = "label") |>
+    dplyr::arrange((.data$name)) |> # ensure priority to first
+    dplyr::distinct(.data$label, .keep_all = TRUE) |>
 
 
     dplyr::mutate(shape = "polygon") |>
@@ -75,9 +75,9 @@
     dplyr::mutate(constraint = "false") |>
     dplyr::mutate(overlap = "false") |>
     dplyr::mutate(splines = "spline") |>
-    dplyr::mutate(x = gsub("v", "-", x = name) |> as.numeric()) |>
-    dplyr::add_count(as.character(x)) |>  # see if a level is dangeling
-    dplyr::mutate(y = ifelse(n == 1, 3, y)) # recenter danglings
+    dplyr::mutate(x = gsub("v", "-", x = .data$name) |> as.numeric()) |>
+    dplyr::add_count(as.character(.data$x)) |>  # see if a level is dangeling
+    dplyr::mutate(y = ifelse(n == 1, 3, .data$y)) # recenter danglings
     #mutate (x = x*100, y = y*100)
 }
 
@@ -99,11 +99,13 @@
       attr_type = "graph") |>
 
     DiagrammeR::add_nodes_from_table(nodes, label = "value") |>
-    DiagrammeR::add_edges_from_table(edges, from_col = from, to_col = to, from_to_map = label) |> # adding edges
-    DiagrammeR::mutate_node_attrs(label = gsub("(.*)_(.*)", "\\1@\\_\\{\\2\\}", label)) |> # sub location
-    DiagrammeR::mutate_node_attrs(label = paste0(label, '@^{', id, '}')) |> #
+    DiagrammeR::add_edges_from_table(edges, from_col = "from", 
+      to_col = "to", from_to_map = "label") |> # adding edges
+    DiagrammeR::mutate_node_attrs(label = gsub("(.*)_(.*)", "\\1@\\_\\{\\2\\}",
+     .data$label)) |> # sub location
+    DiagrammeR::mutate_node_attrs(label = paste0(.data$label, '@^{', .data$id, '}')) |> #
     DiagrammeR::mutate_node_attrs(width = 1) |>
-    DiagrammeR::mutate_node_attrs(x = x*2) # expand
+    DiagrammeR::mutate_node_attrs(x = .data$x*2) # expand
 
 }
 
@@ -118,10 +120,10 @@
     stop("No standard found")
   }
 
-  df <- df |> dplyr::filter(TYPE == type, std_rep == rep) |>
-    dplyr::mutate(v1 = paste0(fold * as.numeric(conc), unit)) |>
-    dplyr::mutate(v0 = paste0(conc, unit, "_", SAMPLE_LOCATION)) |>
-    dplyr::select(v1, v0, TYPE)
+  df <- df |> dplyr::filter(.data$TYPE == type, .data$std_rep == rep) |>
+    dplyr::mutate(v1 = paste0(fold * as.numeric(.data$conc), unit)) |>
+    dplyr::mutate(v0 = paste0(.data$conc, unit, "_", .data$SAMPLE_LOCATION)) |>
+    dplyr::select(matches("v1"), matches("v0"), matches("TYPE"))
 
   if(nrow(df) < 1 ){
     stop("This combination is not present in the plate")
@@ -133,7 +135,7 @@
 # no use now after separate logic
 .multi_graph  <- function(df){
   x <- split(as.data.frame(df), df$TYPE) |> 
-    lapply(\(x) select(x, -TYPE)) |> 
+    lapply(\(x) dplyr::select(x, -matches("TYPE"))) |> 
     lapply(\(x) .gen_graph(x))
 
   # if(length(x) == 1){

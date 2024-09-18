@@ -1,15 +1,22 @@
+
 #' Plate object constructor
 #'
 #' @param m a 96-well matrix
 #' @param df data.frame contains plate's metadata
 #' @param empty_rows a vector for current active rows
+#' @param last_modified last modified date
+#' @param plate_id plate id
+#' @param descr plate description
+#' 
 #' @importFrom dplyr mutate slice_tail
+#' @noRd
 .plate <- function(m, df, plate_id, empty_rows = NULL,
-last_modified = Sys.time(), descr = "") {
+  last_modified = Sys.time(), descr = "") {
+
   df <- df
 
   # get last filled well within the active rows
-  last_filled_i <- which(is.na(m[empty_rows,]), arr.ind = T, useNames = T)
+  last_filled_i <- which(is.na(m[empty_rows,]), arr.ind = TRUE, useNames = TRUE)
 
   # if there is only one active row, R will return a vector not a matrix
   if(length(last_filled_i) == 0) { # no empty spots
@@ -49,7 +56,7 @@ last_modified = Sys.time(), descr = "") {
 #' @importFrom dplyr slice_tail
 #' @importFrom tidyr pivot_longer
 #' @export
-#'
+#' @returns PlateObj
 #' @examples
 #' plate <- generate_96()
 #' plot(plate)
@@ -71,16 +78,16 @@ generate_96 <- function(descr = "", empty_rows = NULL,
   m[empty_rows[1], seq_len(extra_fill)] <- "X"
 
   df <- as.data.frame(m) |>
-    mutate(row = 1:8) |>
-    pivot_longer(-row, names_to = "col", values_to = "value") |>
-    mutate(col = as.integer(str_remove(col, "V"))) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |>
-    mutate(samples = as.character(NA)) |>
-    mutate(conc = as.character(NA)) |>
-    mutate(time = as.numeric(NA)) |>
-    mutate(factor = as.character(NA)) |>
-    mutate(TYPE = as.character(NA))  |>
-    mutate(std_rep = as.numeric(NA))
+    dplyr::mutate(row = 1:8) |>
+    tidyr::pivot_longer(-row, names_to = "col", values_to = "value") |>
+    dplyr::mutate(col = as.integer(str_remove(.data$col, "V"))) |>
+    dplyr::mutate(SAMPLE_LOCATION = paste0(LETTERS[.data$row], ",", .data$col)) |>
+    dplyr::mutate(samples = as.character(NA)) |>
+    dplyr::mutate(conc = as.character(NA)) |>
+    dplyr::mutate(time = as.numeric(NA)) |>
+    dplyr::mutate(factor = as.character(NA)) |>
+    dplyr::mutate(TYPE = as.character(NA))  |>
+    dplyr::mutate(std_rep = as.numeric(NA))
 
   plates_ids <- .compile_cached_plates()
 
@@ -94,7 +101,7 @@ generate_96 <- function(descr = "", empty_rows = NULL,
       paste0("_1")
   }
 
-  print(.plate(m, df, plate_id, empty_rows, descr = descr))
+  .plate(m, df, plate_id, empty_rows, descr = descr)
 }
 
 
@@ -108,17 +115,16 @@ generate_96 <- function(descr = "", empty_rows = NULL,
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
-#' @import dplyr
 #' @export
-#'
+#' @returns PlateObj
 #' @examples
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
 add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , prefix = "S") {
   checkmate::assertVector(samples)
-  checkmate::assertNumeric(time, null.ok = F)
-  checkmate::assertNumeric(conc, null.ok = F)
-  checkmate::assertVector(factor, null.ok = F)
+  checkmate::assertNumeric(time, null.ok = FALSE)
+  checkmate::assertNumeric(conc, null.ok = FALSE)
+  checkmate::assertVector(factor, null.ok = FALSE)
   checkmate::assertClass(plate, "PlateObj")
 
 
@@ -152,13 +158,13 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , pre
 
   empty_spots <-
     which(is.na(plate) &
-      rownames(is.na(plate)) %in% empty_rows, arr.ind = T)
+      rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
   empty_spots <-
     empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
   masked_spots <-
-    which(!(rownames(plate) %in% empty_rows), arr.ind = T)
+    which(!(rownames(plate) %in% empty_rows), arr.ind = TRUE)
 
-  new_df <- df[F, ]
+  new_df <- df[FALSE, ]
   for (i in seq_along(samples)) {
     plate[empty_spots[i, 1], empty_spots[i, 2]] <- samples[i]
     new_df <- dplyr::bind_rows(
@@ -177,12 +183,7 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , pre
     )
   }
   # keep only the samples, other NA
-
-
-
-  df <- dplyr::bind_rows(df, new_df) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |>
-    slice_tail(by = c(row, col))
+  df <- .bind_new_samples(df, new_df)
 
   .plate(plate, df, plate_id,  empty_rows, descr = descr)
 }
@@ -196,19 +197,19 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , pre
 #' @param factor A vector representing factor
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
+#' @returns PlateObj
 #' @details This function is a variation of `add_samples()` where size of inputs does not matter.
 #' The function will automatically create a combination of all sample names with time, concentration and factor.
 #' final name will be of form. Prefix-SampleName-Time-Concentration-Factor
-# @import dplyr
 #' @export
 add_samples_c <- function(plate, samples, time  = NA, conc = NA, factor = NA , prefix = "S") {
   checkmate::assertVector(samples)
-  checkmate::assertNumeric(time, null.ok = F)
-  checkmate::assertNumeric(conc, null.ok = F)
-  checkmate::assertVector(factor, null.ok = F)
+  checkmate::assertNumeric(time, null.ok = FALSE)
+  checkmate::assertNumeric(conc, null.ok = FALSE)
+  checkmate::assertVector(factor, null.ok = FALSE)
 
   combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor) |>
-    dplyr::arrange(samples, factor, time, conc)
+    dplyr::arrange(.data$samples, .data$factor, .data$time, .data$conc)
 
   plate |> add_samples(samples = combined$samples,
     time = combined$time,
@@ -224,8 +225,8 @@ add_samples_c <- function(plate, samples, time  = NA, conc = NA, factor = NA , p
 #' @param IS logical. If TRUE, add IS to the well.
 #' @param analyte logical. If TRUE, add analyte to the well.
 #'
-#' @import dplyr
 #' @import stringr
+#' @returns PlateObj
 #' @export
 add_blank <- function(plate, IS = TRUE, analyte = FALSE) {
   checkmate::assertClass(plate, "PlateObj")
@@ -251,8 +252,8 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE) {
   plate_id <- plate$plate_id
   plate <- plate$plate
 
-  # empty_spots <- which(is.na(plate) & rownames(is.na(plate)) %in% empty_rows, arr.ind = T)
-  empty_spots <- which(is.na(plate), arr.ind = T)
+  # empty_spots <- which(is.na(plate) & rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
+  empty_spots <- which(is.na(plate), arr.ind = TRUE)
   # Ordering one spot gives error. Prevent casting to vector
   if (nrow(empty_spots) > 1) {
     empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
@@ -278,9 +279,8 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE) {
     )
   )
 
-  df <- dplyr::bind_rows(df, new_df) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |>
-    slice_tail(by = c(row, col))
+
+  df <- .bind_new_samples(df, new_df)
 
   .plate(plate, df, plate_id, empty_rows, descr = descr)
 }
@@ -290,13 +290,14 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE) {
 #'
 #' @import checkmate
 #' @export
+#' @returns PlateObj
 #' @examples
 #' plate <- generate_96() |>
 #' add_DB()
 add_DB <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
 
-  add_blank(plate, IS = F, analyte = F)
+  add_blank(plate, IS = FALSE, analyte = FALSE)
 
 }
 
@@ -304,9 +305,10 @@ add_DB <- function(plate){
 #'
 #' @param plate PlateObj
 #' @param plate_std character
-#' @import dplyr
-#' @export
 #'
+#' @export
+#' 
+#' @returns PlateObj
 #' @examples
 #' plate <- generate_96() |>
 #'  add_cs_curve(c(1, 3, 5, 10, 50, 100, 200))
@@ -325,11 +327,11 @@ add_cs_curve <- function(plate, plate_std) {
 
   plate_std <- paste0("CS", seq_along(plate_std), "_", plate_std)
 
-  empty_spots <- which(is.na(plate), arr.ind = T)
+  empty_spots <- which(is.na(plate), arr.ind = TRUE)
   empty_spots <-
     empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
 
-  new_df <- df[F, ]
+  new_df <- df[FALSE, ]
 
   for (i in seq_along(plate_std)) {
     plate[empty_spots[i, 1], empty_spots[i, 2]] <- plate_std[i]
@@ -347,19 +349,16 @@ add_cs_curve <- function(plate, plate_std) {
     )
   }
 
-
   # add sample to the df
-  df <- dplyr::bind_rows(df, new_df) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |> # correct sample location
-    slice_tail(by = c(row, col))
+  df <- .bind_new_samples(df, new_df)
 
   .plate(plate, df, plate_id, empty_rows, descr = descr)
 }
 
 .last_std <- function(plate){
   suppressWarnings({
-  n <- plate$df |> dplyr::filter(TYPE == "Standard") |>
-    pull(std_rep) |>
+  n <- plate$df |> dplyr::filter(.data$TYPE == "Standard") |>
+    pull(.data$std_rep) |>
     max(na.rm = TRUE)
   })
 
@@ -369,8 +368,8 @@ add_cs_curve <- function(plate, plate_std) {
 .last_qc <- function(plate){
 
   suppressWarnings({
-  n <- plate$df |> dplyr::filter(TYPE == "QC") |>
-    pull(std_rep) |>
+  n <- plate$df |> dplyr::filter(.data$TYPE == "QC") |>
+    pull(.data$std_rep) |>
     max()
   })
 
@@ -382,7 +381,7 @@ add_cs_curve <- function(plate, plate_std) {
 #' @param conc numeric. Concentration of the suitability well.
 #' @param label character. Label for the suitability well. Default is "suitability".
 #' @importFrom dplyr bind_rows mutate slice_tail
-#' @import checkmate
+#' @returns PlateObj
 #' @export
 add_suitability <- function(plate, conc, label = "suitability") {
   checkmate::assertCharacter(label)
@@ -395,11 +394,11 @@ add_suitability <- function(plate, conc, label = "suitability") {
   descr <- plate$descr
   plate <- plate$plate
 
-  empty_spots <- which(is.na(plate), arr.ind = T)
+  empty_spots <- which(is.na(plate), arr.ind = TRUE)
   empty_spots <-
     empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
 
-  new_df <- df[F, ]
+  new_df <- df[FALSE, ]
 
   plate[empty_spots[1, 1], empty_spots[1, 2]] <- label
   new_df <- dplyr::bind_rows(
@@ -414,9 +413,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
     )
   )
 
-  df <- dplyr::bind_rows(df, new_df) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |>
-    slice_tail(by = c(row, col))
+  df <- .bind_new_samples(df, new_df)
 
   .plate(plate, df, plate_id, empty_rows, descr = descr)
 }
@@ -427,14 +424,15 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param lqc_conc low quality control concentration
 #' @param mqc_conc  medium quality control concentration
 #' @param hqc_conc high quality control concentration
-#' @import checkmate
+#' @returns PlateObj
+#' @noRd
 .check_qcs <- function(std_vec, loq_conc, lqc_conc, mqc_conc, hqc_conc) {
   checkmate::assertNumeric(loq_conc, lower = 0)
   checkmate::assertNumeric(lqc_conc, lower = loq_conc)
   checkmate::assertNumeric(mqc_conc, lower = lqc_conc)
   checkmate::assertNumeric(hqc_conc, lower = mqc_conc)
 
-  calrange <-  loq_conc:hqc_conc  # seq(loq_conc, hqc_conc, length.out = 200)
+  calrange <-  loq_conc:max(std_vec)  # seq(loq_conc, hqc_conc, length.out = 200)
 
   quantrange <- quantile(calrange, c(0.30, 0.50, 0.75))
 
@@ -453,6 +451,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param n_qc number of QC sets. Default is 3
 #' @param qc_serial logical. If TRUE, QCs are placed serially
 #'
+#' @returns PlateObj
 #' @export
 add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE){
   checkmate::assertClass(plate, "PlateObj")
@@ -471,8 +470,10 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
   }
 
   # get the lloq from the last call
-  loq_conc <- plate$df |> dplyr::filter(TYPE == "Standard", std_rep == grp_std) |>
-    dplyr::pull(conc) |>
+  plate_std <- plate$df |> dplyr::filter(.data$TYPE == "Standard", .data$std_rep == grp_std) |>
+    dplyr::pull(.data$conc) 
+    
+  loq_conc <- plate_std |>
     as.numeric() |> min(na.rm = TRUE)
 
   stopifnot(is.numeric(loq_conc) & loq_conc > 0)
@@ -489,14 +490,14 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
 
   empty_spots <-
     which(is.na(plate) &
-      rownames(is.na(plate)) %in% empty_rows, arr.ind = T)
+      rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
   empty_spots <-
     empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
   if (nrow(empty_spots) < 4 * n_qc) {
     stop("Not enough empty spots for QC")
   }
 
-  new_df <- df[F,]
+  new_df <- df[FALSE,]
 
   if (qc_serial) {
     vec_qc_names <-
@@ -536,9 +537,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
     )
   }
 
-  df <- dplyr::bind_rows(df, new_df) |>
-    mutate(SAMPLE_LOCATION = paste0(LETTERS[row], ",", col)) |> # correct sample location
-    slice_tail(by = c(row, col))
+  df <- .bind_new_samples(df, new_df)
 
   .plate(plate, df, plate_id, empty_rows, descr = descr)
 
@@ -558,9 +557,9 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
 #' @param n_CS0IS1 number of CS0IS1 blanks
 #' @param n_CS1IS0 number of CS1IS0 blanks
 #'
-#' @import dplyr
-#' @import tidyr
 #' @import stringr
+#' 
+#' @returns PlateObj
 #' @export
 make_calibration_study <-
  function(plate,
@@ -582,16 +581,16 @@ make_calibration_study <-
    checkmate::assertNumeric(n_CS1IS0)
 
    for (i in seq(n_CS0IS0)) {
-     plate <- add_blank(plate, IS = F, analyte = F)
+     plate <- add_blank(plate, IS = FALSE, analyte = FALSE)
    }
 
 
    for (i in seq(n_CS1IS0)) {
-     plate <- add_blank(plate, IS = F, analyte = T)
+     plate <- add_blank(plate, IS = FALSE, analyte = TRUE)
    }
 
    for (i in seq(n_CS0IS1)) {
-     plate <- add_blank(plate, IS = T, analyte = F)
+     plate <- add_blank(plate, IS = TRUE, analyte = FALSE)
    }
 
    plate <- add_cs_curve(plate, plate_std)
@@ -630,16 +629,18 @@ make_calibration_study <-
 
 #' Plotting 96 well plate
 #'
-#' @param plate PlateObj
+#' @param x PlateObj
 #' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "TYPE"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
-#' @param path. Default is NULL, if not null, must be a path to save plate image
+#' @param path Default is NULL, if not null, must be a path to save plate image
+#' @param ... additional arguments passed to ggplot2::ggsave
 #'
 #' @importFrom ggplot2 coord_equal scale_fill_discrete scale_x_continuous scale_y_continuous geom_text labs theme_minimal theme expand_limits
 #' @importFrom ggforce geom_circle
 #' @importFrom glue glue
 #' @export
+#' @returns ggplot object
 #'
 #' @examples
 #' plate <- generate_96("new_plate", c("C", "D", "E"), 11) |>
@@ -650,25 +651,26 @@ make_calibration_study <-
 #'     "EE_in0", "EE_T30", "EE_in30", "EE_T60", "EE_in60", "EE_T90", "EE_in90"
 #'   ))
 #' plot(plate)
-plot.PlateObj <- function(plate,
+plot.PlateObj <- function(x,
                           color = "conc",
                           Instrument = "",
                           caption = "",
-                          path = NULL
+                          path = NULL, ...
                           ) {
 
+  plate <- x
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertChoice(color, c("conc", "time", "factor", "samples", "TYPE"))
   checkmate::assertCharacter(Instrument)
   checkmate::assertCharacter(caption)
-  checkmate::assertCharacter(path, null.ok = T)
+  checkmate::assertCharacter(path, null.ok = TRUE)
 
 
   descr <- plate$descr
   plate_df <- plate$df |> # zero if blanks, NA if empty cell. Conc otherwise
-    mutate(conc = ifelse(is.na(conc), ifelse(value == "X", NA, 0), conc)) |>
-    mutate(time = as.character(time))  |>
-    mutate(factor = as.character(factor))
+    mutate(conc = ifelse(is.na(.data$conc), ifelse(.data$value == "X", NA, 0), .data$conc)) |>
+    mutate(time = as.character(.data$time))  |>
+    mutate(factor = as.character(.data$factor))
 
   # remove bottle if there
   plate_df$SAMPLE_LOCATION <-
@@ -706,21 +708,21 @@ plot.PlateObj <- function(plate,
     # text
     ggplot2::geom_text(
       aes(
-        x = col,
-        y = row,
-        label = str_replace_all(value, "_", "\n")
+        x = .data$col,
+        y = .data$row,
+        label = str_replace_all(.data$value, "_", "\n")
       ),
       size = 15,
       size.unit = "pt",
       color = "white"
     ) +
     ggplot2::geom_text(
-      aes(x = col, y = row, label = SAMPLE_LOCATION),
+      aes(x = .data$col, y = .data$row, label = .data$SAMPLE_LOCATION),
       size = 10,
       size.unit = "pt",
       nudge_x = 0.45,
       nudge_y = -0.4,
-      check_overlap = T
+      check_overlap = TRUE
     ) +
     labs(
       title = descr,
@@ -747,20 +749,20 @@ plot.PlateObj <- function(plate,
     message("Plate not registered. To register, use register_plate()")
   }
 
-  if (!is.null(path)) ggplot2::ggsave(path, fig, width = 36, units = "in", dpi = 300, limitsize = FALSE)
+  if (!is.null(path)) ggplot2::ggsave(path, fig, width = 36, units = "in", dpi = 300, limitsize = FALSE, ...)
   fig
 }
 
 
-#' Create a multi-plate study
-#' @param samples vector of samples names
-#'
-#'
-multi_plate_study <- function(samples){
-  checkmate::assertVector(samples)
+# #' Create a multi-plate study
+# #' @param samples vector of samples names
+# #'
+# #'@noRd
+# multi_plate_study <- function(samples){
+#   checkmate::assertVector(samples)
 
-  NULL
-}
+#   NULL
+# }
 
 
 #' Create a metabolic study layout
@@ -770,6 +772,7 @@ multi_plate_study <- function(samples){
 #' @param n_noNAD number of NAD negative samples. Default is 2
 #'
 #' @details Note that this function does not require plate object. It will create a plate object automatically and return MultiPlate object
+#' @returns MultiPlate object
 #' @export
 make_metabolic_study <- function(cmpds,
 time_points = c(0, 5,10, 15, 30, 45, 60, 75, 90, 120), n_NAD =3 , n_noNAD = 2){
@@ -782,11 +785,11 @@ time_points = c(0, 5,10, 15, 30, 45, 60, 75, 90, 120), n_NAD =3 , n_noNAD = 2){
   # Create a data frame with all combinations of cmpd and time_points
 
   df <- expand.grid(cmpd = cmpds, time_points = time_points, factor = "NAD")  |>
-    dplyr::arrange(time_points, cmpd)
+    dplyr::arrange(.data$time_points, .data$cmpd)
 
   time_points <- rep(time_points, n_noNAD)
   df2 <- expand.grid(cmpd = cmpds, time_points = time_points, factor = "noNAD")  |>
-    arrange(time_points, cmpd)
+    arrange(.data$time_points, .data$cmpd)
 
   df <- rbind(df, df2)
 
@@ -835,15 +838,17 @@ time_points = c(0, 5,10, 15, 30, 45, 60, 75, 90, 120), n_NAD =3 , n_noNAD = 2){
 
 #' Print PlateObj
 #' @param x PlateObj
+#' @param ... additional arguments passed to print
 #' @export
+#' @noRd
 print.PlateObj <- function(x, ...) {
-  cat("96 Well Plate \n \n Active Rows:", x$empty_rows, "\n", "Last Fill:", x$last_filled, "\n")
-  cat("Remaining Empty Spots:", sum(is.na(x$plate)), "\n")
-  cat("Description:", x$descr, "\n")
-  cat("Last Modified:", x$last_modified |> as.character(), "\n")
-  cat("Plate ID:", x$plate_id, "\n")
-  cat("Registered:", .is_registered(x), "\n")
-  return(invisible(x))
+  cat("96 Well Plate \n \n Active Rows:", x$empty_rows, "\n", "Last Fill:", x$last_filled, "\n") |>
+  cat("Remaining Empty Spots:", sum(is.na(x$plate)), "\n") |>
+  cat("Description:", x$descr, "\n") |>
+  cat("Last Modified:", x$last_modified |> as.character(), "\n") |>
+  cat("Plate ID:", x$plate_id, "\n") |> 
+  cat("Registered:", .is_registered(x), "\n") |>  
+  print(...) |> invisible()
 }
 
 #' Check if a plate is registered
@@ -857,6 +862,7 @@ print.PlateObj <- function(x, ...) {
 #' Register a plate
 #' This will save the plate to the database
 #' @param plate PlateObj object or MultiPlate object
+#' @returns PlateObj object or list of PlateObj objects
 #' @export
 register_plate <- function(plate){
   UseMethod("register_plate")
@@ -880,8 +886,6 @@ register_plate.MultiPlate <- function(plate){
 
 
 
-#' @import checkmate
-#' @import rappdirs
 .register_plate_logic <- function(plate, force = FALSE){
   checkmate::assertClass(plate, "PlateObj")
   plate_id <- plate$plate_id
@@ -912,16 +916,15 @@ register_plate.MultiPlate <- function(plate){
 .compile_cached_plates <- function(){
   db_path <- rappdirs::user_data_dir() |>
     file.path("PKbioanalysis/plates_cache")
-  plates <- list.files(db_path, full.names = F)
+  plates <- list.files(db_path, full.names = FALSE)
   plates
 }
 
 #' Get all plates in the database
-#' @import rappdirs
 .get_plates_db <- function(){
   db_path <- rappdirs::user_data_dir() |>
     file.path("PKbioanalysis/plates_cache")
-  plates <- list.files(db_path, full.names = T)
+  plates <- list.files(db_path, full.names = TRUE)
 
   parse_fun <- function(x){
     x <- readRDS(x)
@@ -945,7 +948,6 @@ register_plate.MultiPlate <- function(plate){
 
 #' Extract the subid from a plate
 #' @param plate PlateObj
-#' @import checkmate
 .plate_subid <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
   plate$plate_id |>
@@ -963,7 +965,8 @@ register_plate.MultiPlate <- function(plate){
 }
 
 #' Retrive a plate
-#' @import rappdirs
+#' @param id_full character. Plate ID 
+#' @noRd 
 .retrieve_plate <- function(id_full){
   db_path <- rappdirs::user_data_dir() |>
     file.path("PKbioanalysis/plates_cache")
@@ -974,8 +977,8 @@ register_plate.MultiPlate <- function(plate){
 #' Reuse and refill a plate with the same ID
 #' @param id numeric. Plate ID
 #' @param extra_fill numeric. Additional spots to be ignored
-#' @import rappdirs
-#' @import checkmate
+#' @returns PlateObj
+#' @noRd
 reuse_plate <- function(id, extra_fill = 0){
   checkmate::assertNumeric(id)
   checkmate::assertNumeric(extra_fill)
@@ -1017,8 +1020,8 @@ reuse_plate <- function(id, extra_fill = 0){
 #' Set plate description
 #' @param plate PlateObj
 #' @param descr character. Description of the plate
-#' @import checkmate
 #' @export
+#' @returns PlateObj
 plate_metadata <- function(plate, descr){
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertCharacter(descr)
@@ -1035,6 +1038,7 @@ plate_metadata <- function(plate, descr){
 #' Combine plates in MultiPlate object
 #' @param plates list of PlateObj objects
 #' @import checkmate
+#' @returns MultiPlate object
 #' @export
 combine_plates <- function(plates){
   checkmate::assertList(plates)
@@ -1043,4 +1047,12 @@ combine_plates <- function(plates){
 
   class(plates) <- c("MultiPlate", "PlateObj")
   plates
+}
+
+
+# Bind new samples to the plate df 
+.bind_new_samples <- function(df, new_df) {
+  dplyr::bind_rows(df, new_df) |>
+    dplyr::mutate(SAMPLE_LOCATION = paste0(LETTERS[.data$row], ",", .data$col)) |>
+    dplyr::slice_tail(by = c(row, col))
 }

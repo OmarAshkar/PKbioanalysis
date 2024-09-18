@@ -4,9 +4,9 @@
 \name{PKbioanalysis-package}
 \alias{PKbioanalysis}
 \alias{PKbioanalysis-package}
-\title{PKbioanalysis: A package for pharmacokinetic bioanalysis design and exploration}
+\title{PKbioanalysis: Pharmacokinetic Bioanalysis Experiments Design and Exploration}
 \description{
-PKbioanalysis is a package that aims to automate pharmacokinetic/pharmacodynamic bioanalytical procedures based on best practices and regulatory recommendations. The package impose regulatory constrains and sanity checking for common bioanalytical procedures. Additionally, PKbioanalysis provides a relational infrastructure for plate management and injection sequence.
+Automate pharmacokinetic/pharmacodynamic bioanalytical procedures based on best practices and regulatory recommendations. The package impose regulatory constrains and sanity checking for common bioanalytical procedures. Additionally, 'PKbioanalysis' provides a relational infrastructure for plate management and injection sequence.
 }
 \seealso{
 Useful links:

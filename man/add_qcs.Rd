@@ -19,6 +19,9 @@ add_qcs(plate, lqc_conc, mqc_conc, hqc_conc, n_qc = 3, qc_serial = TRUE)
 
 \item{qc_serial}{logical. If TRUE, QCs are placed serially}
 }
+\value{
+PlateObj
+}
 \description{
 Add quality control samples to the plate
 }

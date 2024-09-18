@@ -1,6 +1,4 @@
 #' injection List Object
-#'
-#' @param m matrix
 #' @param df dataframe
 #' @param plates vector of plate IDs
 .injecList <- function(df, plates) {
@@ -12,7 +10,6 @@
   class(s) <- "InjecListObj"
   s
 }
-
 
 
 #' Create Injection Sequence
@@ -33,17 +30,18 @@
 #' @param explore_mode options either TRUE or FALSE. Default if FALSE.
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
-#' 
+#'
 #' @details
-#' explore_mode controls if exploratory samples are to be injected. A random sample from each CS and QC group will be sampled along with 1 blank sample. 
+#' explore_mode controls if exploratory samples are to be injected. A random sample from each CS and QC group will be sampled along with 1 blank sample.
+#' @returns InjecListObj object
 #'@export
-build_injec_seq <- function(plate, 
+build_injec_seq <- function(plate,
                         inlet_method,
                         repeat_std = 1,
                         repeat_qc = 1,
                         repeat_analyte = 1,
-                        blank_after_top_conc = T,
-                        blank_at_end = T,
+                        blank_after_top_conc = TRUE,
+                        blank_at_end = TRUE,
                         system_suitability = 0,
                         blank_every_n = NULL,
                         inject_vol,
@@ -58,35 +56,41 @@ build_injec_seq <- function(plate,
 
 
 #'@export
-build_injec_seq.MultiPlate <- function(plate, tray, ...){
+#'@returns InjecListObj object
+build_injec_seq.MultiPlate <- function( plate, inlet_method,
+  repeat_std = 1, repeat_qc = 1, repeat_analyte = 1,
+  blank_after_top_conc = TRUE, blank_at_end = TRUE, system_suitability = 0,
+  blank_every_n = NULL, inject_vol, descr = "",
+  prefix = Sys.Date(), suffix = "1", tray, explore_mode = FALSE, conc_df = NULL) {
+
   checkmate::assertCharacter(tray, min.len = 1, max.len = 12, unique = TRUE)
 
   if(length(plate) == 1){
     plate <- plate[[1]]
   } else{
-    ## assert length of tray is equal to number of plates 
+    ## assert length of tray is equal to number of plates
     if(length(tray) != length(plate)){
       stop("Number of tray slots must be equal to number of plates")
     }
-    ## assert all plates are registered 
+    ## assert all plates are registered
     if(!all(sapply(plate, .is_registered))){
       stop("All plates are not registered. Please register the plates first.")
     }
 
-    m <- lapply(plate, function(x) x$plate) 
+    m <- lapply(plate, function(x) x$plate)
     m <- do.call(rbind, m)
 
     df <- lapply(1:length(plate), function(i){
-      x <- plate[[i]]$df 
-      x$tray <- tray[i] 
+      x <- plate[[i]]$df
+      x$tray <- tray[i]
       x
     })
 
     df <- do.call(rbind, df)
 
-    plate_id <- sapply(plate, function(x) x$plate_id) 
+    plate_id <- sapply(plate, function(x) x$plate_id)
 
-    descr <- sapply(plate, function(x) x$descr)
+    descr <- sapply(plate, function(x) x$descr) |> paste0(collapse = ", ")
 
     empty_rows <- sapply(plate, function(x) x$empty_rows)
 
@@ -97,21 +101,25 @@ build_injec_seq.MultiPlate <- function(plate, tray, ...){
 
   }
 
-  build_injec_seq(plate, tray = tray, ...)
+  build_injec_seq(plate, inlet_method = inlet_method,
+                  repeat_std = repeat_std, repeat_qc = repeat_qc, repeat_analyte = repeat_analyte,
+                  blank_after_top_conc = blank_after_top_conc, blank_at_end = blank_at_end,
+                  system_suitability = system_suitability, blank_every_n = blank_every_n,
+                  inject_vol = inject_vol, descr = descr, prefix = prefix, suffix = suffix,
+                  tray = tray, explore_mode = explore_mode, conc_df = conc_df)
+
 }
 
-        
-
 #' @importFrom dplyr bind_rows bind_cols mutate add_row filter arrange count group_by group_modify ungroup select
-#' @import checkmate
-#' @export 
+#' @export
+#' @returns InjecListObj object
 build_injec_seq.PlateObj <- function(plate,
                         inlet_method,
                         repeat_std = 1,
                         repeat_qc = 1,
                         repeat_analyte = 1,
-                        blank_after_top_conc = T,
-                        blank_at_end = T,
+                        blank_after_top_conc = TRUE,
+                        blank_at_end = TRUE,
                         system_suitability = 0,
                         blank_every_n = NULL,
                         inject_vol,
@@ -157,21 +165,21 @@ build_injec_seq.PlateObj <- function(plate,
     plate$df$tray <- tray
   }
   plate <-
-    plate$df |> dplyr::mutate(SAMPLE_LOCATION = paste0(tray, ":", SAMPLE_LOCATION))
+    plate$df |> dplyr::mutate(SAMPLE_LOCATION = paste0(tray, ":", .data$SAMPLE_LOCATION))
 
-  df <- plate[F, ] # empty df, same dims
+  df <- plate[FALSE, ] # empty df, same dims
 
-  double_blanks <- dplyr::filter(plate, TYPE == "DoubleBlank")
-  IS_blanks <- dplyr::filter(plate, TYPE == "ISBlank")
+  double_blanks <- dplyr::filter(plate, .data$TYPE == "DoubleBlank")
+  IS_blanks <- dplyr::filter(plate, .data$TYPE == "ISBlank")
   # locate positive blanks
-  blank_list <- dplyr::filter(plate, TYPE == "Blank")
+  blank_list <- dplyr::filter(plate, .data$TYPE == "Blank")
   # find top conc in std
-  std_list <- dplyr::filter(plate, TYPE == "Standard") |> dplyr::arrange(as.numeric(std_rep), as.numeric(conc))
+  std_list <- dplyr::filter(plate, .data$TYPE == "Standard") |> dplyr::arrange(as.numeric(.data$std_rep), as.numeric(.data$conc))
   # find top conc in qc
-  qc_list <- dplyr::filter(plate, TYPE == "QC") |>  dplyr::arrange(as.numeric(std_rep), value)
-  analyte_list <- dplyr::filter(plate, TYPE == "Analyte") |> dplyr::arrange(samples)
+  qc_list <- dplyr::filter(plate, .data$TYPE == "QC") |>  dplyr::arrange(as.numeric(.data$std_rep), .data$value)
+  analyte_list <- dplyr::filter(plate, .data$TYPE == "Analyte") |> dplyr::arrange(.data$samples)
 
-  suitability_list <- filter(plate, TYPE == "Suitability")
+  suitability_list <- filter(plate, .data$TYPE == "Suitability")
 
 
 
@@ -183,19 +191,19 @@ build_injec_seq.PlateObj <- function(plate,
     stopifnot(nrow(qc_list) %% 4 == 0)
     qc_replicates <-
       qc_list |>
-      dplyr::count(value, .by = "value") |>
+      dplyr::count(.data$value, .by = "value") |>
       dplyr::pull(n) |>
       unique()
     stopifnot(length(qc_replicates) == 1)
   }
 
-  ## 1. xplore mode 
+  ## 1. xplore mode
   if(explore_mode){
-    xplore_df <- df[F, ] # empty df
+    xplore_df <- df[FALSE, ] # empty df
     # add random sample from each group
     if(nrow(std_list) > 0){
       std_xplore <- std_list |>
-        dplyr::group_by(std_rep) |>
+        dplyr::group_by(.data$std_rep) |>
         dplyr::sample_n(1) |>
         dplyr::ungroup()
         xplore_df <-  rbind(xplore_df, std_xplore)
@@ -203,7 +211,7 @@ build_injec_seq.PlateObj <- function(plate,
 
     if(nrow(qc_list) > 0){
       qc_xplore <- qc_list |>
-        dplyr::group_by(std_rep) |>
+        dplyr::group_by(.data$std_rep) |>
         dplyr::sample_n(1) |>
         dplyr::ungroup()
         xplore_df <-  rbind(xplore_df, qc_xplore)
@@ -222,10 +230,10 @@ build_injec_seq.PlateObj <- function(plate,
     }
 
     xplore_df <- xplore_df |>
-      mutate(value = paste0(value, "_explore"))
+      mutate(value = paste0(.data$value, "_explore"))
 
     df <- bind_rows(df, xplore_df)
-  } 
+  }
 
   for(i in 1:2){
   # double blank
@@ -330,10 +338,10 @@ build_injec_seq.PlateObj <- function(plate,
     # min_conc <- min(as.numeric(df$conc))
     df <- df |> dplyr::bind_cols(conc_df) |>  # bind conc_df
           dplyr::mutate(dplyr::across(starts_with("CONC_"),
-                                \(x) (as.numeric(x) * as.numeric(conc)))) # multiply conc_df with conc and divide by min conc
+                                \(x) (as.numeric(x) * as.numeric(.data$conc)))) # multiply conc_df with conc and divide by min conc
 
   } else{
-    df <- dplyr::mutate(df, CONC_A = conc)
+    df <- dplyr::mutate(df, CONC_A = .data$conc)
 
   }
 
@@ -342,10 +350,10 @@ build_injec_seq.PlateObj <- function(plate,
   df <- df |>
     dplyr::mutate(
       Index = dplyr::row_number(),
-      FILE_NAME = paste0(prefix, "_", value, "_", suffix),
+      FILE_NAME = paste0(prefix, "_", .data$value, "_", suffix),
       INJ_VOL = inject_vol,
       # CONC_A = conc,
-      FILE_TEXT = descr, 
+      FILE_TEXT = descr,
       INLET_METHOD = inlet_method
     )
 
@@ -373,10 +381,10 @@ build_injec_seq.PlateObj <- function(plate,
   dflen <- 1:nrow(df)
   df |>
     mutate(grp = (dflen %/% every_n)) |>
-    group_by(grp) |>
+    group_by(.data$grp) |>
     group_modify(~ bind_rows(.x, add_df)) |>
     ungroup() |>
-    select(-grp)
+    select(-.data$grp)
 }
 
 
@@ -388,12 +396,12 @@ build_injec_seq.PlateObj <- function(plate,
 #' @param equi_suffix suffix for equilibriation injections
 #' @param equi_pos position of equilibriation injections. For format check details
 #' @param equi_injec_vol volume of equilibriation injection
-#' 
+#'
 #' @details The equi_pos format will be Row:Column format. E.g: "A,1"
 #'
 #' @importFrom checkmate assertList assertNumber assertString assertNumeric
-#' @importFrom rappdirs user_data_dir
 #' @export
+#' @returns InjecListObj object
 #'
 combine_injec_lists <-
   function(sample_lists, n_equi = 10, equi_pos, equi_prefix = Sys.Date(), equi_suffix = "equi", equi_injec_vol =0.5) {
@@ -420,7 +428,7 @@ combine_injec_lists <-
       dplyr::filter(sample_lists[[1]]$injec_list, col == col_i & row == which(LETTERS == row_i)) |>
       dplyr::slice_head(n = 1) |>
       dplyr::mutate(INJ_VOL = equi_injec_vol) |>
-      dplyr::mutate(FILE_NAME = paste0(equi_prefix, "_", value, "_", equi_suffix)) |>
+      dplyr::mutate(FILE_NAME = paste0(equi_prefix, "_", .data$value, "_", equi_suffix)) |>
       dplyr::mutate(FILE_TEXT = paste0("equilibriate"))
 
     stopifnot( "Equilibriation position not found in the plate. Please check equi_pos." = nrow(equi_df) >= 1)
@@ -428,7 +436,7 @@ combine_injec_lists <-
     equi_df <- equi_df |> dplyr::slice(rep(seq(n()), n_equi))
 
 
-    df <- sample_lists[[1]]$injec_list[F, ] # placeholder for new list
+    df <- sample_lists[[1]]$injec_list[FALSE, ] # placeholder for new list
     current_plates_ids <- c()
     for (i in seq_along(sample_lists)) {
       checkmate::assertClass(sample_lists[[i]], "InjecListObj")
@@ -450,7 +458,7 @@ combine_injec_lists <-
 
 # create it if not exists
 .check_sample_db <- function() {
-  
+
   db_path <- rappdirs::user_data_dir() |>
     file.path("PKbioanalysis/samples.db")
 
@@ -459,7 +467,7 @@ combine_injec_lists <-
   DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS samples (
     file_name TEXT PRIMARY KEY,
-    list_id INTEGER, 
+    list_id INTEGER,
     inlet_method TEXT,
     row INTEGER,
     col INTEGER,
@@ -470,7 +478,7 @@ combine_injec_lists <-
     std_rep INTEGER,
     tray TEXT,
     inj_vol REAL,
-    
+
     conc_a TEXT,
     conc_b TEXT,
     conc_c TEXT,
@@ -487,14 +495,14 @@ combine_injec_lists <-
     conc_n TEXT,
     conc_o TEXT,
     conc_p TEXT,
-    
-    compound_a TEXT, 
-    compound_b TEXT, 
-    compound_c TEXT, 
-    compound_d TEXT, 
-    compound_e TEXT, 
-    compound_f TEXT, 
-    compound_g TEXT, 
+
+    compound_a TEXT,
+    compound_b TEXT,
+    compound_c TEXT,
+    compound_d TEXT,
+    compound_e TEXT,
+    compound_f TEXT,
+    compound_g TEXT,
     compound_h TEXT,
     compound_i TEXT,
     compound_j TEXT,
@@ -504,7 +512,7 @@ combine_injec_lists <-
     compound_l TEXT,
     compound_o TEXT,
     compound_p TEXT,
-    
+
     file_text TEXT,
     conc TEXT,
     time TEXT,
@@ -528,9 +536,9 @@ DBI::dbExecute(db, "
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS peakstab (
     peak_id INTEGER PRIMARY KEY,
-    file_name TEXT NOT NULL, 
-    compound TEXT, 
-    compound_id INTEGER NOT NULL, 
+    file_name TEXT NOT NULL,
+    compound TEXT,
+    compound_id INTEGER NOT NULL,
     transition_id INTEGER NOT NULL,
     observed_rt REAL,
     observed_rt_start REAL,
@@ -546,10 +554,10 @@ DBI::dbExecute(db, "
 
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS transtab (
-    transition_id INTEGER PRIMARY KEY, 
+    transition_id INTEGER PRIMARY KEY,
     transition_label TEXT,
-    q1 REAL, 
-    q3 REAL, 
+    q1 REAL,
+    q3 REAL,
     inlet_method TEXT,
     UNIQUE(transition_id),
     UNIQUE(q1, q3, inlet_method)
@@ -559,13 +567,13 @@ DBI::dbExecute(db, "
 
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS compoundstab (
-    compound_id INTEGER PRIMARY KEY, 
+    compound_id INTEGER PRIMARY KEY,
     compound TEXT,
     transition_id INTEGER,
     expected_rt_start REAL,
     expected_rt_end REAL,
     expected_rt REAL,
-    IS_id INTEGER, 
+    IS_id INTEGER,
     UNIQUE(compound_id)
   );
 
@@ -576,22 +584,23 @@ duckdb::dbDisconnect(db, shutdown = TRUE)
 
 #' Export injection sequence to vendor specific format
 #'
-#' @param injec_seq InjecListObj object 
+#' @param injec_seq InjecListObj object
 #'
 #' @import checkmate
 #' @import dplyr
 #' @import rappdirs
-#' 
+#'
 #' @export
+#' @returns dataframe
 write_injec_seq <- function(injec_seq){
   checkmate::assertClass(injec_seq, "InjecListObj")
 
-  
+
   # Modify sample list
-  sample_list <- dplyr::mutate(injec_seq$injec_list, 
-    FILE_NAME = paste0(FILE_NAME, "_R", row_number())) |> 
-    dplyr::rename_all(tolower) |> 
-    select(-index)
+  sample_list <- dplyr::mutate(injec_seq$injec_list,
+    FILE_NAME = paste0(.data$FILE_NAME, "_R", row_number())) |>
+    dplyr::rename_all(tolower) |>
+    select(-matches("index"))
 
 
   db_path <- rappdirs::user_data_dir() |>
@@ -607,9 +616,9 @@ write_injec_seq <- function(injec_seq){
   max_id <- max_id_result$max_id
   max_id <- ifelse(is.na(max_id), 1, as.numeric(max_id) + 1)
 
-  # metadata table 
+  # metadata table
   sample_list <- sample_list |> dplyr::mutate(list_id = as.integer(max_id))
-  metadatadb <- data.frame(id = max_id, 
+  metadatadb <- data.frame(id = max_id,
     date = as.character(Sys.Date()),
     description = injec_seq$injec_list$FILE_TEXT[1],
     assoc_plates = paste(injec_seq$plates, collapse = ","))
@@ -619,7 +628,7 @@ write_injec_seq <- function(injec_seq){
   stopifnot(anyDuplicated(sample_list$file_name) == 0)
 
 
-  ## against db 
+  ## against db
   tryCatch({
     DBI::dbWriteTable(db, "samples", sample_list, append = TRUE, row.names = FALSE)
     DBI::dbWriteTable(db, "metadata", metadatadb, append = TRUE, row.names = FALSE)
@@ -635,38 +644,42 @@ write_injec_seq <- function(injec_seq){
 
 #' Download sample list from database to local spreadsheet
 #'@param sample_list dataframe of sample list either from db or from write_injec_seq
-#'@param vendor currently only "masslynx" is supported. See details
+#'@param vendor currently only 'masslynx' and 'masshunter' are supported
 #'
-#' @details
-#' For masslynx, the file ending must be ".csv". To import that
-#' @export
-download_sample_list <- function(sample_list, vendor){ 
+#'@details
+#'For 'masslynx' and 'masshunter', the exported format will be in csv format, compatible with the respective software.
+#'@export
+#'@returns dataframe
+download_sample_list <- function(sample_list, vendor){
   checkmate::assertDataFrame(sample_list)
-  checkmate::assertSubset(vendor, c("masslynx", "masshunter"), FALSE) 
+  checkmate::assertSubset(vendor, c("masslynx", "masshunter"), FALSE)
 
   if (vendor == "masslynx") {
-    sample_list <- sample_list |> 
-      dplyr::rename_all(toupper) |> 
-      dplyr::select(FILE_NAME, SAMPLE_LOCATION, FILE_TEXT,
-      TYPE, INJ_VOL, starts_with("CONC"), starts_with("COMPOUND")) |> 
-      dplyr::mutate(Index = dplyr::row_number()) 
+    sample_list <- sample_list |>
+      dplyr::rename_all(toupper) |>
+      dplyr::select(matches("FILE_NAME"), matches("SAMPLE_LOCATION"),
+        matches("FILE_TEXT"),
+        matches("TYPE"), matches("INJ_VOL"),
+        starts_with("CONC"), starts_with("COMPOUND")) |>
+      dplyr::mutate(Index = dplyr::row_number())
 
   } else if(vendor == "masshunter"){
-    
-    sample_list <- sample_list |> 
-      dplyr::rename_all(toupper) |> 
-      dplyr::rename(`Sample Name` = FILE_NAME) |>
-      dplyr::rename(`Data File` = FILE_NAME) |>
-      dplyr::rename(Description = FILE_TEXT) |>
-      dplyr::rename(Vial = SAMPLE_LOCATION) |>
-      dplyr::rename(Volume = INJ_VOL) |>
-      dplyr::rename(`Sample Type` = TYPE) |>
-      dplyr::rename(`Dil. factor 1` = CONC_A) |>
-      dplyr::select(`Data file`, Description, Vial, Volume, starts_with("Dil. factor")) |> 
-      dplyr::mutate(Vial = \(x){ # to 
-        x <- strsplit(wat, ":")[[1]]
+
+    sample_list <- sample_list |>
+      dplyr::rename_all(toupper) |>
+      dplyr::rename(`Sample Name` = .data$FILE_NAME) |>
+      dplyr::rename(`Data File` = .data$FILE_NAME) |>
+      dplyr::rename(Description = .data$FILE_TEXT) |>
+      dplyr::rename(Vial = .data$SAMPLE_LOCATION) |>
+      dplyr::rename(Volume = .data$INJ_VOL) |>
+      dplyr::rename(`Sample Type` = .data$TYPE) |>
+      dplyr::rename(`Dil. factor 1` = .data$CONC_A) |>
+      dplyr::select(matches("Data file"), matches("Description"),
+        matches("Vial"), matches("Volume"), starts_with("Dil. factor")) |>
+      dplyr::mutate(Vial = \(x){ # to
+        x <- strsplit(x, ":")[[1]]
         tray <- paste0("P", x[1])
-        well <- gsub(",", "", x[2]) 
+        well <- gsub(",", "", x[2])
         paste0(tray, "-", well)
       }
 
@@ -684,8 +697,8 @@ print.InjecListObj <- function(x, ...) {
   cat("Check if total volume is OK. Volume will depend on injection and filtration modes")
   sprintf("Total number of injections %s", nrow(x$injec_list))
   x$injec_list |>
-    summarize(total_volume = sum(INJ_VOL), .by = SAMPLE_LOCATION) |>
-    arrange(desc(total_volume)) |> print()
+    summarize(total_volume = sum(.data$INJ_VOL), .by = "SAMPLE_LOCATION") |>
+    arrange(desc(.data$total_volume)) |> print()
 
   return(invisible(x))
 
@@ -694,7 +707,7 @@ print.InjecListObj <- function(x, ...) {
 .reset_samples_db <- function() {
   db_path <- rappdirs::user_data_dir() |>
     file.path("PKbioanalysis/samples.db")
-    # rename 
+    # rename
   file.rename(db_path, paste0(db_path, "_old"))
 }
 
@@ -707,7 +720,7 @@ print.InjecListObj <- function(x, ...) {
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
   metadata <- DBI::dbGetQuery(db, "SELECT * FROM metadata")
   duckdb::dbDisconnect(db, shutdown = TRUE)
-  
+
   metadata
 }
 
@@ -724,10 +737,10 @@ print.InjecListObj <- function(x, ...) {
 
 ## get max list_id from db
 .last_list_id <- function(){
-    db_path <- rappdirs::user_data_dir() |> 
+    db_path <- rappdirs::user_data_dir() |>
         file.path("PKbioanalysis/samples.db")
     db <- duckdb::dbConnect( duckdb::duckdb(), dbdir = db_path)
-    max_id_query <- "SELECT MAX(id) AS max_id FROM metadata" 
+    max_id_query <- "SELECT MAX(id) AS max_id FROM metadata"
     max_id_result <- DBI::dbGetQuery(db, max_id_query)
     max_id <- max_id_result$max_id
     duckdb::dbDisconnect(db, shutdown = TRUE)

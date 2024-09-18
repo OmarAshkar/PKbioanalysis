@@ -10,6 +10,9 @@ register_plate(plate)
 \arguments{
 \item{plate}{PlateObj object or MultiPlate object}
 }
+\value{
+PlateObj object or list of PlateObj objects
+}
 \description{
 Register a plate
 This will save the plate to the database

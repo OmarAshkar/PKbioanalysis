@@ -7,7 +7,7 @@ test_that("plate_registered_before_seq", {
 
 test_that("save_injecseq_csv", {
   skip_on_cran()
-  
+
   .reset_samples_db()
   x <- generate_96() |>
     add_samples(1:20) |>
@@ -43,6 +43,8 @@ test_that("multiple_plates", { # expect 1 list
     register_plate()
 
   x <- combine_plates(list(x,y))
+
+  length(x) |> expect_equal(2)
 
   build_injec_seq(x, tray = c("1", "2"), inject_vol = 2, inlet_method = "method.q") |> expect_no_error()
 })

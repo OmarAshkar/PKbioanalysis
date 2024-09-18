@@ -1,16 +1,16 @@
 #' @title bioanalytic_app
 #' @description This function creates a shiny app for plate management
-#' @param chrom_res A ChromRes object
 #' @import shiny
 #' @import bslib
 #' @import bsicons
 #' @import shinyWidgets
 #' @import DiagrammeR
-#' @importFrom shinyjs hide show enable disable useShinyjs 
+#' @importFrom shinyjs hide show enable disable useShinyjs
+#' @returns A shiny app. No default return value. Can return a PlateObj if reuse_plate_button is clicked
 #' @export
 plate_app <- function() {
-  
-  
+
+
 #   js_checkboxdt <- c(
 #   "$('[id^=checkb]').on('click', function(){",
 #   "  var id = this.getAttribute('id');",
@@ -79,10 +79,10 @@ plate_app <- function() {
           numericInput(paste0("equi_vol_prot", number), "Equi Vol", value = 0.5),
         ),
       ),
-      fileInput(paste0("inlet_method_fileinput_prot", number), "Inlet File", accept = c(".txt")), 
+      fileInput(paste0("inlet_method_fileinput_prot", number), "Inlet File", accept = c(".txt")),
       bslib::input_switch(paste0("exploratory_samples_alg_prot", number), "Exploratory Samples", value = FALSE) |>
-        bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"), 
-      p("Repeats"), 
+        bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
+      p("Repeats"),
       fluidRow(
         column(
           width = 3,
@@ -133,26 +133,26 @@ plate_app <- function() {
           #  textInput(paste0("tray_prot", number), "Tray", value = "1")
           #)
       ))
-    
+
   }
 
 
-  
+
   ui <- bslib::page_navbar(
     title = "Plate Management",
     shinyjs::useShinyjs(),
     bslib::nav_panel(title = "Dashboard", p("Welome to my app!")), ## dashboard panel
-    bslib::nav_panel(title = "Sample Lists", 
+    bslib::nav_panel(title = "Sample Lists",
       bslib::layout_sidebar(
         sidebar = sidebar(
           width = 500,
           actionButton("change_samplelist_metadata_descr_btn", "Change Description"),
           DT::DTOutput("sample_list_metatable_DT")
-        ), 
+        ),
         actionButton("redownload_current_db_list_btn", "Download Current List", icon = icon("download")),
         actionButton("select_plates_current_list_btn", "Select Plates", icon = icon("check")),
         DT::DTOutput("sample_list_filtered_DT")
-    
+
     )), ## sample lists panel
     bslib::nav_panel(title = "Plates",           ## plates panel
       bslib::layout_column_wrap(
@@ -165,7 +165,7 @@ plate_app <- function() {
             selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "time", "TYPE", "samples")),
             numericInput("plate_map_font_size", "Font Size", value = 12),
             title = "Color By"
-          )), 
+          )),
           plotOutput("plate_map_plot1", width = "100%", height = "500px" )
         ),
         bslib::card(
@@ -174,7 +174,7 @@ plate_app <- function() {
           downloadButton( "export_plate_image", "Export Plate Image", icon = icon("download")),
           actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary"),
           # tabset with plate, sample list, dilution
-          actionButton("clear_selected_plates_btn", "Clear All"), 
+          actionButton("clear_selected_plates_btn", "Clear All"),
           DT::DTOutput("plate_db_table")
             ))),
 
@@ -192,9 +192,9 @@ plate_app <- function() {
                   bslib::accordion(
                     id = "protocols_accordion",
                     bslib::accordion_panel(
-                      title = "Protocol 1", 
+                      title = "Protocol 1",
                       value = "protocol_1",
-                      fileInput("inlet_method_fileinput_prot1", "Inlet File", accept = c(".txt")), 
+                      fileInput("inlet_method_fileinput_prot1", "Inlet File", accept = c(".txt")),
                       bslib::input_switch("exploratory_samples_alg_prot1", "Exploratory Samples", value = FALSE) |>
                           bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
                       p("Repeats"),
@@ -247,11 +247,11 @@ plate_app <- function() {
                             width = 6,
                             selectInput("tray_prot1", "Tray", choices = as.character(1:12), multiple = TRUE)
                           ))),
-                    div(id = "prot_holder"), 
+                    div(id = "prot_holder"),
                     accordion_panel(
                       title = "Compounds dilution",
                       value = "compounds_accordion",
-                      div(id = "cmpd_holder"), 
+                      div(id = "cmpd_holder"),
                       fluidRow(
                         column(width = 2, actionButton("add_cmpd", "Add")),
                         column(width = 2, actionButton("remove_cmpd", "Remove"))),
@@ -284,16 +284,16 @@ plate_app <- function() {
                         selectInput("dil_rep", "Replicate", choices = 1:10)
                       ),
                       actionButton("dilute", "Dilute", icon = icon("flask")),
-                      
-                      # layout_column_wrap(width = 1/2, 
-                      #   textInput("add_dil_cmpd_textinput", "Dilution concentration") |> 
+
+                      # layout_column_wrap(width = 1/2,
+                      #   textInput("add_dil_cmpd_textinput", "Dilution concentration") |>
                       #     bslib::tooltip("See help for format"),
                       #   actionButton("add_dil_cmpd_btn", "Add Dilution Step")
                       # ),
                       # shinyMatrix::matrixInput(
-                      #   inputId = "lower_tri_matrix", 
-                      #   value = matrix(0, nrow = 4, ncol = 4), 
-                      #   rows = list(names = TRUE), 
+                      #   inputId = "lower_tri_matrix",
+                      #   value = matrix(0, nrow = 4, ncol = 4),
+                      #   rows = list(names = TRUE),
                       #   cols = list(names = TRUE),
                       #   class = "numeric"
                       # ),
@@ -320,7 +320,7 @@ plate_app <- function() {
 
 
   server <- function(input, output, session) {
-    ########################## sample list 
+    ########################## sample list
 
 
     current_sample_list_metatable <- reactiveVal(.get_samplesdb_metadata())
@@ -329,18 +329,18 @@ plate_app <- function() {
         DT::datatable(
           selection = list(mode = "single", target = "row"),
           options = list(scrollX=TRUE, scrollY=TRUE, scrollCollapse=TRUE)
-        ) 
-    }) 
+        )
+    })
 
     current_visible_sample_db <- reactiveVal(NULL)
     observeEvent(input$sample_list_metatable_DT_rows_selected, {
-      # get row id and recover sample list from db 
+      # get row id and recover sample list from db
       index <- input$sample_list_metatable_DT_rows_selected
-      id <- current_sample_list_metatable() |> 
-        filter(row_number() == index) |> pull(id) 
-      .get_samplelist(id)  |> select(-row, -col, -list_id) |> 
+      id <- current_sample_list_metatable() |>
+        filter(row_number() == index) |> pull(id)
+      .get_samplelist(id)  |> select(-"row", -"col", -"list_id") |>
         current_visible_sample_db()
-    }) 
+    })
 
     output$sample_list_filtered_DT <- DT::renderDT({
       req(current_visible_sample_db())
@@ -348,7 +348,7 @@ plate_app <- function() {
         DT::datatable(
           selection = list(mode = "single", target = "row"),
           options = list(scrollX=TRUE, scrollY=TRUE, scrollCollapse=TRUE)
-        ) 
+        )
     })
     observeEvent(input$redownload_current_db_list_btn, {
       showModal(modalDialog(
@@ -369,7 +369,7 @@ plate_app <- function() {
     )
 
 
-    ############################### plate 
+    ############################### plate
 
     # used to create checkboxes
     shinyInput <- function(FUN, len, id, ...) {
@@ -425,7 +425,7 @@ plate_app <- function() {
 
     #   })
 
-      
+
     #   already_removed <- reactiveVal(1)
     #   observeEvent(input[[paste0("remove_cmpd_prot", current_injec_protcols())]], {
     #     cmpd_last <- names(input) |> grep(pattern = "^var\\d+\\-compound_name", value = TRUE) |>
@@ -443,7 +443,7 @@ plate_app <- function() {
     #   })
     # })
 
-    
+
       observeEvent(input$add_cmpd, {
         cmpd_last <- sum(input$add_cmpd, 1)
         insertUI(
@@ -454,7 +454,7 @@ plate_app <- function() {
 
       })
 
-      
+
       already_removed <- reactiveVal(1)
       observeEvent(input$remove_cmpd, {
         cmpd_last <- names(input) |> grep(pattern = "^var\\d+\\-compound_name", value = TRUE) |>
@@ -494,7 +494,7 @@ plate_app <- function() {
       ui       = tagList(module_compounds("var1", 1))
     )
 
-    current_injec_protcols(current_injec_protcols() + 1) 
+    current_injec_protcols(current_injec_protcols() + 1)
 
   }, priority = 1)
 
@@ -522,8 +522,8 @@ plate_app <- function() {
 
     output$plate_map_plot1 <- renderPlot({
        plate_db()[current_plate_row(),  ]$id |> selected_ids()
-  
-      # select last id for current plate list 
+
+      # select last id for current plate list
       .retrieve_plate(rev(selected_ids())[[1]]) |> current_plate()
       plot(current_plate(), color = input$plate_map_color_toggle) +
           theme(text = element_text(size = input$plate_map_font_size))
@@ -544,12 +544,12 @@ plate_app <- function() {
 
     observeEvent(current_injec_protcols(), {
       req(current_injec_protcols() > 0)
-        updateSelectizeInput( inputId = paste0("plate_id_prot", current_injec_protcols()), 
+        updateSelectizeInput( inputId = paste0("plate_id_prot", current_injec_protcols()),
           choices = selected_ids())
     }
     )
 
-    # remove dilutions tab if no std 
+    # remove dilutions tab if no std
     observeEvent(current_plate(), {
       if(.last_std(current_plate()) == 0){
         nav_hide("generator_nav", "Dilution")
@@ -585,11 +585,11 @@ plate_app <- function() {
             hide("write_sample_list")
             hide("export_sample_list")
             lock_export(TRUE) # FIXME introduce a loop bug, but without it the tables will not clear
-        }) 
+        })
       }
     })
 
-      
+
 
     current_cmpd_df <- reactiveVal(NULL)
     observeEvent(input$create_sample_list, {
@@ -601,7 +601,7 @@ plate_app <- function() {
       )
       current_cmpd_df(cmpds_df)
 
-      
+
       tryCatch(
         {
           plates_list <- list()
@@ -616,12 +616,12 @@ plate_app <- function() {
 
           plates_list <- combine_plates(plates_list) # one big plate
 
-          # create custom protocol for the big plate     
+          # create custom protocol for the big plate
           index_prot <- ifelse(current_injec_protcols() < 13, current_injec_protcols(), 12)
           index_prot <- if(index_prot == 1) 1 else seq(1, index_prot, 1)
 
           for(i in index_prot){
-             injseq_list[[i]] <- plates_list |> 
+             injseq_list[[i]] <- plates_list |>
               build_injec_seq(descr = input[[paste0("descr_prot", i)]],
                 inlet_method =   input$inlet_method_fileinput_prot1$name,
                 suffix = input[[paste0("suffix_prot", i)]],
@@ -636,9 +636,9 @@ plate_app <- function() {
                 explore_mode = input[[paste0("exploratory_samples_alg_prot", i)]],
                 conc_df = current_cmpd_df(),
                 inject_vol = input[[paste0("injec_vol_prot", i)]])
-          } 
+          }
 
-          
+
           # enable export button
           nav_show("sample_list_nav", "Export")
           nav_show("sample_list_nav", "Summary")
@@ -649,19 +649,19 @@ plate_app <- function() {
           shinyjs::hide("export_sample_list")
 
           nav_select("sample_list_nav", "Sample List")
-          
+
           if(length(injseq_list) == 1){
             current_injec_seq(injseq_list[[1]])
           } else{
             combine_injec_lists(injseq_list , equi_pos = "A,3") |> current_injec_seq()
           }
-          
+
 
           lock_export(FALSE)
 
         },
         error = function(e) {showNotification(e$message, type = "error")}
-      ) 
+      )
 
     })
 
@@ -707,18 +707,18 @@ plate_app <- function() {
         showNotification("Check the summary tab for total volume", type = "message")
 
         current_injec_seq()$injec_list  |>
-        dplyr::select(Index, FILE_NAME, FILE_TEXT, SAMPLE_LOCATION,
-          INJ_VOL,  conc, TYPE, starts_with("COMPOUND"), starts_with("CONC")) |>
-        dplyr::rename("Sample Location" = SAMPLE_LOCATION, Description = FILE_TEXT) |>
-        mutate(FILE_NAME = paste0(FILE_NAME, "_R", row_number())) |> # only visual reflection for actual result
+        dplyr::select("Index", "FILE_NAME", "FILE_TEXT", "SAMPLE_LOCATION",
+          "INJ_VOL",  "conc", "TYPE", starts_with("COMPOUND"), starts_with("CONC")) |>
+        dplyr::rename("Sample Location" = .data$SAMPLE_LOCATION, Description = .data$FILE_TEXT) |>
+        mutate(FILE_NAME = paste0(.data$FILE_NAME, "_R", row_number())) |> # only visual reflection for actual result
         DT::datatable(
           selection = list(mode = "single", target = "cell"),
           options = list(scrollX=TRUE, scrollY = "550px",
           scrollCollapse=TRUE, dom = "ft", pageLength = 10000000), rownames = FALSE) |>
         DT::formatStyle(columns = "INJ_VOL", valueColumns = "INJ_VOL",
-          backgroundColor = styleEqual(unique_vol, redpal)) |>
+          backgroundColor = DT::styleEqual(unique_vol, redpal)) |>
         DT::formatStyle(columns = "conc", valueColumns = "conc",
-          backgroundColor = styleEqual(unique_conc, bluepal))
+          backgroundColor = DT::styleEqual(unique_conc, bluepal))
       } else{
         NULL
       }
@@ -726,7 +726,7 @@ plate_app <- function() {
 
 
     current_injec_seq_summary <- reactiveVal(NULL)
-    
+
     # outputOptions(output, "sample_list_summary", suspendWhenHidden = FALSE)
     # outputOptions(output, "total_injections", suspendWhenHidden = FALSE)
     # outputOptions(output, "max_vol", suspendWhenHidden = FALSE)
@@ -738,8 +738,8 @@ plate_app <- function() {
 
       if(!lock_export()){
         d <- current_injec_seq()$injec_list  |>
-          dplyr::select(INJ_VOL, SAMPLE_LOCATION, value) |>
-          dplyr::summarise(total_vol = sum(INJ_VOL), .by = c(SAMPLE_LOCATION, value))
+          dplyr::select("INJ_VOL", "SAMPLE_LOCATION", "value") |>
+          dplyr::summarise(total_vol = sum(.data$INJ_VOL), .by = c("SAMPLE_LOCATION", "value"))
 
         current_injec_seq_summary(d)
 
@@ -758,7 +758,7 @@ plate_app <- function() {
         x <- nrow(current_injec_seq()$injec_list)
         paste0("Total Injections: ", x)
       } else{
-        NULL 
+        NULL
       }
 
     })
@@ -768,7 +768,7 @@ plate_app <- function() {
       req(current_injec_seq())
 
       if(!lock_export()){
-        max_vol <- current_injec_seq_summary() |> dplyr::pull(total_vol) |> max()
+        max_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_vol) |> max()
         paste0("Max Volume: ", max_vol)
       } else{
         NULL
@@ -780,7 +780,7 @@ plate_app <- function() {
       req(current_injec_seq())
 
       if(!lock_export()){
-        min_vol <- current_injec_seq_summary() |> dplyr::pull(total_vol) |> min()
+        min_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_vol) |> min()
         paste0("Min Volume: ", min_vol)
       } else{
         NULL
@@ -803,14 +803,14 @@ plate_app <- function() {
 
       empty_rows <- data.frame(v4 = NA, v3 = NA, v2 = NA)
       d <- cbind(empty_rows, d)
-      
+
       if(input$dil_type == "QC"){ # delete the vial position for now and aggregate
         d$v0 <- gsub("(.*)_(.*)", "\\1", d$v0)
         d <- d |> distinct()
       }
 
-      current_dil_df(d) 
-      # parallel_dil_df(d[,c(4,5)] |> .gen_graph()) 
+      current_dil_df(d)
+      # parallel_dil_df(d[,c(4,5)] |> .gen_graph())
 
       # nodes <- c(d$v1, d$v0)
       # adj_matrix <- matrix(0, nrow = length(nodes), ncol = length(nodes))
@@ -822,7 +822,7 @@ plate_app <- function() {
       # }
 
       # shinyMatrix::updateMatrixInput(session, "lower_tri_matrix", value = adj_matrix)
-      
+
       shinyjs::hide("dil_graph_grviz_card")
       shinyjs::hide("export_dil_graph")
       })
@@ -831,7 +831,7 @@ plate_app <- function() {
       req(class(current_plate()) == "PlateObj")
       req(current_dil_df())
 
-      current_dil_df() |> 
+      current_dil_df() |>
         DT::datatable(
         # colnames = rep("", ncol(current_dil_df())),
         rownames = FALSE,
@@ -844,7 +844,7 @@ plate_app <- function() {
     proxy = dataTableProxy('dilution_dt')
     observeEvent(input$dilution_dt_cell_edit, {
       print(input$dilution_dt_cell_edit)
-      editData(current_dil_df(), input$dilution_dt_cell_edit, 'dilution_dt', rownames = FALSE) |>
+      DT::editData(current_dil_df(), input$dilution_dt_cell_edit, 'dilution_dt', rownames = FALSE) |>
         current_dil_df()
     })
 
@@ -856,10 +856,10 @@ plate_app <- function() {
       d <- current_dil_df()
       d[d == ""] <- NA
       x <- d |>
-        select( where(function(x) !all(is.na(x)))) |> # FIXME 
+        select( where(function(x) !all(is.na(x)))) |> # FIXME
         # group_by(TYPE) |> # to make sure not mixing both things
         tidyr::fill(everything(), .direction = "downup") |>
-        select(-TYPE) |>
+        select(-"TYPE") |>
         # ungroup() |>
         # .multi_graph()
         .gen_graph()
@@ -872,7 +872,7 @@ plate_app <- function() {
 
 
 
-    # trim the matrix and give error if not numeric of off diagonal  
+    # trim the matrix and give error if not numeric of off diagonal
     # observe({
     #   mat <- input$lower_tri_matrix
     #   mat[lower.tri(mat)] <- NA  # Set upper triangular part to NA
@@ -920,22 +920,22 @@ plate_app <- function() {
     dilution_factor_label <- reactiveVal(NULL)
     observeEvent(  input$dil_graph_grviz_out_click, {
       dil_graphs_observer()
-      
-      node_id <- input$dil_graph_grviz_out_click
-      edge_id <- select_edges_by_node_id(dil_graphs_observer(), 
-        grep(x = node_id$id,  pattern = "\\d+")) |> 
-        get_selection() 
-      
-       get_edge_df(dil_graphs_observer()) |> 
-        filter(id == edge_id) |> pull(label) |> dilution_factor_label()
 
-      get_edge_df(dil_graphs_observer()) |> 
-        mutate(label = ifelse(id == edge_id, label, label) )
+      node_id <- input$dil_graph_grviz_out_click
+      edge_id <- select_edges_by_node_id(dil_graphs_observer(),
+        grep(x = node_id$id,  pattern = "\\d+")) |>
+        get_selection()
+
+       get_edge_df(dil_graphs_observer()) |>
+        filter(id == edge_id) |> pull(.data$label) |> dilution_factor_label()
+
+      # get_edge_df(dil_graphs_observer()) |>
+      #   mutate(label = ifelse(.data$id == edge_id, label, label))
 
       showModal(modalDialog(
         node_id$nodeValues[[1]],
         paste0("Dilution factor: ", dilution_factor_label()),
-        numericInput("final_dil_vol", "Final Volume", value = 1, min = 0.1, max = 10000), 
+        numericInput("final_dil_vol", "Final Volume", value = 1, min = 0.1, max = 10000),
         textOutput("final_vol_output")
       ))
     })
@@ -944,13 +944,10 @@ plate_app <- function() {
       paste0("Final Volume: ", .final_vol(dilution_factor_label(), input$final_dil_vol))
     })
 
-
-    
-
     output$export_dil_graph <- downloadHandler(
       filename =  function(){
         paste(Sys.Date(), input$dil_type ,"_schema.png")
-      }, 
+      },
       content = function(file) {
         DiagrammeR::export_graph(dil_graphs_observer(), file_name = file)
       }
@@ -978,19 +975,19 @@ plate_app <- function() {
     output$export_sample_list <- downloadHandler(
       filename =  function(){
         paste0(Sys.Date(), "_sample_list.csv")
-      }, 
+      },
       content = function(file) {
           download_sample_list(exported_list(), input$sample_list_vendor) |>
-            write.csv(file, row.names = FALSE, na = "") 
+            write.csv(file, row.names = FALSE, na = "")
       }
     )
-    
+
     output$export_plate_image <- downloadHandler(
       filename = function(){
         paste0(current_plate()$plate_id, ".png")
       },
       content = function(file){
-        ggsave(file,  current_plate() |> 
+        ggsave(file,  current_plate() |>
             plot(color = input$plate_map_color_toggle))
       }
     )
@@ -1011,7 +1008,8 @@ plate_app <- function() {
       tryCatch(
         {
         id <- as.numeric(strsplit(current_plate()$plate_id, "_")[[1]][1])
-        assign("plat", reuse_plate(id, input$refill_gaps), envir = .GlobalEnv)
+        #assign("plate", reuse_plate(id, input$refill_gaps), envir = .GlobalEnv)
+        reuse_plate(id, input$refill_gaps)
         } ,
         error = function(e) {showNotification(e$message, type = "error")}
       )
@@ -1020,17 +1018,18 @@ plate_app <- function() {
     show_alert(
       title = "Plate Successfully Exported",
       text = tags$div(
-        h3("A new variable named 'plate' has been created in the environment. \n you can exit the app.")
+        h3("A new variable has been assigned in the environment. \n you can exit the app.")
       )
       )
+
     })
+
     # exit button ####
     observeEvent(input$exit, {
       shinyalert::shinyalert("Are you sure you want to exit?",
         type = "warning",
         showConfirmButton = TRUE,
-        showCancelButton = TRUE,
-        callbackR = function(){ stopApp(peaksobj())}
+        showCancelButton = TRUE
       )
     })
 

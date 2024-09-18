@@ -13,6 +13,9 @@ add_suitability(plate, conc, label = "suitability")
 
 \item{label}{character. Label for the suitability well. Default is "suitability".}
 }
+\value{
+PlateObj
+}
 \description{
 Add suitability sample to the plate
 }

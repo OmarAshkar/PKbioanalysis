@@ -19,6 +19,9 @@ add_samples_c(plate, samples, time = NA, conc = NA, factor = NA, prefix = "S")
 
 \item{prefix}{A prefix to be added before samples names. Default is "S"}
 }
+\value{
+PlateObj
+}
 \description{
 Cartesian product of sample factors to a plate
 }

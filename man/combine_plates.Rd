@@ -9,6 +9,9 @@ combine_plates(plates)
 \arguments{
 \item{plates}{list of PlateObj objects}
 }
+\value{
+MultiPlate object
+}
 \description{
 Combine plates in MultiPlate object
 }

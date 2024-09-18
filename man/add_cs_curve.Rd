@@ -11,6 +11,9 @@ add_cs_curve(plate, plate_std)
 
 \item{plate_std}{character}
 }
+\value{
+PlateObj
+}
 \description{
 Add calibration curve to the plate
 }

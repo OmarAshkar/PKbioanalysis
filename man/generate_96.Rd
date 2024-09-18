@@ -14,6 +14,9 @@ generate_96(descr = "", empty_rows = NULL, extra_fill = 0)
 
 \item{extra_fill}{additional spots to be ignored from the first empty row.}
 }
+\value{
+PlateObj
+}
 \description{
 Generate 96 Plate
 Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.

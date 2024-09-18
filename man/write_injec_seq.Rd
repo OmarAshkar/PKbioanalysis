@@ -9,6 +9,9 @@ write_injec_seq(injec_seq)
 \arguments{
 \item{injec_seq}{InjecListObj object}
 }
+\value{
+dataframe
+}
 \description{
 Export injection sequence to vendor specific format
 }
