@@ -1,23 +1,27 @@
 .parse_cmpds <- function(path){
     checkmate::assert_file_exists(path)
     res <- yaml::read_yaml(path)
-    # check there is one method, description and compounds
-    checkmate::assertNames(names(res),  must.include = c("method", "description", "compounds"), type = "unique")
-    # assert unique names of list 
-    checkmate::assertNames(res$compounds, type = "unique")
     res
 }
 
 .save_cmpd_db <- function(cmpds_list){
     .check_sample_db()
 
+    # check there is one method, description and compounds
+    checkmate::assertNames(names(cmpds_list),  
+        must.include = c("method", "description", "compounds"), type = "unique")
+    # assert unique names of list 
+    checkmate::assertNames(cmpds_list$compounds, type = "unique")
+
+    # drop empty strings
+    cmpds_list$compounds <- cmpds_list$compounds[cmpds_list$compounds != ""]
+
     db <- .connect_to_db()
 
     # create new method ID 
-    q <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab")$`MAX(method_id)` + 1
+    q <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
     method_id <- ifelse(length(q) == 0, 1, q+1)
 
-    browser()
     # add to methodstab 
     DBI::dbAppendTable(
         db, "methodstab",

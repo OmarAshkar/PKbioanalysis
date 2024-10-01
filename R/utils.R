@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS methodstab (
   method_id INTEGER PRIMARY KEY,
   method TEXT,
   method_descr TEXT,
-  UNIQUE(method_id)
+  UNIQUE(method_id, method)
 );" )
 
 DBI::dbExecute(db, "

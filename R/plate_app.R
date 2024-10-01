@@ -58,6 +58,8 @@ plate_app <- function() {
     ))
   }
 
+  methodsdb_init <- .get_methodsdb()
+
   module_protocols <- function(id, number){
     ns <- NS(id)
 
@@ -79,7 +81,7 @@ plate_app <- function() {
           numericInput(paste0("equi_vol_prot", number), "Equi Vol", value = 0.5),
         ),
       ),
-      fileInput(paste0("inlet_method_fileinput_prot", number), "Inlet File", accept = c(".txt")),
+      selectInput(paste0("inlet_method_select_prot", number), "Inlet Method", choices = methodsdb_init$method),
       bslib::input_switch(paste0("exploratory_samples_alg_prot", number), "Exploratory Samples", value = FALSE) |>
         bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
       p("Repeats"),
@@ -137,11 +139,21 @@ plate_app <- function() {
   }
 
 
-
   ui <- bslib::page_navbar(
     title = "Plate Management",
     shinyjs::useShinyjs(),
-    bslib::nav_panel(title = "Dashboard", p("Welome to my app!")), ## dashboard panel
+    bslib::nav_panel(title = "Dashboard", 
+      p("Welcome to the plate management dashboard. Here you can manage plates, methods, make dilution schemes and create sample lists")),
+    bslib::nav_panel(title = "methods", 
+       # create 70 30 layout
+      bslib::layout_sidebar(
+        sidebar = bslib::sidebar(
+          width = 600,
+        actionButton("add_method", "Add New Method"),
+        DT::DTOutput("methods_dt")
+      ),
+        DT::DTOutput("cmpd_methods_dt"),
+    )),
     bslib::nav_panel(title = "Sample Lists",
       bslib::layout_sidebar(
         sidebar = sidebar(
@@ -194,7 +206,7 @@ plate_app <- function() {
                     bslib::accordion_panel(
                       title = "Protocol 1",
                       value = "protocol_1",
-                      fileInput("inlet_method_fileinput_prot1", "Inlet File", accept = c(".txt")),
+                      selectInput("inlet_method_select_prot1", "Inlet Method", choices = ""),
                       bslib::input_switch("exploratory_samples_alg_prot1", "Exploratory Samples", value = FALSE) |>
                           bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
                       p("Repeats"),
@@ -473,6 +485,11 @@ plate_app <- function() {
 
 
   # for each protcol add, extra protocol accordion panel
+    #### methods 
+    methodsdb <- reactiveVal(.get_methodsdb()) # get methods from db
+    observeEvent(methodsdb(), {
+      updateSelectInput(session, "inlet_method_select_prot1", choices = methodsdb()$method)
+    })
 
   observeEvent(input$add_protocols, {
     protocol_last <- sum(input$add_protocols, 1)
@@ -495,8 +512,9 @@ plate_app <- function() {
     )
 
     current_injec_protcols(current_injec_protcols() + 1)
-
   }, priority = 1)
+
+
 
    output$plate_db_table <- DT::renderDT({
       # cbind(
@@ -623,7 +641,7 @@ plate_app <- function() {
           for(i in index_prot){
              injseq_list[[i]] <- plates_list |>
               build_injec_seq(descr = input[[paste0("descr_prot", i)]],
-                inlet_method =   input$inlet_method_fileinput_prot1$name,
+                method =   input[[paste0("inlet_method_select_prot", i)]],  
                 suffix = input[[paste0("suffix_prot", i)]],
                 tray = input$tray_prot1, # always the same
                 blank_after_top_conc = input[[paste0("blank_after_top_conc_prot", i)]],
@@ -968,8 +986,63 @@ plate_app <- function() {
 
     })
 
-    #### methods 
-    methodsdb <- reactiveVal(.get_methodsdb())
+    ## methods 
+    observeEvent(input$add_method, {
+      showModal(modalDialog(
+        title = "Add New Method",
+        textInput("method_name", "Method Name"),
+        textInput("method_description", "Description"),
+        p("Add compounds separated by new line"),
+        textAreaInput("compounds_method_input", "Compounds", placeholder = "Compound1\nCompound2\nCompound3"),
+        actionButton("add_method_final_btn", "Add")
+      ))
+    })
+
+    observeEvent(input$add_method_final_btn, {
+      req(input$method_name)
+      req(input$compounds_method_input)
+
+      res <- list(method = input$method_name, 
+        description = input$method_description,
+        compounds = strsplit(input$compounds_method_input, "\n")[[1]])
+
+      tryCatch(
+        {
+          .save_cmpd_db(res)
+
+        },
+        error = function(e) {showNotification(e$message, type = "error")}
+      )
+
+      methodsdb(.get_methodsdb())
+
+    })
+
+    output$methods_dt <- DT::renderDT({
+      req(methodsdb())
+      methodsdb() |>
+        DT::datatable(
+          selection = list(mode = "single", target = "row"),
+          options = list(scrollX=TRUE, scrollY=TRUE, scrollCollapse=TRUE)
+        )
+    })
+
+    output$cmpd_methods_dt <- DT::renderDT({
+      # get the method_id from the methodsdb
+      req(methodsdb())
+      req(input$methods_dt_rows_selected)
+      method_id <- methodsdb()[input$methods_dt_rows_selected, "method_id"]
+
+      .get_method_cmpds(method_id) |>
+        DT::datatable(
+          selection = list(mode = "single", target = "row"),
+          options = list(scrollX=TRUE, scrollY=TRUE, scrollCollapse=TRUE)
+        )
+        
+    })
+
+
+    
 
     # exit button ####
     observeEvent(input$exit, {
