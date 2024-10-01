@@ -120,9 +120,7 @@ test_that("combination_samples", {
 
 
 test_that("qc_ranges", {
-
   generate_96() |> 
     add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
     add_qcs(75, 750 , 1750) |> expect_warning()
-
 })

@@ -419,6 +419,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
 }
 
 #' Check the quality control samples valid
+#' The function will be strict for LQC, but will give a warning only for MQC and HQC
 #' @param std_vec vector of calibration standards
 #' @param loq_conc limit of quantification
 #' @param lqc_conc low quality control concentration
