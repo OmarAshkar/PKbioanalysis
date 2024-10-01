@@ -15,7 +15,7 @@
 #' Create Injection Sequence
 #'
 #' @param plate PlateObj object
-#' @param inlet_method file path specifying the inlet method.
+#' @param method choose method from database
 #' @param repeat_std number of re-injections for calibration standards. Default is 1.
 #' @param repeat_analyte number of re-injections for unknown samples. Default is 1
 #' @param repeat_qc number of re-injections for QC wells. Default is 1
@@ -36,7 +36,7 @@
 #' @returns InjecListObj object
 #'@export
 build_injec_seq <- function(plate,
-                        inlet_method,
+                        method,
                         repeat_std = 1,
                         repeat_qc = 1,
                         repeat_analyte = 1,
@@ -57,7 +57,7 @@ build_injec_seq <- function(plate,
 
 #'@export
 #'@returns InjecListObj object
-build_injec_seq.MultiPlate <- function( plate, inlet_method,
+build_injec_seq.MultiPlate <- function( plate, method,
   repeat_std = 1, repeat_qc = 1, repeat_analyte = 1,
   blank_after_top_conc = TRUE, blank_at_end = TRUE, system_suitability = 0,
   blank_every_n = NULL, inject_vol, descr = "",
@@ -101,7 +101,7 @@ build_injec_seq.MultiPlate <- function( plate, inlet_method,
 
   }
 
-  build_injec_seq(plate, inlet_method = inlet_method,
+  build_injec_seq(plate, method = method,
                   repeat_std = repeat_std, repeat_qc = repeat_qc, repeat_analyte = repeat_analyte,
                   blank_after_top_conc = blank_after_top_conc, blank_at_end = blank_at_end,
                   system_suitability = system_suitability, blank_every_n = blank_every_n,
@@ -114,7 +114,7 @@ build_injec_seq.MultiPlate <- function( plate, inlet_method,
 #' @export
 #' @returns InjecListObj object
 build_injec_seq.PlateObj <- function(plate,
-                        inlet_method,
+                        method,
                         repeat_std = 1,
                         repeat_qc = 1,
                         repeat_analyte = 1,
@@ -129,7 +129,7 @@ build_injec_seq.PlateObj <- function(plate,
                         tray = 1,
                         explore_mode = FALSE,
                         conc_df = NULL) {
-  # checkmate::assertFile(inlet_method)
+            
   checkmate::assertNumber(repeat_std, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_qc, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_analyte, finite = TRUE, lower = 1)
@@ -354,7 +354,7 @@ build_injec_seq.PlateObj <- function(plate,
       INJ_VOL = inject_vol,
       # CONC_A = conc,
       FILE_TEXT = descr,
-      INLET_METHOD = inlet_method
+      INLET_METHOD = method
     )
 
 

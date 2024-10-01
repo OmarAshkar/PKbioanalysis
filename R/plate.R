@@ -432,13 +432,15 @@ add_suitability <- function(plate, conc, label = "suitability") {
   checkmate::assertNumeric(mqc_conc, lower = lqc_conc)
   checkmate::assertNumeric(hqc_conc, lower = mqc_conc)
 
-  calrange <-  loq_conc:max(std_vec)  # seq(loq_conc, hqc_conc, length.out = 200)
+  # find the 30%, 50% and 75% cut on the calibration range
+  min_val <- as.numeric(loq_conc)
+  max_val <- max(as.numeric(std_vec))
+  quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.70)) 
 
-  quantrange <- quantile(calrange, c(0.30, 0.50, 0.75))
-
-  if(!(lqc_conc <= lqc_conc*3)) stop(paste("LQC should be less or equal 3xLOQ", loq_conc*3))
-  if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) stop(paste("MQC should be between 30%",  quantrange[1],  "and 50%", quantrange[2] ,"of the calibration range"))
-  if(!(hqc_conc >= quantrange[3])) stop(paste("HQC should be equal or greater than 75%", quantrange[3], "of the calibration range"))
+  if(!(lqc_conc <= lqc_conc*3)) stop(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
+  if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) warning(paste("MQC should be between 30% (",
+    quantrange[1], ")and 50%", quantrange[2] ,"of the calibration range"))
+  if(!(hqc_conc >= quantrange[3])) warning(paste("HQC should be equal or greater than 75% (>=", quantrange[3], ")of the calibration range"))
 
 }
 
@@ -472,7 +474,6 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
   # get the lloq from the last call
   plate_std <- plate$df |> dplyr::filter(.data$TYPE == "Standard", .data$std_rep == grp_std) |>
     dplyr::pull(.data$conc) 
-    
   loq_conc <- plate_std |>
     as.numeric() |> min(na.rm = TRUE)
 

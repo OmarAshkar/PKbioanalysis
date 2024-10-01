@@ -1023,6 +1023,9 @@ plate_app <- function() {
 
     })
 
+    #### methods 
+    methodsdb <- reactiveVal(.get_methodsdb())
+
     # exit button ####
     observeEvent(input$exit, {
       shinyalert::shinyalert("Are you sure you want to exit?",
