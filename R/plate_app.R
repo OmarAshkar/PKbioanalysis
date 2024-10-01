@@ -270,7 +270,7 @@ plate_app <- function() {
                         column(width = 8, DT::DTOutput("sample_list_summary")),
                       )),
                     bslib::nav_panel("Export",
-                        selectInput("sample_list_vendor", "Select Vendor", choices = c("masslynx", "masshunter")),
+                        selectInput("sample_list_vendor", "Select Vendor", choices = c("masslynx", "masshunter", "analyst")),
                         actionButton("write_sample_list", "Write Sample List"),
                         downloadButton("export_sample_list", "Export", icon = icon("download"))
                 )))),
@@ -1008,7 +1008,6 @@ plate_app <- function() {
       tryCatch(
         {
         id <- as.numeric(strsplit(current_plate()$plate_id, "_")[[1]][1])
-        #assign("plate", reuse_plate(id, input$refill_gaps), envir = .GlobalEnv)
         reuse_plate(id, input$refill_gaps)
         } ,
         error = function(e) {showNotification(e$message, type = "error")}

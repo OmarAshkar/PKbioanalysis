@@ -41,5 +41,6 @@
 #' @importFrom tidyselect matches
 #' @importFrom tidyselect starts_with
 #' @importFrom utils write.csv
+#' @importFrom yaml read_yaml
 ## usethis namespace: end
 NULL

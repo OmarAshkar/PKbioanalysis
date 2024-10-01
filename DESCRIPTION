@@ -39,7 +39,8 @@ Imports:
     htmltools,
     rlang,
     grDevices,
-    utils
+    utils,
+    yaml
 Suggests: 
     knitr,
     rmarkdown,
