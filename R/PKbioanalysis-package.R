@@ -5,6 +5,7 @@
 #' @importFrom checkmate assertSubset
 #' @importFrom DBI dbIsValid
 #' @importFrom DBI dbWriteTable
+#' @importFrom DiagrammeR get_edge_df
 #' @importFrom dplyr as_tibble
 #' @importFrom dplyr tbl
 #' @importFrom DT datatable

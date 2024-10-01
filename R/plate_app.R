@@ -810,18 +810,6 @@ plate_app <- function() {
       }
 
       current_dil_df(d)
-      # parallel_dil_df(d[,c(4,5)] |> .gen_graph())
-
-      # nodes <- c(d$v1, d$v0)
-      # adj_matrix <- matrix(0, nrow = length(nodes), ncol = length(nodes))
-      # rownames(adj_matrix) <- colnames(adj_matrix) <- nodes
-      # for (i in 1:(nrow(d))) {
-      #   from <- d$v1[i]
-      #   to <- d$v0[i]
-      #   adj_matrix[from, to] <- 1
-      # }
-
-      # shinyMatrix::updateMatrixInput(session, "lower_tri_matrix", value = adj_matrix)
 
       shinyjs::hide("dil_graph_grviz_card")
       shinyjs::hide("export_dil_graph")
@@ -871,45 +859,6 @@ plate_app <- function() {
     })
 
 
-
-    # trim the matrix and give error if not numeric of off diagonal
-    # observe({
-    #   mat <- input$lower_tri_matrix
-    #   mat[lower.tri(mat)] <- NA  # Set upper triangular part to NA
-    #   diag(mat) <- NA
-
-
-    #    # Restrict values to 0, NA, or 1
-    #   mat <- apply(mat, c(1, 2), function(x) {
-    #   if (is.na(x) || x == 0 || x == 1) {
-    #     return(x)
-    #   } else {
-    #     return(NA)
-    #   }
-    #   })
-
-    #   shinyMatrix::updateMatrixInput(session, "lower_tri_matrix", value = mat)
-    # })
-
-    # observeEvent(input$add_dil_cmpd_btn , {
-    #   req(input$add_dil_cmpd_textinput)
-
-    #   expanded_matrix <- matrix(0, nrow = nrow(input$lower_tri_matrix) + 1, ncol = ncol(input$lower_tri_matrix) + 1)
-    #   rownames(expanded_matrix) <- colnames(expanded_matrix) <- c(rownames(input$lower_tri_matrix), input$add_dil_cmpd_textinput)
-
-    #   # Find the indices of the non-zero elements
-    #   edges <- which(adj_matrix != 0, arr.ind = TRUE)
-
-    #   # Create a dataframe with "to" and "from" columns
-    #   df <- data.frame(
-    #     from = rownames(adj_matrix)[edges[, 1]],
-    #     to = colnames(adj_matrix)[edges[, 2]]
-    #   )
-
-    #   shinyMatrix::updateMatrixInput(session, "lower_tri_matrix", value = expanded_matrix)
-
-    # })
-
     output$dil_graph_grviz_out <- DiagrammeR::renderGrViz({
       req(dil_graphs_observer())
       dil_graphs_observer() |>
@@ -922,15 +871,9 @@ plate_app <- function() {
       dil_graphs_observer()
 
       node_id <- input$dil_graph_grviz_out_click
-      edge_id <- select_edges_by_node_id(dil_graphs_observer(),
-        grep(x = node_id$id,  pattern = "\\d+")) |>
-        get_selection()
-
-       get_edge_df(dil_graphs_observer()) |>
-        filter(id == edge_id) |> pull(.data$label) |> dilution_factor_label()
-
-      # get_edge_df(dil_graphs_observer()) |>
-      #   mutate(label = ifelse(.data$id == edge_id, label, label))
+      DiagrammeR::get_edge_df(dil_graphs_observer()) |>
+        dplyr::filter(.data$to == node_id$nodeValues[[2]]) |> 
+        dplyr::pull("label") |> dilution_factor_label()
 
       showModal(modalDialog(
         node_id$nodeValues[[1]],
@@ -1008,18 +951,20 @@ plate_app <- function() {
       tryCatch(
         {
         id <- as.numeric(strsplit(current_plate()$plate_id, "_")[[1]][1])
-        reuse_plate(id, input$refill_gaps)
+        
+        x <- reuse_plate(id, input$refill_gaps)
+        show_alert(
+          title = "Plate Successfully Exported",
+          text = tags$div(
+            h3("A new variable captured in R. Please close this window now")
+          ))
+          shiny::stopApp(x) # return the new plate
+
         } ,
         error = function(e) {showNotification(e$message, type = "error")}
       )
 
     removeModal()
-    show_alert(
-      title = "Plate Successfully Exported",
-      text = tags$div(
-        h3("A new variable has been assigned in the environment. \n you can exit the app.")
-      )
-      )
 
     })
 

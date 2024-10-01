@@ -11,7 +11,6 @@ test_that("conc_calculation_correct", {
 # decimals 
 .conc_ratio("1.5", "100") |> expect_equal("0.015")
 .conc_ratio("1.5mg", "100ug") |> expect_equal("15")
-
 })
 
 
