@@ -1,7 +1,7 @@
 
 #'@noRd
 .connect_to_db <- function(){
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
   db
@@ -22,7 +22,7 @@
 #' Delete samples database
 #' @noRd
 .reset_samples_db <- function() {
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
     
   if(file.exists(db_path)) {
@@ -36,7 +36,7 @@
 .get_samplesdb_metadata <- function(){
   .check_sample_db()
 
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
   metadata <- DBI::dbGetQuery(db, "SELECT * FROM metadata")
@@ -47,7 +47,7 @@
 
 .get_samplelist <- function(id){
   .check_sample_db()
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
   sample_list <- DBI::dbGetQuery(db, paste0("SELECT * FROM samples WHERE list_id = ", id))
@@ -58,7 +58,7 @@
 # create it if not exists
 .check_sample_db <- function() {
 
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
 
   # Check if the database file exists

@@ -58,3 +58,11 @@
     duckdb::dbDisconnect(db, shutdown = TRUE)
     as.data.frame(cmpds)
 }
+
+.get_method_id <- function(method){
+    .check_sample_db()
+    db <- .connect_to_db()
+    method_id <- DBI::dbGetQuery(db, paste0("SELECT method_id FROM methodstab WHERE method = '", method, "'")) |> as.numeric()
+    duckdb::dbDisconnect(db, shutdown = TRUE)
+    method_id
+}

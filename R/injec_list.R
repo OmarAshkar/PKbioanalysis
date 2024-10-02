@@ -130,7 +130,7 @@ build_injec_seq.PlateObj <- function(plate,
                         tray = 1,
                         explore_mode = FALSE,
                         conc_df = NULL) {
-            
+
   checkmate::assertNumber(repeat_std, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_qc, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_analyte, finite = TRUE, lower = 1)
@@ -476,7 +476,7 @@ write_injec_seq <- function(injec_seq){
     select(-matches("index"))
 
 
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
 
   .check_sample_db()
@@ -604,7 +604,7 @@ print.InjecListObj <- function(x, ...) {
 ## get max list_id from db
 #'@noRd
 .last_list_id <- function(){
-    db_path <- PKbioanalysis_data_dir |>
+    db_path <- PKbioanalysis_env$data_dir |>
         file.path("samples.db")
 
     db <- duckdb::dbConnect( duckdb::duckdb(), dbdir = db_path)

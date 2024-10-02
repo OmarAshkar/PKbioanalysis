@@ -6,6 +6,9 @@ vignette: >
   %\VignetteIndexEntry{PKbioanalysis overview}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+
+fig_width: 12
+fig_height: 8
 ---
 
 ```{r, include = FALSE}
@@ -23,15 +26,14 @@ library(PKbioanalysis)
 
 ## Plate generation, reusing and managing plates
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96() 
-
 plot(plate)
 ```
 
 Calibration study examples
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96("Calibration study") |> 
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200, 500)) |>
     add_DB() |> 
@@ -81,7 +83,7 @@ plate_app()
 
 ## Adding samples
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96() |> add_samples(1:20)
 
 plot(plate)
@@ -89,7 +91,7 @@ plot(plate)
 
 ### Adding samples manually or from external spreadsheet
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96()
 
 plate <- plate |> 
@@ -102,7 +104,7 @@ plot(plate)
 
 ### Define samples by attributes
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 data(Indometh)
 plate <- generate_96() |> 
     add_samples(samples = Indometh$Subject, 
@@ -113,7 +115,7 @@ plot(plate, color = "samples")
 
 ### Automated crossover
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96() |> 
     # add_samples_c(c("subject1", "subject2"), time = c(0, 10, 30, 60, 120), factor = "Male") |>
     add_samples_c("subject1", time = c(0, 10, 30, 60, 120), 
@@ -130,7 +132,7 @@ plot(plate, color = "conc")
 #### Food Effect Example
 
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 plate <- generate_96() |> 
     add_samples_c(1:4, time = c(0, 10, 30, 60, 120), 
          factor = c("Fed", "Fast"))
@@ -153,7 +155,7 @@ plates <- make_metabolic_study(
 
 ```
 
-```{r fig.width = 12, fig.height = 8}
+```{r}
 length(plates)
 plot(plates[[1]], color = "samples", label_size = 9)
 plot(plates[[2]], color = "samples", label_size = 9)
@@ -165,6 +167,6 @@ plot(plates[[6]], color = "samples", label_size = 9)
 
 ```
 
-```{r, eval = FALSE}
+```{r eval = FALSE}
 register_plate(plates)
 ```

@@ -901,7 +901,7 @@ register_plate.MultiPlate <- function(plate){
   plate_id <- plate$plate_id
 
 
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
 
   plates_vec <- .compile_cached_plates()
@@ -925,7 +925,7 @@ register_plate.MultiPlate <- function(plate){
 
 #' @noRd
 .compile_cached_plates <- function(){
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
 
   plates <- list.files(db_path, full.names = FALSE)
@@ -935,7 +935,7 @@ register_plate.MultiPlate <- function(plate){
 #' Get all plates in the database
 #' @noRd
 .get_plates_db <- function(){
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
   plates <- list.files(db_path, full.names = TRUE)
 
@@ -983,7 +983,7 @@ register_plate.MultiPlate <- function(plate){
 #' @param id_full character. Plate ID 
 #' @noRd 
 .retrieve_plate <- function(id_full){
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
     
   plate <- readRDS(file.path(db_path, id_full))
@@ -999,7 +999,7 @@ reuse_plate <- function(id, extra_fill = 0){
   checkmate::assertNumeric(id)
   checkmate::assertNumeric(extra_fill)
 
-  db_path <- PKbioanalysis_data_dir |>
+  db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
   plates <- list.files(db_path, pattern = paste0(id, "_"))
   plates <- plates[plates %>% str_detect(paste0(id, "_"))]
