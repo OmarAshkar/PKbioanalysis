@@ -1,7 +1,7 @@
 Type: Package
 Package: PKbioanalysis
 Title: Pharmacokinetic Bioanalysis Experiments Design and Exploration
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
     person("Omar", "Elashkar", email = "omar.i.elashkar@gmail.com", role = c("aut", "cre")))
 Maintainer: Omar Elashkar <omar.i.elashkar@gmail.com>

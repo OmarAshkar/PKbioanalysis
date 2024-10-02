@@ -642,7 +642,7 @@ plate_app <- function() {
                 repeat_qc = input[[paste0("repeat_qc_prot", i)]],
                 explore_mode = input[[paste0("exploratory_samples_alg_prot", i)]],
                 conc_df = current_cmpd_df() |>
-                  filter(method == input[[paste0("inlet_method_select_prot", i)]]) |>    # filter only correct method
+                  filter(.data$method == input[[paste0("inlet_method_select_prot", i)]]) |>    # filter only correct method
                   dplyr::select("compound", "ratio"), # only compound and ratio columns
                 inject_vol = input[[paste0("injec_vol_prot", i)]])
           } # filter only correct method
