@@ -20,7 +20,7 @@
 
     # create new method ID 
     q <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
-    method_id <- ifelse(length(q) == 0, 1, q+1)
+    method_id <- ifelse(is.na(q), 1, q+1)
 
     # add to methodstab 
     DBI::dbAppendTable(

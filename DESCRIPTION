@@ -24,7 +24,6 @@ Imports:
     glue (>= 1.6.2),
     checkmate,
     shiny (>= 1.9.1),
-    rappdirs,
     DBI,
     duckdb (>= 1.0.0),
     bslib,

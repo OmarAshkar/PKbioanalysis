@@ -1,6 +1,7 @@
 #' injection List Object
 #' @param df dataframe
 #' @param plates vector of plate IDs
+#' @noRd
 .injecList <- function(df, plates) {
   s <- list(
     injec_list = df,
@@ -377,6 +378,7 @@ build_injec_seq.PlateObj <- function(plate,
 #' @param df original dataframe
 #' @param add_df dataframe to add
 #' @param every_n number of rows to interject add_df
+#' @noRd
 .add_every_n <- function(df, add_df, every_n) {
   dflen <- 1:nrow(df)
   df |>
@@ -461,7 +463,6 @@ combine_injec_lists <-
 #'
 #' @import checkmate
 #' @import dplyr
-#' @import rappdirs
 #'
 #' @export
 #' @returns dataframe
@@ -475,8 +476,8 @@ write_injec_seq <- function(injec_seq){
     select(-matches("index"))
 
 
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/samples.db")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("samples.db")
 
   .check_sample_db()
 
@@ -601,9 +602,11 @@ print.InjecListObj <- function(x, ...) {
 
 
 ## get max list_id from db
+#'@noRd
 .last_list_id <- function(){
-    db_path <- rappdirs::user_data_dir() |>
-        file.path("PKbioanalysis/samples.db")
+    db_path <- PKbioanalysis_data_dir |>
+        file.path("samples.db")
+
     db <- duckdb::dbConnect( duckdb::duckdb(), dbdir = db_path)
     max_id_query <- "SELECT MAX(id) AS max_id FROM metadata"
     max_id_result <- DBI::dbGetQuery(db, max_id_query)

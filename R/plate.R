@@ -355,6 +355,8 @@ add_cs_curve <- function(plate, plate_std) {
   .plate(plate, df, plate_id, empty_rows, descr = descr)
 }
 
+#' Get last standard repetition
+#'@noRd
 .last_std <- function(plate){
   suppressWarnings({
   n <- plate$df |> dplyr::filter(.data$TYPE == "Standard") |>
@@ -365,6 +367,8 @@ add_cs_curve <- function(plate, plate_std) {
   ifelse(is.finite(n), n, 0)
 }
 
+#' Get last quality control repetition
+#' @noRd
 .last_qc <- function(plate){
 
   suppressWarnings({
@@ -635,6 +639,7 @@ make_calibration_study <-
 #' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "TYPE"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
+#' @param label_size numeric. Size of the label. Default is 15
 #' @param path Default is NULL, if not null, must be a path to save plate image
 #' @param ... additional arguments passed to ggplot2::ggsave
 #'
@@ -657,6 +662,7 @@ plot.PlateObj <- function(x,
                           color = "conc",
                           Instrument = "",
                           caption = "",
+                          label_size = 15,
                           path = NULL, ...
                           ) {
 
@@ -714,7 +720,7 @@ plot.PlateObj <- function(x,
         y = .data$row,
         label = str_replace_all(.data$value, "_", "\n")
       ),
-      size = 15,
+      size = label_size,
       size.unit = "pt",
       color = "white"
     ) +
@@ -751,7 +757,7 @@ plot.PlateObj <- function(x,
     message("Plate not registered. To register, use register_plate()")
   }
 
-  if (!is.null(path)) ggplot2::ggsave(path, fig, width = 36, units = "in", dpi = 300, limitsize = FALSE, ...)
+  if (!is.null(path)) ggplot2::ggsave(path, fig, width = 12, height =8, dpi = 300, limitsize = FALSE, ...)
   fig
 }
 
@@ -853,8 +859,10 @@ print.PlateObj <- function(x, ...) {
   print(...) |> invisible()
 }
 
+
 #' Check if a plate is registered
 #' @param plate PlateObj
+#' @noRd
 .is_registered <- function(plate){
   checkmate::testClass(plate, c("RegisteredPlate", "PlateObj"))
 }
@@ -887,14 +895,15 @@ register_plate.MultiPlate <- function(plate){
 }
 
 
-
+#'@noRd
 .register_plate_logic <- function(plate, force = FALSE){
   checkmate::assertClass(plate, "PlateObj")
   plate_id <- plate$plate_id
 
 
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/plates_cache")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("plates_cache")
+
   plates_vec <- .compile_cached_plates()
 
   ids <- str_split(plates_vec, "_")[1]
@@ -914,18 +923,20 @@ register_plate.MultiPlate <- function(plate){
   plate
 }
 
-#' @import rappdirs
+#' @noRd
 .compile_cached_plates <- function(){
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/plates_cache")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("plates_cache")
+
   plates <- list.files(db_path, full.names = FALSE)
   plates
 }
 
 #' Get all plates in the database
+#' @noRd
 .get_plates_db <- function(){
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/plates_cache")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("plates_cache")
   plates <- list.files(db_path, full.names = TRUE)
 
   parse_fun <- function(x){
@@ -950,6 +961,7 @@ register_plate.MultiPlate <- function(plate){
 
 #' Extract the subid from a plate
 #' @param plate PlateObj
+#' @noRd
 .plate_subid <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
   plate$plate_id |>
@@ -960,6 +972,7 @@ register_plate.MultiPlate <- function(plate){
 #' Extract the plate id from a plate
 #' @param plate PlateObj
 #' @import checkmate
+#' @noRd
 .plate_id <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
   plate$plate_id |>
@@ -970,8 +983,9 @@ register_plate.MultiPlate <- function(plate){
 #' @param id_full character. Plate ID 
 #' @noRd 
 .retrieve_plate <- function(id_full){
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/plates_cache")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("plates_cache")
+    
   plate <- readRDS(file.path(db_path, id_full))
   plate
 }
@@ -985,8 +999,8 @@ reuse_plate <- function(id, extra_fill = 0){
   checkmate::assertNumeric(id)
   checkmate::assertNumeric(extra_fill)
 
-  db_path <- rappdirs::user_data_dir() |>
-    file.path("PKbioanalysis/plates_cache")
+  db_path <- PKbioanalysis_data_dir |>
+    file.path("plates_cache")
   plates <- list.files(db_path, pattern = paste0(id, "_"))
   plates <- plates[plates %>% str_detect(paste0(id, "_"))]
   if(length(plates) == 0) stop("Plate not found")
@@ -1052,7 +1066,8 @@ combine_plates <- function(plates){
 }
 
 
-# Bind new samples to the plate df 
+# Bind new samples to the plate df
+#' @noRd
 .bind_new_samples <- function(df, new_df) {
   dplyr::bind_rows(df, new_df) |>
     dplyr::mutate(SAMPLE_LOCATION = paste0(LETTERS[.data$row], ",", .data$col)) |>
