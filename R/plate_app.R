@@ -979,24 +979,75 @@ plate_app <- function() {
     })
 
     ## methods
+    current_method_capture_df <- reactiveVal(NULL)
     observeEvent(input$add_method, {
+      i <- rep(NA, 20)
+
+      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i))
+      
       showModal(modalDialog(
         title = "Add New Method",
-        textInput("method_name", "Method Name"),
-        textInput("method_description", "Description"),
-        p("Add compounds separated by new line"),
-        textAreaInput("compounds_method_input", "Compounds", placeholder = "Compound1\nCompound2\nCompound3"),
-        actionButton("add_method_final_btn", "Add")
-      ))
+        # either import a YAML file or manually add
+        fluidPage(
+          textInput("method_name", "Method Name"),
+          textInput("method_description", "Description"),
+          textInput("method_gradient", "Gradient"),
+          DT::DTOutput("cmpd_methods_entry_dt"),
+          actionButton("add_method_final_btn", "Add")
+        )))
+
     })
+
+    output$cmpd_methods_entry_dt <- DT::renderDT({
+      req(current_method_capture_df())
+      current_method_capture_df() |>
+        DT::datatable(
+          selection = list(mode = "single", target = "row"),
+          rownames = FALSE,
+          options = list(scrollX=TRUE, scrollY="15vh", scrollCollapse=TRUE, paging = FALSE),
+          editable = list(target = "all")
+        )
+    })
+    proxy_method_entry_dt <- dataTableProxy('cmpd_methods_entry_dt')
+    observeEvent(input$cmpd_methods_entry_dt_cell_edit, {
+      DT::editData(current_method_capture_df(), input$cmpd_methods_entry_dt_cell_edit,
+        'cmpd_methods_entry_dt', rownames = FALSE, proxy = proxy_method_entry_dt) |>
+        current_method_capture_df()
+    })
+
 
     observeEvent(input$add_method_final_btn, {
       req(input$method_name)
-      req(input$compounds_method_input)
+
+      # remove complete NA rows
+      # switch any "" to NA 
+      capture_method_cmpd_df <- current_method_capture_df() |> 
+        dplyr::mutate(q1 = as.numeric(q1), q3 = as.numeric(q3)) |>  # convert to numeric|>
+        dplyr::mutate(across(everything(), ~ifelse(. == "", NA, .))) |>
+        dplyr::filter(dplyr::if_all(everything(), ~!is.na(.))) # remove complete NA rows
+        
+      req(nrow(capture_method_cmpd_df) > 0)
+
+      tryCatch(
+        {
+        # check if any cmpd is NA. 
+        if(any(is.na(capture_method_cmpd_df$compounds))){
+          stop("Compounds cannot be empty")
+        }
+
+        # if there is duplicate cmpd
+        if(any(duplicated(capture_method_cmpd_df$compounds))){
+          stop("Duplicate compounds detected")
+        }
+        }, 
+        error = function(e) {showNotification(e$message, type = "error")}
+        )
+
 
       res <- list(method = input$method_name,
         description = input$method_description,
-        compounds = strsplit(input$compounds_method_input, "\n")[[1]])
+        gradient = input$method_gradient,
+        compounds = capture_method_cmpd_df)
 
       tryCatch(
         {

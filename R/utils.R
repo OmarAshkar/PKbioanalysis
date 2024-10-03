@@ -151,13 +151,39 @@ CREATE TABLE IF NOT EXISTS chroms (
 
 
 # gradient methods table
+## method_id: this will auto increment and unique number
+## method_gradient: gradient of the method
+## q1: q1 value
+## q3: q3 value
+## inlet_method: inlet method
+## transition_label: q1 > q3
+## transition_id: T1, T2, T3, etc
+## last unique assertations might be important to avoid repeating identical method entries
+
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS transtab (
+  method_id INTEGER,
+  method_gradient TEXT,
+  q1 REAL,
+  q3 REAL,
+  inlet_method TEXT,
+  transition_label TEXT,
+  transition_id TEXT, 
+  UNIQUE(transition_label)
+);" )
+
+# methods tab
+## method_descr: description of the method
 DBI::dbExecute(db, "
 CREATE TABLE IF NOT EXISTS methodstab (
   method_id INTEGER PRIMARY KEY,
   method TEXT,
   method_descr TEXT,
-  UNIQUE(method_id, method)
+  method_gradient TEXT,
+  UNIQUE(method_id), 
+  UNIQUE(method)
 );" )
+
 
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS peakstab (
@@ -178,27 +204,19 @@ DBI::dbExecute(db, "
 
 ")
 
-DBI::dbExecute(db, "
-  CREATE TABLE IF NOT EXISTS transtab (
-    transition_id INTEGER PRIMARY KEY,
-    transition_label TEXT,
-    q1 REAL,
-    q3 REAL,
-    inlet_method TEXT,
-    UNIQUE(transition_id),
-    UNIQUE(q1, q3, inlet_method)
-  );
-")
 
+# non on the three first columns are unique. 
+# the unqiuness is based on all method_id trans_id compound_id
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS compoundstab (
+    method_id INTEGER,
+    transition_id TEXT,
     compound_id TEXT,
     compound TEXT,
-    method_id INTEGER,
-    transition_id INTEGER,
     expected_rt_start REAL,
     expected_rt_end REAL,
-    expected_rt REAL
+    expected_rt REAL, 
+    UNIQUE(method_id, transition_id, compound_id)
   );
 
 ")
