@@ -441,8 +441,13 @@ add_suitability <- function(plate, conc, label = "suitability") {
   min_val <- as.numeric(loq_conc)
   max_val <- max(as.numeric(std_vec))
   quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.70)) 
+  lowerboundrange <- quantile(c(min_val, max_val), c(0.15, 0.65, 0.66)) 
 
-  if(!(lqc_conc <= lqc_conc*3)) stop(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
+  if(!(lqc_conc <= loq_conc*3)) stop(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
+
+  if(!(mqc_conc >= lowerboundrange[1] & mqc_conc <= lowerboundrange[2])) stop("MQC is way below recommended range")
+  if(!(hqc_conc >= lowerboundrange[3])) stop("HQC is way from recommended range")
+
   if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) warning(paste("MQC should be between 30% (",
     quantrange[1], ")and 50%", quantrange[2] ,"of the calibration range"))
   if(!(hqc_conc >= quantrange[3])) warning(paste("HQC should be equal or greater than 75% (>=", quantrange[3], ")of the calibration range"))
