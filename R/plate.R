@@ -763,6 +763,7 @@ plot.PlateObj <- function(x,
   }
 
   if (!is.null(path)) ggplot2::ggsave(path, fig, width = 12, height =8, dpi = 300, limitsize = FALSE, ...)
+
   fig
 }
 
