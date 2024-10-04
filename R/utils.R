@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS transtab (
   inlet_method TEXT,
   transition_label TEXT,
   transition_id TEXT, 
-  UNIQUE(transition_label)
+  UNIQUE(method_id, transition_id)
 );" )
 
 # methods tab

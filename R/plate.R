@@ -86,6 +86,7 @@ generate_96 <- function(descr = "", empty_rows = NULL,
     dplyr::mutate(conc = as.character(NA)) |>
     dplyr::mutate(time = as.numeric(NA)) |>
     dplyr::mutate(factor = as.character(NA)) |>
+    dplyr::mutate(dosage = as.character(NA)) |>
     dplyr::mutate(TYPE = as.character(NA))  |>
     dplyr::mutate(std_rep = as.numeric(NA))
 
@@ -112,6 +113,7 @@ generate_96 <- function(descr = "", empty_rows = NULL,
 #' @param time A vector representing time points
 #' @param conc A vector representing concentration
 #' @param factor A vector representing factor
+#' @param dosage A vector representing dosage
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
@@ -120,11 +122,12 @@ generate_96 <- function(descr = "", empty_rows = NULL,
 #' @examples
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
-add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , prefix = "S") {
+add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA, dosage = NA , prefix = "S") {
   checkmate::assertVector(samples)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertVector(factor, null.ok = FALSE)
+  checkmate::assertVector(dosage, null.ok = FALSE)
   checkmate::assertClass(plate, "PlateObj")
 
 
@@ -195,6 +198,7 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , pre
 #' @param time A vector representing time points
 #' @param conc A vector representing concentration
 #' @param factor A vector representing factor
+#' @param dosage A vector representing dosage
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @returns PlateObj
@@ -202,19 +206,21 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA , pre
 #' The function will automatically create a combination of all sample names with time, concentration and factor.
 #' final name will be of form. Prefix-SampleName-Time-Concentration-Factor
 #' @export
-add_samples_c <- function(plate, samples, time  = NA, conc = NA, factor = NA , prefix = "S") {
+add_samples_c <- function(plate, samples, time  = NA, conc = NA, factor = NA, dosage = NA , prefix = "S") {
   checkmate::assertVector(samples)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertVector(factor, null.ok = FALSE)
+  checkmate::assertVector(dosage, null.ok = FALSE)
 
-  combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor) |>
-    dplyr::arrange(.data$samples, .data$factor, .data$time, .data$conc)
+  combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor, dosage = dosage) |>
+    dplyr::arrange(.data$samples, .data$factor, .data$time, .data$dosage, .data$conc)
 
   plate |> add_samples(samples = combined$samples,
     time = combined$time,
     conc = combined$conc,
     factor = as.character(combined$factor),
+    dosage = as.character(combined$dosage),
     prefix = prefix)
 }
 
@@ -449,8 +455,9 @@ add_suitability <- function(plate, conc, label = "suitability") {
   if(!(hqc_conc >= lowerboundrange[3])) stop("HQC is way from recommended range")
 
   if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) warning(paste("MQC should be between 30% (",
-    quantrange[1], ")and 50%", quantrange[2] ,"of the calibration range"))
-  if(!(hqc_conc >= quantrange[3])) warning(paste("HQC should be equal or greater than 75% (>=", quantrange[3], ")of the calibration range"))
+    quantrange[1], ")and 50% (", quantrange[2] ,") of the calibration range"))
+  if(!(hqc_conc >= quantrange[3])) warning(paste("HQC should be equal or greater than 75% (>=", 
+    quantrange[3], ") of the calibration range"))
 
 }
 
@@ -641,7 +648,7 @@ make_calibration_study <-
 #' Plotting 96 well plate
 #'
 #' @param x PlateObj
-#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "TYPE"
+#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage", "TYPE"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
@@ -673,7 +680,7 @@ plot.PlateObj <- function(x,
 
   plate <- x
   checkmate::assertClass(plate, "PlateObj")
-  checkmate::assertChoice(color, c("conc", "time", "factor", "samples", "TYPE"))
+  checkmate::assertChoice(color, c("conc", "time", "factor", "dosage", "samples", "TYPE"))
   checkmate::assertCharacter(Instrument)
   checkmate::assertCharacter(caption)
   checkmate::assertCharacter(path, null.ok = TRUE)
@@ -683,6 +690,7 @@ plot.PlateObj <- function(x,
   plate_df <- plate$df |> # zero if blanks, NA if empty cell. Conc otherwise
     mutate(conc = ifelse(is.na(.data$conc), ifelse(.data$value == "X", NA, 0), .data$conc)) |>
     mutate(time = as.character(.data$time))  |>
+    mutate(dosage = as.character(.data$dosage)) |>
     mutate(factor = as.character(.data$factor))
 
   # remove bottle if there

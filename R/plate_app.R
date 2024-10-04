@@ -752,7 +752,9 @@ plate_app <- function() {
         current_injec_seq_summary(d)
 
         DT::datatable(d, options = list(scrollX=TRUE,
-          scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))
+          scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))  |> 
+          DT::formatStyle(columns = "total_vol", valueColumns = "total_vol",
+            backgroundColor = DT::styleEqual(unique(d$total_vol), colorRampPalette(c("red", "white"))(length(unique(d$total_vol)))))
       } else{
         NULL
       }
@@ -1007,7 +1009,7 @@ plate_app <- function() {
           textInput("method_description", "Description"),
           textInput("method_gradient", "Gradient"),
           bslib::tooltip( bsicons::bs_icon("question-circle"), 
-            "For more compounds: Right-click > Insert row. \n current Q1 and Q3 combinations must be unqiue", 
+            "For more compounds: Right-click > Insert row.", 
               placement = "right"),
           excelR::excelOutput("cmpd_methods_entry_dt"),
           actionButton("add_method_final_btn", "Add")
