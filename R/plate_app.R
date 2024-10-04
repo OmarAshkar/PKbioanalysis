@@ -310,7 +310,7 @@ plate_app <- function() {
                       #   cols = list(names = TRUE),
                       #   class = "numeric"
                       # ),
-                      DT::DTOutput("dilution_dt"),
+                      excelR::excelOutput("dilution_dt"),
                       actionButton("gen_dil_graph", "Generate Dilution Graph", icon = icon("chart-line")),
                       bslib::card(
                           id = "dil_graph_grviz_card",
@@ -824,27 +824,37 @@ plate_app <- function() {
       shinyjs::hide("export_dil_graph")
       })
 
-    output$dilution_dt <- DT::renderDT({
+      # a function to disable last columns
+     updateTable <- "function(instance, td, col, row, value, label, cellName) {
+      var header = instance.jexcel.getHeader (col);
+      if (header == 'TYPE') {
+        td.classList.add ('readonly') ;
+      }
+      if (header == 'v0') {
+        td.classList.add ('readonly') ;
+      }
+      if (header == 'v1') {
+        td.classList.add ('readonly') ;
+      }
+    }"
+
+
+    output$dilution_dt <- excelR::renderExcel({
       req(class(current_plate()) == "PlateObj")
       req(current_dil_df())
 
-      current_dil_df() |>
-        DT::datatable(
-        # colnames = rep("", ncol(current_dil_df())),
-        rownames = FALSE,
-        colnames = c(rep("From/To", 4), "To",  "Type"),
-        options = list(ordering = FALSE,
-                  dom = "ft", scrollY = "300px", scrollX = TRUE, pageLength = 10000),
-         editable = list(target = "all", disable = list(columns = c(4,5,6))))
+     columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
+                    type=c('text', 'text', 'text', 'text', 'text', 'text'))
+      current_dil_df() |> 
+        excelR::excelTable(  columns = columns, updateTable = htmlwidgets::JS(updateTable))
+
     })
 
-    proxy_dil_dt = dataTableProxy('dilution_dt')
-    observeEvent(input$dilution_dt_cell_edit, {
-      print(input$dilution_dt_cell_edit)
-      DT::editData(current_dil_df(), input$dilution_dt_cell_edit,
-        'dilution_dt', rownames = FALSE, proxy = proxy_dil_dt)
-        current_dil_df()
+    observeEvent(input$dilution_dt, {
+      browser()
+      excelR::excel_to_R(input$dilution_dt) |> current_dil_df()
     })
+
 
     dil_graphs_observer <- reactiveVal(NULL)
     observeEvent(input$gen_dil_graph, {

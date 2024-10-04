@@ -39,7 +39,8 @@ Imports:
     rlang,
     grDevices,
     utils,
-    yaml
+    yaml,
+    excelR
 Suggests: 
     knitr,
     rmarkdown,

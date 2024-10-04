@@ -206,7 +206,8 @@ DBI::dbExecute(db, "
 
 
 # non on the three first columns are unique. 
-# the unqiuness is based on all method_id trans_id compound_id
+# the unqiuness is based on all method_id trans_id compound_id 
+# IS is a property of compound. Call get_IS_name to get the IS for a compound
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS compoundstab (
     method_id INTEGER,
@@ -216,6 +217,7 @@ DBI::dbExecute(db, "
     expected_rt_start REAL,
     expected_rt_end REAL,
     expected_rt REAL, 
+    IS_name TEXT,
     UNIQUE(method_id, transition_id, compound_id)
   );
 
@@ -223,3 +225,4 @@ DBI::dbExecute(db, "
 
 duckdb::dbDisconnect(db, shutdown = TRUE)
 }
+
