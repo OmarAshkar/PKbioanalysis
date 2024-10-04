@@ -174,7 +174,7 @@ plate_app <- function() {
           full_screen = TRUE,
           card_header("Plate Map", popover(
             bs_icon("gear"),
-            selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "time", "TYPE", "samples")),
+            selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "TYPE", "samples")),
             numericInput("plate_map_font_size", "Font Size", value = 12),
             title = "Color By"
           )),
