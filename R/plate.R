@@ -435,9 +435,10 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param lqc_conc low quality control concentration
 #' @param mqc_conc  medium quality control concentration
 #' @param hqc_conc high quality control concentration
+#' @param non_reg logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE
 #' @returns PlateObj
 #' @noRd
-.check_qcs <- function(std_vec, loq_conc, lqc_conc, mqc_conc, hqc_conc) {
+.check_qcs <- function(std_vec, loq_conc, lqc_conc, mqc_conc, hqc_conc, non_reg) {
   checkmate::assertNumeric(loq_conc, lower = 0)
   checkmate::assertNumeric(lqc_conc, lower = loq_conc)
   checkmate::assertNumeric(mqc_conc, lower = lqc_conc)
@@ -446,17 +447,15 @@ add_suitability <- function(plate, conc, label = "suitability") {
   # find the 30%, 50% and 75% cut on the calibration range
   min_val <- as.numeric(loq_conc)
   max_val <- max(as.numeric(std_vec))
-  quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.70)) 
-  lowerboundrange <- quantile(c(min_val, max_val), c(0.15, 0.65, 0.66)) 
+  quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.75)) 
 
-  if(!(lqc_conc <= loq_conc*3)) stop(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
+  e_func <- ifelse(non_reg, warning, stop) 
 
-  if(!(mqc_conc >= lowerboundrange[1] & mqc_conc <= lowerboundrange[2])) stop("MQC is way below recommended range")
-  if(!(hqc_conc >= lowerboundrange[3])) stop("HQC is way from recommended range")
+  if(!(lqc_conc <= loq_conc*3)) e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
 
-  if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) warning(paste("MQC should be between 30% (",
+  if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) e_func(paste("MQC should be between 30% (",
     quantrange[1], ")and 50% (", quantrange[2] ,") of the calibration range"))
-  if(!(hqc_conc >= quantrange[3])) warning(paste("HQC should be equal or greater than 75% (>=", 
+  if(!(hqc_conc >= quantrange[3])) e_func(paste("HQC should be equal or greater than 75% (>=", 
     quantrange[3], ") of the calibration range"))
 
 }
@@ -469,11 +468,18 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param hqc_conc high quality control concentration
 #' @param n_qc number of QC sets. Default is 3
 #' @param qc_serial logical. If TRUE, QCs are placed serially
-#'
+#' @param non_reg logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE
+#' @description 
+#' A function to add QCs to plate. This function assumes adherence to 
+#' ICH guideline M10 on bioanalytical method validation and study sample analysis Geneva, Switzerland (2022).
+#' If you are not following this guideline, you can set `non_reg = TRUE` to ignore the restrictions.
 #' @returns PlateObj
 #' @export
-add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE){
+add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE, non_reg = FALSE){
   checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertLogical(qc_serial)
+  checkmate::assertLogical(non_reg)
+  
 
   # assert there was a standard call, and get the last call
   grp_std <- .last_std(plate)
@@ -496,7 +502,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE)
 
   stopifnot(is.numeric(loq_conc) & loq_conc > 0)
 
-  .check_qcs(plate_std, loq_conc, lqc_conc, mqc_conc, hqc_conc)
+  .check_qcs(plate_std, loq_conc, lqc_conc, mqc_conc, hqc_conc, non_reg)
   checkmate::assertLogical(qc_serial)
   checkmate::assertNumeric(n_qc, lower = 0)
 

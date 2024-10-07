@@ -24,7 +24,7 @@
 .reset_samples_db <- function() {
   db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
-    
+
   if(file.exists(db_path)) {
     file.rename(db_path, paste0(db_path, "_old"))
   }
@@ -116,6 +116,7 @@
     conc TEXT,
     time TEXT,
     factor TEXT,
+    dosage TEXT,
     UNIQUE(file_name)
   );
 ")
@@ -149,6 +150,25 @@ CREATE TABLE IF NOT EXISTS chroms (
   UNIQUE(chrom_id)
 );")
 
+DBI::dbExecute(db, " 
+  CREATE TABLE IF NOT EXISTS chrom_files_metadata (
+    chrom_id INTEGER PRIMARY KEY,
+    file_name TEXT NOT NULL,
+    type TEXT,
+    std_rep INTEGER,
+    sample_location TEXT,
+    inj_vol REAL,
+    date TEXT,
+
+    conc TEXT,
+    time TEXT,
+    factor TEXT,
+    dosage TEXT,
+
+    UNIQUE(file_name)
+  )
+")
+
 
 # gradient methods table
 ## method_id: this will auto increment and unique number
@@ -168,7 +188,7 @@ CREATE TABLE IF NOT EXISTS transtab (
   q3 REAL,
   inlet_method TEXT,
   transition_label TEXT,
-  transition_id TEXT, 
+  transition_id TEXT,
   UNIQUE(method_id, transition_id)
 );" )
 
@@ -177,10 +197,10 @@ CREATE TABLE IF NOT EXISTS transtab (
 DBI::dbExecute(db, "
 CREATE TABLE IF NOT EXISTS methodstab (
   method_id INTEGER PRIMARY KEY,
-  method TEXT,
+  method TEXT NOT NULL,
   method_descr TEXT,
   method_gradient TEXT,
-  UNIQUE(method_id), 
+  UNIQUE(method_id),
   UNIQUE(method)
 );" )
 
@@ -205,19 +225,20 @@ DBI::dbExecute(db, "
 ")
 
 
-# non on the three first columns are unique. 
-# the unqiuness is based on all method_id trans_id compound_id 
+# non on the three first columns are unique.
+# the unqiuness is based on all method_id trans_id compound_id
 # IS is a property of compound. Call get_IS_name to get the IS for a compound
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS compoundstab (
-    method_id INTEGER,
-    transition_id TEXT,
-    compound_id TEXT,
+    method_id INTEGER NOT NULL,
+    transition_id TEXT NOT NULL,
+    compound_id TEXT NOT NULL,
+    qualifier BOOLEAN NOT NULL,
     compound TEXT,
     expected_rt_start REAL,
     expected_rt_end REAL,
-    expected_rt REAL, 
-    IS_name TEXT,
+    expected_rt REAL,
+    IS_id TEXT,
     UNIQUE(method_id, transition_id, compound_id)
   );
 

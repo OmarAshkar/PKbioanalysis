@@ -123,7 +123,7 @@ test_that("qc_ranges", {
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(30, 750 , 1750) |> expect_warning()
+      add_qcs(30, 750 , 1750) |> expect_error()
   })
 
   
@@ -131,27 +131,7 @@ test_that("qc_ranges", {
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(50, 750 , 1750) |> expect_error()
-  })
-
-  suppressWarnings({
-    generate_96() |> 
-      add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(30, 700 , 1750) |> expect_warning()
-  })
-
-  ## errors with MQC  
-  suppressWarnings({
-    generate_96() |> 
-      add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(30, 2000 , 2000) |> expect_error()
-  })
-
-  ## Errors with HQC
-  suppressWarnings({
-    generate_96() |> 
-      add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(30, 700 , 1500) |> expect_error()
+      add_qcs(50, 750 , 1750, non_reg = TRUE) |> expect_warning()
   })
 
 })

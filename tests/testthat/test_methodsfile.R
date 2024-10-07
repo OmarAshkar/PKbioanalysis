@@ -13,4 +13,3 @@ test_that("retreive database", {
     .save_cmpd_db(x) |> expect_error()
 })
 
- 

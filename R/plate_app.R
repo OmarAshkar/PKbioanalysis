@@ -752,7 +752,7 @@ plate_app <- function() {
         current_injec_seq_summary(d)
 
         DT::datatable(d, options = list(scrollX=TRUE,
-          scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))  |> 
+          scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))  |>
           DT::formatStyle(columns = "total_vol", valueColumns = "total_vol",
             backgroundColor = DT::styleEqual(unique(d$total_vol), colorRampPalette(c("red", "white"))(length(unique(d$total_vol)))))
       } else{
@@ -846,16 +846,15 @@ plate_app <- function() {
 
      columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
                     type=c('text', 'text', 'text', 'text', 'text', 'text'))
-      current_dil_df() |> 
-        excelR::excelTable(  columns = columns, 
-        allowInsertRow = FALSE, 
+      current_dil_df() |>
+        excelR::excelTable(  columns = columns,
+        allowInsertRow = FALSE,
         allowDeleteRow = FALSE,
         allowInsertColumn = FALSE,
         updateTable = htmlwidgets::JS(updateTable))
     })
 
     observeEvent(input$dilution_dt, {
-      browser()
       excelR::excel_to_R(input$dilution_dt) |> current_dil_df()
     })
 
@@ -894,9 +893,11 @@ plate_app <- function() {
     observeEvent(  input$dil_graph_grviz_out_click, {
       dil_graphs_observer()
 
+
       node_id <- input$dil_graph_grviz_out_click
+      node_label <- ifelse(length(node_id$nodeValues) == 3, node_id$nodeValues[[3]], node_id$nodeValues[[2]])
       DiagrammeR::get_edge_df(dil_graphs_observer()) |>
-        dplyr::filter(.data$to == node_id$nodeValues[[2]]) |>
+        dplyr::filter(.data$to == node_label) |>
         dplyr::pull("label") |> dilution_factor_label()
 
       showModal(modalDialog(
@@ -955,7 +956,7 @@ plate_app <- function() {
       },
       content = function(file){
         ggsave(file,  current_plate() |>
-            plot(color = input$plate_map_color_toggle, label_size = input$plate_map_font_size), 
+            plot(color = input$plate_map_color_toggle, label_size = input$plate_map_font_size),
             width = 12, heigh =8)
       }
     )
@@ -998,8 +999,8 @@ plate_app <- function() {
     observeEvent(input$add_method, {
       i <- rep(NA, 5)
 
-      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i))
-      
+      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i, qualifier = i))
+
       showModal(modalDialog(
         title = "Add New Method",
         # either import a YAML file or manually add
@@ -1008,8 +1009,8 @@ plate_app <- function() {
           textInput("method_name", "Method Name"),
           textInput("method_description", "Description"),
           textInput("method_gradient", "Gradient"),
-          bslib::tooltip( bsicons::bs_icon("question-circle"), 
-            "For more compounds: Right-click > Insert row.", 
+          bslib::tooltip( bsicons::bs_icon("question-circle"),
+            "For more compounds: Right-click > Insert row.",
               placement = "right"),
           excelR::excelOutput("cmpd_methods_entry_dt"),
           actionButton("add_method_final_btn", "Add")
@@ -1021,7 +1022,8 @@ plate_app <- function() {
       req(current_method_capture_df())
             current_method_capture_df() |>
               excelR::excelTable(allowInsertRow = TRUE, allowDeleteRow = TRUE, allowInsertColumn = FALSE,
-              columns = data.frame(title = c("compound", "q1", "q3"), type = c("text", "numeric", "numeric"))
+              columns = data.frame(title = c("compound", "q1", "q3", "qualifier"),
+                                   type = c("text", "numeric", "numeric", "checkbox"))
               )
           })
     observeEvent(input$cmpd_methods_entry_dt, {
@@ -1032,17 +1034,17 @@ plate_app <- function() {
       req(input$method_name)
 
       # remove complete NA rows
-      # switch any "" to NA 
-      capture_method_cmpd_df <- current_method_capture_df() |> 
+      # switch any "" to NA
+      capture_method_cmpd_df <- current_method_capture_df() |>
         dplyr::mutate(q1 = as.numeric(q1), q3 = as.numeric(q3)) |>  # convert to numeric|>
         dplyr::mutate(across(everything(), ~ifelse(. == "", NA, .))) |>
-        dplyr::filter(dplyr::if_all(everything(), ~!is.na(.))) # remove complete NA rows
-        
+        dplyr::filter(dplyr::if_all(-c("qualifier"), ~!is.na(.)))  # remove complete NA rows
+
       req(nrow(capture_method_cmpd_df) > 0)
 
       tryCatch(
         {
-        # check if any cmpd is NA. 
+        # check if any cmpd is NA.
         if(any(is.na(capture_method_cmpd_df$compounds))){
           stop("Compounds cannot be empty")
         }
@@ -1051,7 +1053,7 @@ plate_app <- function() {
         if(any(duplicated(capture_method_cmpd_df$compounds))){
           stop("Duplicate compounds detected")
         }
-        }, 
+        },
         error = function(e) {showNotification(e$message, type = "error")}
         )
 
