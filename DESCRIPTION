@@ -40,7 +40,7 @@ Imports:
     grDevices,
     utils,
     yaml,
-    excelR
+    rhandsontable
 Suggests: 
     knitr,
     rmarkdown,

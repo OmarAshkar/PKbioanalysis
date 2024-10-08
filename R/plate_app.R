@@ -310,7 +310,7 @@ plate_app <- function() {
                       #   cols = list(names = TRUE),
                       #   class = "numeric"
                       # ),
-                      excelR::excelOutput("dilution_dt"),
+                      rhandsontable::rHandsontableOutput("dilution_dt"),
                       actionButton("gen_dil_graph", "Generate Dilution Graph", icon = icon("chart-line")),
                       bslib::card(
                           id = "dil_graph_grviz_card",
@@ -825,37 +825,24 @@ plate_app <- function() {
       shinyjs::hide("export_dil_graph")
       })
 
-      # a function to disable last columns
-     updateTable <- "function(instance, td, col, row, value, label, cellName) {
-      var header = instance.jexcel.getHeader (col);
-      if (header == 'TYPE') {
-        td.classList.add ('readonly') ;
-      }
-      if (header == 'v0') {
-        td.classList.add ('readonly') ;
-      }
-      if (header == 'v1') {
-        td.classList.add ('readonly') ;
-      }
-    }"
 
-
-    output$dilution_dt <- excelR::renderExcel({
+    output$dilution_dt <- rhandsontable::renderRHandsontable({
       req(class(current_plate()) == "PlateObj")
       req(current_dil_df())
 
      columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
                     type=c('text', 'text', 'text', 'text', 'text', 'text'))
       current_dil_df() |>
-        excelR::excelTable(  columns = columns,
-        allowInsertRow = FALSE,
-        allowDeleteRow = FALSE,
-        allowInsertColumn = FALSE,
-        updateTable = htmlwidgets::JS(updateTable))
+        dplyr::mutate(across(everything(), as.character)) |>
+        rhandsontable::rhandsontable(useTypes = TRUE) |> 
+        rhandsontable::hot_col(c("v1"), readOnly = TRUE)  |>
+        rhandsontable::hot_col(c("v0"), readOnly = TRUE) |>
+        rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |> 
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     })
 
     observeEvent(input$dilution_dt, {
-      excelR::excel_to_R(input$dilution_dt) |> current_dil_df()
+      rhandsontable::hot_to_r(input$dilution_dt) |> current_dil_df()
     })
 
 
@@ -999,7 +986,10 @@ plate_app <- function() {
     observeEvent(input$add_method, {
       i <- rep(NA, 5)
 
-      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i, qualifier = i))
+      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i, qualifier = i) |> 
+      dplyr::mutate(compound = as.character(compound), 
+        q1 = as.numeric(q1), q3 = as.numeric(q3), qualifier = as.logical(FALSE)))
+
 
       showModal(modalDialog(
         title = "Add New Method",
@@ -1012,22 +1002,19 @@ plate_app <- function() {
           bslib::tooltip( bsicons::bs_icon("question-circle"),
             "For more compounds: Right-click > Insert row.",
               placement = "right"),
-          excelR::excelOutput("cmpd_methods_entry_dt"),
+          rhandsontable::rHandsontableOutput("cmpd_methods_entry_dt"),
           actionButton("add_method_final_btn", "Add")
         )))
 
     })
 
-    output$cmpd_methods_entry_dt <- excelR::renderExcel({
+    output$cmpd_methods_entry_dt <- rhandsontable::renderRHandsontable({
       req(current_method_capture_df())
             current_method_capture_df() |>
-              excelR::excelTable(allowInsertRow = TRUE, allowDeleteRow = TRUE, allowInsertColumn = FALSE,
-              columns = data.frame(title = c("compound", "q1", "q3", "qualifier"),
-                                   type = c("text", "numeric", "numeric", "checkbox"))
-              )
+              rhandsontable::rhandsontable(useTypes = TRUE)
           })
     observeEvent(input$cmpd_methods_entry_dt, {
-      excelR::excel_to_R(input$cmpd_methods_entry_dt) |> current_method_capture_df()
+      rhandsontable::hot_to_r(input$cmpd_methods_entry_dt) |> current_method_capture_df()
     })
 
     observeEvent(input$add_method_final_btn, {
