@@ -114,7 +114,7 @@
   checkmate::assertNumeric(fold, lower = 0.1, upper = 10000)
   checkmate::assertNumber(rep, lower = 1, upper = 20)
   checkmate::assertChoice(type, choices = c("Standard", "QC") )
-  df <- plate$df
+  df <- plate@df
 
   if(.last_std(plate) == 0){
     stop("No standard found")

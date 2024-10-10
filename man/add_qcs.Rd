@@ -4,7 +4,15 @@
 \alias{add_qcs}
 \title{Add quality control samples to the plate}
 \usage{
-add_qcs(plate, lqc_conc, mqc_conc, hqc_conc, n_qc = 3, qc_serial = TRUE)
+add_qcs(
+  plate,
+  lqc_conc,
+  mqc_conc,
+  hqc_conc,
+  n_qc = 3,
+  qc_serial = TRUE,
+  non_reg = FALSE
+)
 }
 \arguments{
 \item{plate}{PlateObj object}
@@ -18,10 +26,14 @@ add_qcs(plate, lqc_conc, mqc_conc, hqc_conc, n_qc = 3, qc_serial = TRUE)
 \item{n_qc}{number of QC sets. Default is 3}
 
 \item{qc_serial}{logical. If TRUE, QCs are placed serially}
+
+\item{non_reg}{logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE}
 }
 \value{
 PlateObj
 }
 \description{
-Add quality control samples to the plate
+A function to add QCs to plate. This function assumes adherence to 
+ICH guideline M10 on bioanalytical method validation and study sample analysis Geneva, Switzerland (2022).
+If you are not following this guideline, you can set `non_reg = TRUE` to ignore the restrictions.
 }

@@ -4,7 +4,15 @@
 \alias{add_samples}
 \title{Add unknown samples to a plate}
 \usage{
-add_samples(plate, samples, time = NA, conc = NA, factor = NA, prefix = "S")
+add_samples(
+  plate,
+  samples,
+  time = NA,
+  conc = NA,
+  factor = NA,
+  dosage = NA,
+  prefix = "S"
+)
 }
 \arguments{
 \item{plate}{PlateObj}
@@ -16,6 +24,8 @@ add_samples(plate, samples, time = NA, conc = NA, factor = NA, prefix = "S")
 \item{conc}{A vector representing concentration}
 
 \item{factor}{A vector representing factor}
+
+\item{dosage}{A vector representing dosage}
 
 \item{prefix}{A prefix to be added before samples names. Default is "S"}
 }

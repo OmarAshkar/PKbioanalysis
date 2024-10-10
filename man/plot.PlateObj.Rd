@@ -17,7 +17,7 @@
 \arguments{
 \item{x}{PlateObj}
 
-\item{color}{character. Coloring variable. Either "conc", "time", "factor", "samples", "TYPE"}
+\item{color}{character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage", "TYPE"}
 
 \item{Instrument}{A string placed at subtitle}
 
