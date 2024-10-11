@@ -142,8 +142,9 @@ plate_app <- function() {
   ui <- bslib::page_navbar(
     title = "Plate Management",
     shinyjs::useShinyjs(),
-    bslib::nav_panel(title = "Dashboard",
-      p("Welcome to the plate management dashboard. Here you can manage plates, methods, make dilution schemes and create sample lists")),
+    bslib::nav_panel(title = "Dashboard", 
+            uiOutput("plate_creation_ui")
+      ),
     bslib::nav_panel(title = "methods",
        # create 70 30 layout
       bslib::layout_sidebar(
@@ -167,29 +168,37 @@ plate_app <- function() {
 
     )), ## sample lists panel
     bslib::nav_panel(title = "Plates",           ## plates panel
-      bslib::layout_column_wrap(
-        width = NULL, height = 1200,
-        style = htmltools::css(grid_template_columns = "2fr 1fr"),
-        bslib::card(
-          full_screen = TRUE,
-          card_header("Plate Map", popover(
-            bs_icon("gear"),
-            selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "TYPE", "samples")),
-            numericInput("plate_map_font_size", "Font Size", value = 12),
-            title = "Color By"
-          )),
-          plotOutput("plate_map_plot1", width = "100%", height = "500px" )
-        ),
+      bslib::layout_columns(
+        # style = htmltools::css(grid_template_columns = "2fr 1fr"),
+        col_widths = c(8, 4),
+        bslib::layout_columns(
+          col_widths = c(12),
+          row_heights = c(4,1),
+          bslib::card(
+            full_screen = TRUE,
+            card_header("Plate Map", popover(
+              bs_icon("gear"),
+              selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "TYPE", "samples")),
+              numericInput("plate_map_font_size", "Font Size", value = 12),
+              title = "Color By")),
+            plotOutput("plate_map_plot1", width = "100%", height = "100%" )
+          ),
+          bslib::card(
+            max_height = 150,
+              layout_columns(
+                actionBttn("create_new_plate_btn", "Add New Plate", icon = icon("plus"), color = "default"),
+                actionBttn("make_metabolic_study_btn", "Make Metabolic Study", icon = icon("flask"), color = "default"),
+                actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary")
+              )
+            )),
         bslib::card(
           textOutput("plate_id_plateview_output"),
           actionButton("change_plate_meta_btn", "Change Plate Description", icon = icon("edit")),
           downloadButton( "export_plate_image", "Export Plate Image", icon = icon("download")),
-          actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary"),
           # tabset with plate, sample list, dilution
           actionButton("clear_selected_plates_btn", "Clear All"),
           DT::DTOutput("plate_db_table")
-            ))),
-
+          ))),
     bslib::nav_panel(title = "Generators",       ## generators panel
       fluidPage(
           # tabset with plate, sample list, dilution
@@ -381,6 +390,7 @@ plate_app <- function() {
     )
 
 
+    #################################################################################################################
     ############################### plate
 
     # used to create checkboxes
@@ -391,6 +401,32 @@ plate_app <- function() {
           }
           inputs
       }
+
+
+    # create new plate button
+    observeEvent(input$create_new_plate_btn, {
+      showModal(modalDialog(
+        title = "Create New Plate",
+        textInput("plate_descr", "Description", value = ""),
+        selectInput("start_row_plate_input", "Start Row", choices = LETTERS[1:8]),
+        selectInput("start_col_plate_input", "Start Column", choices = 1:12),
+        actionButton("create_plate_btn_final", "Create")
+      ))
+    })
+
+
+
+    # create metabolic study button
+    observeEvent(input$make_metabolic_study_btn, {
+      showModal(modalDialog(
+        title = "Create Metabolic Study",
+        textInput("metabolic_study_cmpds", "Compounds", value = "", placeholder = "comma separated"),
+        textInput("time_points_metabolic_study_input", "Time Points", value = "", placeholder = "comma separated"),
+        numericInput("n_NAD_metabolic_study_input", "NADPH replicates", value = 3),
+        numericInput("n_noNAD_metabolic_study_input", "No NADPH replicates", value = 3),
+        actionButton("create_metabolic_study_btn_final", "Create")
+      ))
+    })
 
     ############################# Gen
 
@@ -925,7 +961,7 @@ plate_app <- function() {
       current_sample_list_metatable(.get_samplesdb_metadata())
     })
     output$plate_id_plateview_output <- renderText({
-      paste0("Plate ID:", current_plate()$plate_id)
+      paste0("Plate ID:", current_plate()@plate_id)
     })
     output$export_sample_list <- downloadHandler(
       filename =  function(){
@@ -939,7 +975,7 @@ plate_app <- function() {
 
     output$export_plate_image <- downloadHandler(
       filename = function(){
-        paste0(current_plate()$plate_id, ".png")
+        paste0(current_plate()@plate_id, ".png")
       },
       content = function(file){
         ggsave(file,  current_plate() |>
@@ -950,7 +986,7 @@ plate_app <- function() {
 
     # reuse plate
     observeEvent(input$reuse_plate_button, {
-      current_plate_id <- current_plate()$plate_id
+      current_plate_id <- current_plate()@plate_id
       showModal(modalDialog(
         title = "Reuse Plate",
         h3("Plate ID: ", current_plate_id),
@@ -960,10 +996,10 @@ plate_app <- function() {
     })
 
     observeEvent(input$reuse_plate_final_btn, {
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       tryCatch(
         {
-        id <- as.numeric(strsplit(current_plate()$plate_id, "_")[[1]][1])
+        id <- as.numeric(strsplit(current_plate()@plate_id, "_")[[1]][1])
 
         x <- reuse_plate(id, input$refill_gaps)
         show_alert(
