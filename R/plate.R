@@ -1,5 +1,4 @@
 
-
 # Define the constructor function for PlateObj
 PlateObj <- function(m, df, plate_id, empty_rows = NULL, last_modified = Sys.time(), descr = "") {
   df <- df

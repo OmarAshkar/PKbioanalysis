@@ -491,6 +491,7 @@ plate_app <- function() {
       dplyr::mutate(method  = input$inlet_method_select_prot1,
         ratio = 1) |>
       dplyr::select("method", "compound", "ratio") |>
+      distinct() |>
       current_cmpd_df()
     })
 

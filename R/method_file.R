@@ -52,9 +52,6 @@
     checkmate::assertNames(names(unique_methods_df),
         must.include = c("method_id", "method_descr", "method_gradient"))
 
-
-
-
     # create sequence for autoincrement compound_id
     cmpd_id <- seq(1, nrow(cmpds_list$compounds))
     cmpd_id <- paste0("C", cmpd_id)
