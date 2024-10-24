@@ -142,7 +142,7 @@ plate_app <- function() {
   ui <- bslib::page_navbar(
     title = "Plate Management",
     shinyjs::useShinyjs(),
-    bslib::nav_panel(title = "Dashboard", 
+    bslib::nav_panel(title = "Dashboard",
             uiOutput("plate_creation_ui")
       ),
     bslib::nav_panel(title = "methods",
@@ -446,7 +446,7 @@ plate_app <- function() {
 
 
     output$plate_ids_for_sample_list <- renderText({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       paste0("Selected Plates ID: ", paste(selected_ids(), collapse = "& "))
     })
 
@@ -642,7 +642,7 @@ plate_app <- function() {
 
     current_cmpd_df <- reactiveVal(NULL)
     observeEvent(input$create_sample_list, {
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
 
       tryCatch(
         {
@@ -713,7 +713,7 @@ plate_app <- function() {
     observeEvent(input$change_plate_meta_btn, {
       showModal(modalDialog(
         title = "Change Plate Description",
-        textInput("new_plate_descr", "New Description", value = current_plate()$desc),
+        textInput("new_plate_descr", "New Description", value = current_plate()@descr),
         pickerInput("compounds_metadata", "Compounds", choices = "", multiple = TRUE, options = list(`live-search` = TRUE)),
         pickerInput("instruments_metadata", "Instruments", choices = "", multiple = TRUE, options = list(`live-search` = TRUE)),
         pickerInput("IS_metadata", "Internal Standards", choices = "", multiple = TRUE, options = list(`live-search` = TRUE)),
@@ -722,7 +722,7 @@ plate_app <- function() {
       ))
     })
     observeEvent(input$change_plate_descr_btn_final, {
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       tryCatch(
         {
           current_plate() |> plate_metadata(input$new_plate_descr)
@@ -745,7 +745,7 @@ plate_app <- function() {
         bluepal <- colorRampPalette(c("blue", "white"))(length(unique_conc)) |>
           paste0(50)
 
-        req(class(current_plate()) == "PlateObj")
+        req(class(current_plate()) == "RegisteredPlate")
         req(current_injec_seq())
 
         showNotification("Check the summary tab for total volume", type = "message")
@@ -777,7 +777,7 @@ plate_app <- function() {
     # outputOptions(output, "min_vol", suspendWhenHidden = FALSE)
 
     output$sample_list_summary <- DT::renderDT({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       req(current_injec_seq())
 
       if(!lock_export()){
@@ -797,7 +797,7 @@ plate_app <- function() {
     })
 
     output$total_injections <- renderText({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       req(current_injec_seq())
 
       if(!lock_export()){
@@ -810,7 +810,7 @@ plate_app <- function() {
     })
 
     output$max_vol <- renderText({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       req(current_injec_seq())
 
       if(!lock_export()){
@@ -822,7 +822,7 @@ plate_app <- function() {
     })
 
     output$min_vol <- renderText({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
       req(current_injec_seq())
 
       if(!lock_export()){
@@ -837,7 +837,7 @@ plate_app <- function() {
     current_dil_df <- reactiveVal(NULL)
     parallel_dil_df <- reactiveVal(NULL)
     observeEvent(input$dilute, { # click dilute button to only generate parallel table
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) == "RegisteredPlate")
 
       d <- tryCatch(
         .parallel_dilution(current_plate(),
@@ -863,17 +863,17 @@ plate_app <- function() {
 
 
     output$dilution_dt <- rhandsontable::renderRHandsontable({
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) ==  "RegisteredPlate")
       req(current_dil_df())
 
      columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
                     type=c('text', 'text', 'text', 'text', 'text', 'text'))
       current_dil_df() |>
         dplyr::mutate(across(everything(), as.character)) |>
-        rhandsontable::rhandsontable(useTypes = TRUE) |> 
+        rhandsontable::rhandsontable(useTypes = TRUE) |>
         rhandsontable::hot_col(c("v1"), readOnly = TRUE)  |>
         rhandsontable::hot_col(c("v0"), readOnly = TRUE) |>
-        rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |> 
+        rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     })
 
@@ -884,7 +884,7 @@ plate_app <- function() {
 
     dil_graphs_observer <- reactiveVal(NULL)
     observeEvent(input$gen_dil_graph, {
-      req(class(current_plate()) == "PlateObj")
+      req(class(current_plate()) ==  "RegisteredPlate")
       req(current_dil_df())
 
       d <- current_dil_df()
@@ -980,7 +980,7 @@ plate_app <- function() {
       content = function(file){
         ggsave(file,  current_plate() |>
             plot(color = input$plate_map_color_toggle, label_size = input$plate_map_font_size),
-            width = 12, heigh =8)
+            width = 12, height = 8)
       }
     )
 
@@ -1022,9 +1022,9 @@ plate_app <- function() {
     observeEvent(input$add_method, {
       i <- rep(NA, 5)
 
-      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i, qualifier = i) |> 
-      dplyr::mutate(compound = as.character(compound), 
-        q1 = as.numeric(q1), q3 = as.numeric(q3), qualifier = as.logical(FALSE)))
+      current_method_capture_df(data.frame(compound = i, q1 = i, q3 = i, qualifier = i) |>
+      dplyr::mutate(compound = as.character(.data$compound),
+        q1 = as.numeric(.data$q1), q3 = as.numeric(.data$q3), qualifier = as.logical(FALSE)))
 
 
       showModal(modalDialog(

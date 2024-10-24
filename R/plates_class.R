@@ -32,13 +32,23 @@ setClass("MultiPlate",
   )
 )
 
-# set subset method for multiplate
-setMethod("[[" , signature(x = "MultiPlate", i = "ANY" ),
+#' Subsetting method for MultiPlate
+#' @param x MultiPlate object
+#' @param i index
+#' @param j index
+#' @param ... additional arguments
+#' @export
+#' @returns PlateObj object
+setMethod("[[" , signature(x = "MultiPlate", i = "ANY" , j = "ANY"),
   function(x, i, ...) {
     x@plates[[i]]
   }
 )
 
+#' Length method for MultiPlate
+#' @param x MultiPlate object
+#' @export
+#' @returns number of plates
 setMethod("length", signature(x = "MultiPlate"),
   function(x) {
     length(x@plates)
@@ -77,7 +87,24 @@ setGeneric("build_injec_seq", function(plate, method,
 
 
 
+#' Create Injection Sequence from PlateObj (Single Plate)
 #' @importFrom dplyr bind_rows bind_cols mutate add_row filter arrange count group_by group_modify ungroup select
+#' @param plate PlateObj object
+#' @param method choose method from database
+#' @param repeat_std number of re-injections for calibration standards. Default is 1.
+#' @param repeat_analyte number of re-injections for unknown samples. Default is 1
+#' @param repeat_qc number of re-injections for QC wells. Default is 1
+#' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
+#' @param blank_at_end If True, adding blank at the end of queue.
+#' @param system_suitability Number of re-injections for suitability vial.
+#' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
+#' @param inject_vol volume of injection in micro liters.
+#' @param descr Run description.
+#' @param suffix string to be added to the end of the filename. Default is "1".
+#' @param prefix string at the beginning of the filename. Default is today's date.
+#' @param explore_mode options either TRUE or FALSE. Default if FALSE.
+#' @param tray Location in sample manager.
+#' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
 #' @export
 #' @returns InjecListObj object
 setMethod("build_injec_seq" , "PlateObj" , function(plate,
@@ -340,6 +367,25 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 
 
 
+#' Create Injection Sequence from MultiPlate (Multiple Plates)
+#' 
+#' @param plate MultiPlate object
+#' @param method choose method from database
+#' @param repeat_std number of re-injections for calibration standards. Default is 1.
+#' @param repeat_analyte number of re-injections for unknown samples. Default is 1
+#' @param repeat_qc number of re-injections for QC wells. Default is 1
+#' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
+#' @param blank_at_end If True, adding blank at the end of queue.
+#' @param system_suitability Number of re-injections for suitability vial.
+#' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
+#' @param inject_vol volume of injection in micro liters.
+#' @param descr Run description.
+#' @param suffix string to be added to the end of the filename. Default is "1".
+#' @param prefix string at the beginning of the filename. Default is today's date.
+#' @param explore_mode options either TRUE or FALSE. Default if FALSE.
+#' @param tray Location in sample manager.
+#' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
+#' 
 #'@export
 #'@returns InjecListObj object
 setMethod("build_injec_seq", "MultiPlate",  function(plate, method,
@@ -442,3 +488,29 @@ setMethod(
   }
 )
 
+
+
+#' Register a plate
+#' This will save the plate to the database
+#' @param plate PlateObj object or MultiPlate object
+#' @returns PlateObj object or list of PlateObj objects
+#' @export
+setGeneric("register_plate", function(plate) standardGeneric("register_plate"))
+
+
+#' Register a plate
+#' This will save the plate to the database
+#' @param plate PlateObj object
+#' @export
+#' @returns Registered PlateObj object
+setMethod("register_plate", "PlateObj", function(plate){
+  .register_plate_logic(plate)
+})
+
+#' Register a multiple plates at once
+#' @param plate MultiPlate object
+#'@export
+#'@return a list of RegisteredPlate objects
+setMethod("register_plate", "MultiPlate", function(plate){
+  lapply(plate@plates, .register_plate_logic)
+})

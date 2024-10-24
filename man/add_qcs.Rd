@@ -33,7 +33,7 @@ add_qcs(
 PlateObj
 }
 \description{
-A function to add QCs to plate. This function assumes adherence to 
+A function to add QCs to plate. This function assumes adherence to
 ICH guideline M10 on bioanalytical method validation and study sample analysis Geneva, Switzerland (2022).
 If you are not following this guideline, you can set `non_reg = TRUE` to ignore the restrictions.
 }

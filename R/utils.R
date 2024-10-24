@@ -9,15 +9,7 @@
 }
 
 
-#' Load methods database
-#' @noRd
-.get_methodsdb <- function(){
-    .check_sample_db()
-    db <- .connect_to_db()
-    methods <- DBI::dbGetQuery(db, "SELECT * FROM methodstab")
-    duckdb::dbDisconnect(db, shutdown = TRUE)
-    methods
-}
+
 
 #' Delete samples database
 #' @noRd
@@ -235,8 +227,8 @@ DBI::dbExecute(db, "
     compound_id TEXT NOT NULL,
     qualifier BOOLEAN NOT NULL,
     compound TEXT,
-    expected_rt_start REAL,
-    expected_rt_end REAL,
+    expected_peak_start REAL,
+    expected_peak_end REAL,
     expected_rt REAL,
     IS_id TEXT,
     UNIQUE(method_id, transition_id, compound_id)
@@ -247,3 +239,12 @@ DBI::dbExecute(db, "
 duckdb::dbDisconnect(db, shutdown = TRUE)
 }
 
+
+
+rename_db_col <- function(old, new, tablename){
+  db_path <- PKbioanalysis_env$data_dir |>
+    file.path("samples.db")
+  db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
+  DBI::dbExecute(db, paste0("ALTER TABLE ", tablename, " RENAME COLUMN ", old, " TO ", new))
+  duckdb::dbDisconnect(db, shutdown = TRUE)
+}

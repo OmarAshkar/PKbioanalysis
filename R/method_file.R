@@ -18,9 +18,9 @@
     # drop empty rows
     cmpds_list$compounds <- cmpds_list$compounds[!is.na(cmpds_list$compounds$compound), ]
 
-    # assert unique names of list
-    checkmate::assertNames(cmpds_list$compounds$compound, type = "unique")
-    # assert combination of q1 and q3 is unique
+    # compound names doen't have to be unique
+
+    # assert combination of q1 and q3 is unique to be saved in transition table
 
     db <- .connect_to_db()
     # create new method ID
@@ -39,10 +39,11 @@
     # create method tab
     unique_trans_df <- cmpds_list$compounds |>
         dplyr::select("q1", "q3") |>
+        dplyr::arrange("q1", "q3") |>
         dplyr::distinct() |>
         dplyr::mutate(method_id = method_id) |>
         dplyr::mutate(method_gradient = cmpds_list$gradient) |>
-        dplyr::mutate(transition_label = paste0(q1, " > ", q3)) |>
+        dplyr::mutate(transition_label = paste0(.data$q1, " > ", .data$q3)) |>
         dplyr::mutate(transition_id = paste0("T", dplyr::row_number()))
 
     # avoid repeated transitions in the same method
@@ -112,9 +113,21 @@
 .get_method_cmpds <- function(method_id){
     .check_sample_db()
     db <- .connect_to_db()
-    cmpds <- DBI::dbGetQuery(db, paste0("SELECT * FROM compoundstab WHERE method_id = ", method_id))
+    cmpds <- DBI::dbGetQuery(db, paste0("SELECT * FROM compoundstab WHERE method_id = ", method_id)) |> 
+        as.data.frame()
+    
+    if(nrow(cmpds) == 0){
+        stop("No compounds found for method_id ", method_id)
+    }
+
+    transitionsdf <- DBI::dbGetQuery(db, paste0("SELECT * FROM transtab WHERE method_id = ", method_id)) |> 
+        as.data.frame() |> 
+        dplyr::select(-"method_id")
     duckdb::dbDisconnect(db, shutdown = TRUE)
-    as.data.frame(cmpds)
+
+    cmpds |>
+        dplyr::left_join(transitionsdf, by = "transition_id")
+
 }
 
 .get_method_id <- function(method){

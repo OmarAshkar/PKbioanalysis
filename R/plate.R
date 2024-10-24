@@ -36,7 +36,7 @@ PlateObj <- function(m, df, plate_id, empty_rows = NULL, last_modified = Sys.tim
 #' Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.
 #' @param descr plate description.
 #' @param start_row A letter corresponding to empty rows in a 96 well plate. Default is A.
-#' @param start_col A number indicating a column number to start with, given the start row. Default is 1. 
+#' @param start_col A number indicating a column number to start with, given the start row. Default is 1.
 #'
 #' @importFrom dplyr slice_tail
 #' @importFrom tidyr pivot_longer
@@ -46,7 +46,7 @@ PlateObj <- function(m, df, plate_id, empty_rows = NULL, last_modified = Sys.tim
 #' plate <- generate_96()
 #' plot(plate)
 #'
-#' plate <- generate_96("calibration", start_row = "C"), start_col = 11)
+#' plate <- generate_96("calibration", start_row = "C", start_col = 11)
 #' plot(plate)
 #'
 generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
@@ -309,7 +309,7 @@ add_DB <- function(plate){
 #' @param plate_std character
 #'
 #' @export
-#' 
+#'
 #' @returns PlateObj
 #' @examples
 #' plate <- generate_96() |>
@@ -448,15 +448,15 @@ add_suitability <- function(plate, conc, label = "suitability") {
   # find the 30%, 50% and 75% cut on the calibration range
   min_val <- as.numeric(loq_conc)
   max_val <- max(as.numeric(std_vec))
-  quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.75)) 
+  quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.75))
 
-  e_func <- ifelse(non_reg, warning, stop) 
+  e_func <- ifelse(non_reg, warning, stop)
 
   if(!(lqc_conc <= loq_conc*3)) e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
 
   if(!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) e_func(paste("MQC should be between 30% (",
     quantrange[1], ")and 50% (", quantrange[2] ,") of the calibration range"))
-  if(!(hqc_conc >= quantrange[3])) e_func(paste("HQC should be equal or greater than 75% (>=", 
+  if(!(hqc_conc >= quantrange[3])) e_func(paste("HQC should be equal or greater than 75% (>=",
     quantrange[3], ") of the calibration range"))
 
 }
@@ -470,8 +470,8 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param n_qc number of QC sets. Default is 3
 #' @param qc_serial logical. If TRUE, QCs are placed serially
 #' @param non_reg logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE
-#' @description 
-#' A function to add QCs to plate. This function assumes adherence to 
+#' @description
+#' A function to add QCs to plate. This function assumes adherence to
 #' ICH guideline M10 on bioanalytical method validation and study sample analysis Geneva, Switzerland (2022).
 #' If you are not following this guideline, you can set `non_reg = TRUE` to ignore the restrictions.
 #' @returns PlateObj
@@ -480,7 +480,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE,
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertLogical(qc_serial)
   checkmate::assertLogical(non_reg)
-  
+
 
   # assert there was a standard call, and get the last call
   grp_std <- .last_std(plate)
@@ -497,7 +497,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE,
 
   # get the lloq from the last call
   plate_std <- plate@df |> dplyr::filter(.data$TYPE == "Standard", .data$std_rep == grp_std) |>
-    dplyr::pull(.data$conc) 
+    dplyr::pull(.data$conc)
   loq_conc <- plate_std |>
     as.numeric() |> min(na.rm = TRUE)
 
@@ -586,7 +586,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE,
 #' @param n_CS1IS0 number of CS1IS0 blanks
 #'
 #' @import stringr
-#' 
+#'
 #' @returns PlateObj
 #' @export
 make_calibration_study <-
@@ -672,7 +672,7 @@ make_calibration_study <-
 #' @returns ggplot object
 #'
 #' @examples
-#' plate <- generate_96("new_plate", c("C", "D", "E"), 11) |>
+#' plate <- generate_96("new_plate", "C", 11) |>
 #'   add_blank(IS = FALSE, analyte = FALSE) |>
 #'   add_blank(IS = TRUE, analyte = FALSE) |>
 #'   add_samples(c(
@@ -881,8 +881,8 @@ print.PlateObj <- function(x, ...) {
   cat("Remaining Empty Spots:", sum(is.na(x@plate)), "\n") |>
   cat("Description:", x@descr, "\n") |>
   cat("Last Modified:", x@last_modified |> as.character(), "\n") |>
-  cat("Plate ID:", x@plate_id, "\n") |> 
-  cat("Registered:", .is_registered(x), "\n") |>  
+  cat("Plate ID:", x@plate_id, "\n") |>
+  cat("Registered:", .is_registered(x), "\n") |>
   print(...) |> invisible()
 }
 
@@ -896,37 +896,6 @@ print.PlateObj <- function(x, ...) {
 
 
 
-#' Register a plate
-#' This will save the plate to the database
-#' @param plate PlateObj object or MultiPlate object
-#' @returns PlateObj object or list of PlateObj objects
-#' @export
-register_plate <- function(plate){
-  # UseMethod("register_plate")
-  if(inherits(plate, "PlateObj")){
-    register_plate.PlateObj(plate)
-  } else if(inherits(plate, "MultiPlate")){
-    register_plate.MultiPlate(plate)
-  } else {
-    register_plate.default(plate)
-  }
-}
-
-#' @export
-register_plate.default <- function(plate){
-  stop("Object not supported")
-}
-
-
-#'@export
-register_plate.PlateObj <- function(plate){
-  .register_plate_logic(plate)
-}
-
-#'@export
-register_plate.MultiPlate <- function(plate){
-  lapply(plate, .register_plate_logic)
-}
 
 
 #'@noRd
@@ -952,10 +921,10 @@ register_plate.MultiPlate <- function(plate){
     if(file.exists(save_path)) stop("Plate already saved in the database")
   }
 
-  plate <- new("RegisteredPlate", 
-    plate = plate@plate, 
+  plate <- new("RegisteredPlate",
+    plate = plate@plate,
     df = plate@df,
-    plate_id = plate_id, 
+    plate_id = plate_id,
     empty_rows = plate@empty_rows, last_filled = plate@last_filled,
     last_modified = Sys.time(), descr = plate@descr)
 
@@ -1020,12 +989,12 @@ register_plate.MultiPlate <- function(plate){
 }
 
 #' Retrive a plate
-#' @param id_full character. Plate ID 
-#' @noRd 
+#' @param id_full character. Plate ID
+#' @noRd
 .retrieve_plate <- function(id_full){
   db_path <- PKbioanalysis_env$data_dir |>
     file.path("plates_cache")
-    
+
   plate <- readRDS(file.path(db_path, id_full))
   plate
 }
@@ -1055,9 +1024,9 @@ reuse_plate <- function(id, extra_fill = 0){
   plate@plate_id <- paste0(id, "_", plate_subid + 1)
 
   plate <- new("PlateObj",  # reset the plate
-    plate = plate@plate, 
+    plate = plate@plate,
     df = plate@df,
-    plate_id = plate@plate_id, 
+    plate_id = plate@plate_id,
     empty_rows = plate@empty_rows, last_filled = plate@last_filled,
     last_modified = Sys.time(), descr = plate@descr)
 
@@ -1119,3 +1088,5 @@ combine_plates <- function(plates){
     dplyr::mutate(SAMPLE_LOCATION = paste0(LETTERS[.data$row], ",", .data$col)) |>
     dplyr::slice_tail(by = c(row, col))
 }
+
+

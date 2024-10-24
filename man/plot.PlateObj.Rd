@@ -36,7 +36,7 @@ ggplot object
 Plotting 96 well plate
 }
 \examples{
-plate <- generate_96("new_plate", c("C", "D", "E"), 11) |>
+plate <- generate_96("new_plate", "C", 11) |>
   add_blank(IS = FALSE, analyte = FALSE) |>
   add_blank(IS = TRUE, analyte = FALSE) |>
   add_samples(c(

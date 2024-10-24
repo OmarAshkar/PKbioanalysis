@@ -40,7 +40,8 @@ Imports:
     grDevices,
     utils,
     yaml,
-    rhandsontable
+    rhandsontable,
+    methods
 Suggests: 
     knitr,
     rmarkdown,

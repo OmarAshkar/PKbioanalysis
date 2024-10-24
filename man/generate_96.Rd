@@ -25,7 +25,7 @@ Generate a typical 96 well plate. User need to specify the empty rows which a go
 plate <- generate_96()
 plot(plate)
 
-plate <- generate_96("calibration", start_row = "C"), start_col = 11)
+plate <- generate_96("calibration", start_row = "C", start_col = 11)
 plot(plate)
 
 }
