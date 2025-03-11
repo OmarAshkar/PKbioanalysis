@@ -1,6 +1,6 @@
 
 # Define the constructor function for PlateObj
-PlateObj <- function(m, df, plate_id, empty_rows = NULL, last_modified = Sys.time(), descr = "") {
+PlateObj <- function(m, df, plate_id, empty_rows = NULL, filling_scheme, last_modified = Sys.time(), descr = "") {
   df <- df
 
   # get last filled well within the active rows
@@ -21,6 +21,7 @@ PlateObj <- function(m, df, plate_id, empty_rows = NULL, last_modified = Sys.tim
     plate = m,
     df = df,
     empty_rows = empty_rows,
+    filling_scheme = filling_scheme,
     last_filled = last_filled,
     last_modified = last_modified,
     plate_id = plate_id,
@@ -91,7 +92,8 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   }
 
   # .plate(m, df, plate_id, empty_rows, descr = descr)
-  PlateObj(m, df, plate_id, empty_rows, descr = descr)
+  PlateObj(m, df, plate_id, empty_rows, descr = descr, 
+    filling_scheme =  list(scheme = "horizontal", top_bound = "A", bottom_bound = "H", left_bound = 1, right_bound = 12))
 }
 
 
@@ -148,13 +150,8 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, factor = NA, dosa
   if(!is.na(conc[1])) values <- paste0(values, "_", conc)
   if(!is.na(factor[1])) values <- paste0(values, "_", factor)
 
-  empty_spots <-
-    which(is.na(plate) &
-      rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
-  empty_spots <-
-    empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
-  masked_spots <-
-    which(!(rownames(plate) %in% empty_rows), arr.ind = TRUE)
+  empty_spots <- .spot_mask(plate_obj)
+  
 
   new_df <- df[FALSE, ]
   for (i in seq_along(samples)) {
@@ -249,15 +246,9 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE) {
   df <- plate@df
   plate <- plate@plate
 
-  # empty_spots <- which(is.na(plate) & rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
-  empty_spots <- which(is.na(plate), arr.ind = TRUE)
-  # Ordering one spot gives error. Prevent casting to vector
-  if (nrow(empty_spots) > 1) {
-    empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
-  }
+  empty_spots <- .spot_mask(plate_obj)
 
   plate[empty_spots[1, 1], empty_spots[1, 2]] <- blank_vec
-
 
   new_df <- data.frame(
     row = empty_spots[1, 1],
@@ -326,9 +317,7 @@ add_cs_curve <- function(plate, plate_std) {
 
   plate_std <- paste0("CS", seq_along(plate_std), "_", plate_std)
 
-  empty_spots <- which(is.na(plate), arr.ind = TRUE)
-  empty_spots <-
-    empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+  empty_spots <- .spot_mask(plate_obj)
 
   new_df <- df[FALSE, ]
 
@@ -400,9 +389,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
   df <- plate@df
   plate <- plate@plate
 
-  empty_spots <- which(is.na(plate), arr.ind = TRUE)
-  empty_spots <-
-    empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+  empty_spots <- .spot_mask(plate_obj)
 
   new_df <- df[FALSE, ]
 
@@ -435,10 +422,10 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param lqc_conc low quality control concentration
 #' @param mqc_conc  medium quality control concentration
 #' @param hqc_conc high quality control concentration
-#' @param non_reg logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE
+#' @param reg logical. Indicates if restrictions should be applied to the QC samples. Default is TRUE
 #' @returns PlateObj
 #' @noRd
-.check_qcs <- function(std_vec, loq_conc, lqc_conc, mqc_conc, hqc_conc, non_reg) {
+.check_qcs <- function(std_vec, loq_conc, lqc_conc, mqc_conc, hqc_conc, reg) {
   checkmate::assertNumeric(loq_conc, lower = 0)
   checkmate::assertNumeric(lqc_conc, lower = loq_conc)
   checkmate::assertNumeric(mqc_conc, lower = lqc_conc)
@@ -449,7 +436,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
   max_val <- max(as.numeric(std_vec))
   quantrange <- quantile(c(min_val, max_val), c(0.30, 0.50, 0.75))
 
-  e_func <- ifelse(non_reg, warning, stop)
+  e_func <- ifelse(reg, stop, warning)
 
   if(!(lqc_conc <= loq_conc*3)) e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc*3), ")")
 
@@ -468,17 +455,17 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param hqc_conc high quality control concentration
 #' @param n_qc number of QC sets. Default is 3
 #' @param qc_serial logical. If TRUE, QCs are placed serially
-#' @param non_reg logical. Indicates if restrictions should not be applied to the QC samples. Default is FALSE
+#' @param reg logical. Indicates if restrictions should not be applied to the QC samples. Default is TRUE
 #' @description
 #' A function to add QCs to plate. This function assumes adherence to
 #' ICH guideline M10 on bioanalytical method validation and study sample analysis Geneva, Switzerland (2022).
-#' If you are not following this guideline, you can set `non_reg = TRUE` to ignore the restrictions.
+#' If you are not following this guideline, you can set `reg = TRUE` to ignore the restrictions.
 #' @returns PlateObj
 #' @export
-add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE, non_reg = FALSE){
+add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE, reg = TRUE){
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertLogical(qc_serial)
-  checkmate::assertLogical(non_reg)
+  checkmate::assertLogical(reg)
 
 
   # assert there was a standard call, and get the last call
@@ -502,7 +489,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE,
 
   stopifnot(is.numeric(loq_conc) & loq_conc > 0)
 
-  .check_qcs(plate_std, loq_conc, lqc_conc, mqc_conc, hqc_conc, non_reg)
+  .check_qcs(plate_std, loq_conc, lqc_conc, mqc_conc, hqc_conc, reg)
   checkmate::assertLogical(qc_serial)
   checkmate::assertNumeric(n_qc, lower = 0)
 
@@ -511,11 +498,8 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, n_qc=3, qc_serial=TRUE,
   plate <- plate@plate
   empty_rows <- plate_obj@empty_rows
 
-  empty_spots <-
-    which(is.na(plate) &
-      rownames(is.na(plate)) %in% empty_rows, arr.ind = TRUE)
-  empty_spots <-
-    empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+  empty_spots <- .spot_mask(plate_obj)
+
   if (nrow(empty_spots) < 4 * n_qc) {
     stop("Not enough empty spots for QC")
   }
@@ -880,6 +864,7 @@ print.PlateObj <- function(x, ...) {
   cat("Remaining Empty Spots:", sum(is.na(x@plate)), "\n") |>
   cat("Description:", x@descr, "\n") |>
   cat("Last Modified:", x@last_modified |> as.character(), "\n") |>
+  cat("Scheme", x@filling_scheme$scheme, "\n") |>
   cat("Plate ID:", x@plate_id, "\n") |>
   cat("Registered:", .is_registered(x), "\n") |>
   print(...) |> invisible()
@@ -1089,3 +1074,58 @@ combine_plates <- function(plates){
 }
 
 
+
+fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", left_bound = 1, right_bound = 12){
+  checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertChoice(fill, c("h", "v", "hv"))
+  checkmate::assertCharacter(top_bound)
+  checkmate::assertCharacter(bottom_bound)
+  checkmate::assertNumeric(left_bound)
+  checkmate::assertNumeric(right_bound)
+
+  top_bound <- match(toupper(top_bound), LETTERS)
+  bottom_bound <- match(toupper(bottom_bound), LETTERS)
+
+  if(top_bound > bottom_bound) stop("Top bound should be less than bottom bound")
+  if(left_bound > right_bound) stop("Left bound should be less than right bound")
+
+  top_bound <- LETTERS[top_bound]
+  bottom_bound <- LETTERS[bottom_bound]
+
+  plate@filling_scheme <- list(scheme = fill, top_bound = top_bound, bottom_bound = bottom_bound, 
+    left_bound = left_bound, right_bound = right_bound)
+    
+  validObject(plate_obj)
+  plate
+}
+
+
+# TODO
+# fill_at <- function(location){
+#   NULL
+# }
+
+.spot_mask <- function(plate){
+
+  # get empty spots
+  empty_rows <- plate@empty_rows
+  empty_spots <- which(is.na(plate@plate), arr.ind = TRUE) # empty spots 
+
+  empty_spots <- empty_spots[empty_spots[, 1] >= match(plate@filling_scheme$top_bound, LETTERS) &
+    empty_spots[, 1] <= match(plate@filling_scheme$bottom_bound, LETTERS) & 
+    empty_spots[, 2] >= plate@filling_scheme$left_bound &
+    empty_spots[, 2] <= plate@filling_scheme$right_bound, ]
+
+  if(plate@filling_scheme$scheme == "h"){
+    empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+  } else if(plate@filling_scheme$scheme == "v"){
+    empty_spots <- empty_spots[order(empty_spots[, 2], empty_spots[, 1]), ]
+  } else if(plate@filling_scheme$scheme == "hv"){
+    empty_spots <- empty_spots
+    empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+  } 
+
+  if(nrow(empty_spots) == 0) stop("No empty spots available")
+
+  empty_spots
+}

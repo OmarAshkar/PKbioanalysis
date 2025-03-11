@@ -17,6 +17,7 @@ setClass(
     plate = "matrix",
     df = "data.frame",
     empty_rows = "character",
+    filling_scheme = "list",
     last_filled = "character",
     last_modified = "POSIXct",
     plate_id = "character",
@@ -461,6 +462,11 @@ setValidity("PlateObj", function(object) {
    "time", "factor", "dosage", "TYPE", "std_rep")
   checkmate::assertNames(names(object@df), must.include = cols)
 
+
+  if(!is.list(object@filling_scheme)){
+    stop("filling_scheme must be a list")
+  }
+  object@filling_scheme$filling_scheme %in% c("h", "v", "hv") |> stop("filling_scheme must be h, v or hv")
 
   if (!is.character(object@empty_rows)) {
     stop("empty_rows must be a character")
