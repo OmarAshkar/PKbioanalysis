@@ -457,16 +457,19 @@ setValidity("PlateObj", function(object) {
 
   
   col_type <- c("integer", "integer", "character", "character", "character", "character", 
-        "numeric", "character", "character", "integer")
+        "numeric", "character", "character", "integer", "integer")
   cols <- c("row", "col", "value", "SAMPLE_LOCATION", "samples", "conc", 
-   "time", "factor", "dosage", "TYPE", "std_rep")
+   "time", "factor", "dosage", "TYPE", "std_rep", 'dil')
   checkmate::assertNames(names(object@df), must.include = cols)
 
 
   if(!is.list(object@filling_scheme)){
     stop("filling_scheme must be a list")
   }
-  object@filling_scheme$filling_scheme %in% c("h", "v", "hv") |> stop("filling_scheme must be h, v or hv")
+
+  if(!(object@filling_scheme$scheme %in% c("h", "v", "hv"))){
+    stop("filling_scheme must be either 'h', 'v' or 'hv'")
+  }
 
   if (!is.character(object@empty_rows)) {
     stop("empty_rows must be a character")

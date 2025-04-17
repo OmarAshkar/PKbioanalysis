@@ -59,6 +59,56 @@ test_that("multiple_stds_n_qcs" ,{
 
 })
 
+test_that("rep_stdTest"), {
+
+  generate_96() |> 
+    fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
+    add_samples(rep("LOQ/4", 3), conc = 0.25) |>
+    fill_scheme("h", left_bound = 2, right_bound = 9) |>
+    add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
+
+    fill_scheme("h", left_bound = 9, right_bound = 12) |>
+    add_DB() |>
+    add_blank() |> 
+    add_blank() |> 
+    fill_scheme("v", top_bound = "D", bottom_bound = "G") |>
+    # fill_scheme("h", left_bound = 1, right_bound = 12) |>
+    add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
+    add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) |>
+    fill_scheme("h") |>
+    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "Q")  |>
+    plot()
+
+    
+  generate_96() |> 
+    fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
+    add_samples(rep("LOQ/4", 3), conc = 0.25) |>
+    fill_scheme("h", left_bound = 2, right_bound = 9) |>
+    add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
+
+    fill_scheme("h", left_bound = 9, right_bound = 12) |>
+    add_DB() |>
+    add_blank() |> 
+    add_blank() |> 
+    fill_scheme("h", top_bound = "D", bottom_bound = "H") |>
+    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "Q")  |>
+    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
+    fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
+    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
+    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) |>
+    plot(color = "conc", watermark = F)
+    
+}
+
+test_that("dil_qcs", {
+  generate_96() |> 
+    fill_scheme("h", left_bound = 1, right_bound = 10) |>
+    add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
+    add_qcs( 3,4.5,9, reg = F, dil = 10) |> 
+    add_samples(1:10, dil = 10) |>
+    expect_no_error()
+})
+
 test_that("Last position", {
   x <- generate_96(start_row  = "H", start_col  = 5) |>
     add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
@@ -97,8 +147,6 @@ test_that("make_metabolic_study", {
   plot(x[[1]], color = "conc") |> expect_no_error()
   plot(x[[1]], color = "TYPE") |> expect_no_error()
   plot(x[[1]], color = "samples") |> expect_no_error()
-  
-
 }
 )
 
@@ -131,7 +179,38 @@ test_that("qc_ranges", {
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(50, 750 , 1750, non_reg = TRUE) |> expect_warning()
+      add_qcs(50, 750 , 1750, reg = TRUE) |> expect_warning()
   })
 
+})
+
+test_that("fill_horizontalTest", {
+  generate_96() |> fill_scheme(4, 6) |> expect_no_error()
+  
+  # avoid filling previously filled spots #TODO raise warning and continue
+
+  
+})
+
+test_that("fill_verticalTest", {
+  generate_96() |> 
+    add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |>
+    fill_scheme("h",  "D", "E") |> 
+    add_qcs(50, 750 , 1750, reg = FALSE) |> 
+    expect_no_error()
+  
+})
+
+
+test_that("spot_maskTest", {
+  generate_96() |> 
+    fill_scheme(fill = "v", top_bound = "D", bottom_bound = "E") |>
+    .spot_mask()
+})
+
+
+test_that("plotDesignTest", {
+  generate_96() |> 
+    fill_scheme(fill = "v", top_bound = "D", bottom_bound = "E") |>
+    plot_design() |> expect_no_error()
 })
