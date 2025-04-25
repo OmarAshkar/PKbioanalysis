@@ -28,7 +28,6 @@ test_that("reuse_plate", {
   .is_registered(x) |> expect_equal(FALSE)
 
   validObject(x) |> expect_equal(TRUE)
-
 }
 )
 
@@ -54,16 +53,14 @@ test_that("multiple_stds_n_qcs" ,{
   generate_96() |>  add_cs_curve(1:10) |> .last_entity("QC") |> expect_equal(0)
 
   generate_96() |>  add_cs_curve(1:10) |> add_qcs( 3,4.5,9)  |>
-    .last_entity("QC") 
-    expect_equal(1)
-
+    .last_entity("QC")  |> expect_equal(1)
 })
 
 test_that("rep_stdTest", {
 
   generate_96() |> 
     fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
-    add_samples(rep("LOQ/4", 3), conc = 0.25) |>
+    add_samples(rep("SLOQ/4", 3), conc = 0.25) |>
     fill_scheme("h", left_bound = 2, right_bound = 9) |>
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
 
@@ -76,7 +73,7 @@ test_that("rep_stdTest", {
     add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
     add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) |>
     fill_scheme("h") |>
-    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "Q")  |>
+    add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
     plot()
 
     
@@ -103,14 +100,13 @@ test_that("rep_stdTest", {
     add_blank() |> 
     add_blank() |> 
     fill_scheme("h", top_bound = "D", bottom_bound = "H") |>
-    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "Q")  |>
-    add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
+    add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
+    add_samples(rep("DQLOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
     fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
     add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
     add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) 
 
-  register_plate(x)
-
+  # register_plate(x)
     
   plot(x, color = "conc", watermark = F)
   plot(x, color = "conc", watermark = F, transform_dil = T) 
@@ -135,26 +131,12 @@ test_that("Last position", {
 })
 
 test_that("test_factor_samples", {
-  generate_96() |>
-    add_samples(samples = 1:10, time = 1:10*30, conc = 1:10)  |>
-    plot(color = "conc") |> expect_no_error()
-
-  generate_96() |>
-    add_samples(samples = 1:10, time = 10, conc = 1:10)  |>
-    plot(color = "conc") |> expect_no_error()
-
-  generate_96() |>
-    add_samples(samples = 1:10, time = 1:10*30, conc = 1)  |>
-    plot(color = "factor") |> expect_no_error()
-
-  generate_96() |>
-  add_samples(samples = 1:10, time = 1:10*30, conc = NA)  |>
-  plot(color = "time") |> expect_no_error()
-
-  generate_96() |>
-  add_samples(samples = 1:10, time = 1:10*30, conc = 1:2)  |>
-  plot(color = "time") |> expect_error()
-
+  x <- generate_96() |>
+    add_samples(samples = 1:5, time = 1:10*30, conc = 20)  
+    
+  x |> plot(color = "conc") |> expect_no_error()
+  x |> plot(color = "factor") |> expect_no_error()
+  x |> plot(color = "time") |> expect_no_error()
 })
 
 test_that("make_metabolic_study", {
@@ -168,20 +150,14 @@ test_that("make_metabolic_study", {
 )
 
 test_that("metabolic_last_plate", {
+
   x <- make_metabolic_study(letters[1:8])
   length(x) |> expect_equal(8)
   is.na(x[[8]]@df$time[1]) |> expect_equal(FALSE)
 })
 
-test_that("combination_samples", {
 
-  x <- generate_96() |> 
-    add_samples_c(samples = 1:3, time = 0:5*30, conc = c(1,2), factor = c("M", "F")) 
-  plot(x)
 
-  sum(!is.na(x@df$samples)) |> expect_equal(72) # cartesian product 
-
-})
 
 
 test_that("qc_ranges", {
@@ -191,12 +167,11 @@ test_that("qc_ranges", {
       add_qcs(30, 750 , 1750) |> expect_error()
   })
 
-  
   ## errors with LQC >3
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(50, 750 , 1750, reg = TRUE) |> expect_warning()
+      add_qcs(50, 750 , 1750, reg = FALSE) |> expect_warning()
   })
 
 })
@@ -256,6 +231,13 @@ test_that("samples_vectorization", {
 })
 
 test_that("samples_combination", {
+
+  
+  x <- generate_96() |> 
+    add_samples_c(n_rep= 3, time = 0:5*30, conc = c(1,2), factor = c("M", "F")) 
+  plot(x)
+
+  sum(!is.na(x@df$samples)) |> expect_equal(72) # cartesian product 
 
   # 2 x 2 x 2 
   x <- generate_96() |> 

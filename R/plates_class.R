@@ -429,8 +429,10 @@ setMethod("build_injec_seq", "MultiPlate",  function(plate, method,
 
     last_modified <- sapply(plate, function(x) x@last_modified)
 
-    plate <- new("RegisteredPlate", plate = m, df = df, plate_id = plate_id, 
-      empty_rows = empty_rows[,1], last_modified = as.POSIXct(Sys.Date()), descr = descr)
+    plate <- new("RegisteredPlate", plate = m, df = df, plate_id = plate_id,  descr = descr,
+      # Note: all from here is dummy to avoid class checking error, this plate will not be returned 
+      empty_rows = empty_rows[,1], last_modified = as.POSIXct(Sys.Date()),  
+      filling_scheme = plate[[1]]@filling_scheme, last_filled = plate[[1]]@last_filled) 
     plate
   }
 

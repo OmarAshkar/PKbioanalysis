@@ -120,7 +120,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
 add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor = NA, dosage = NA , prefix = "S") {
-  checkmate::assertVector(samples, unique = TRUE)
+  checkmate::assertVector(samples, unique = FALSE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertNumeric(dil, null.ok = FALSE)
@@ -146,7 +146,8 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
   samples_time <- expand.grid(samples = samples, time = time) |>
     dplyr::arrange(.data$samples, .data$time)
 
-  samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil) 
+  samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil) |> 
+    distinct()
 
   samples_df <- left_join(samples_time, samples_factors, by = "samples") |>
     dplyr::arrange(.data$samples, .data$time, .data$factor, .data$conc, .data$dosage, .data$dil) |>
@@ -225,11 +226,12 @@ add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dosa
   checkmate::assertVector(factor, null.ok = FALSE)
   checkmate::assertVector(dosage, null.ok = FALSE)
 
-  samples <- seq_len(n_rep)
+  last_unique <- plate@df$samples |> as.numeric() |> unique() |> length() 
+  samples <- seq_len(n_rep) + last_unique
   combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor, dosage = dosage) |>
     dplyr::arrange(.data$samples, .data$dosage, .data$factor, .data$conc, .data$time) |>
     dplyr::group_by(.data$samples, .data$factor, .data$dosage, .data$conc) |>
-    dplyr::mutate(samples = dplyr::cur_group_id())
+    dplyr::mutate(samples = dplyr::cur_group_id() + last_unique) 
 
   plate |> add_samples(samples = unique(combined$samples),
     time = unique(combined$time),
@@ -866,9 +868,11 @@ time_points = c(0, 5,10, 15, 30, 45, 60, 75, 90, 120), n_NAD =3 , n_noNAD = 2){
     curr_plate <- generate_96()
     if(x == 1){ # first plate
       vec <- 1:96
-      curr_plate <- add_samples(curr_plate, time = df$time_points[vec],
+      curr_plate <- add_samples(curr_plate, 
+        time = df$time_points[vec],
         samples = df$cmpd[vec],
-        prefix = "", factor = as.character(df$factor[vec]))
+        prefix = "", 
+        factor = as.character(df$factor[vec]))
     } else if (x == n_plates){ # last plate
         y <- x - 1
         vec <- (y*96+1):nrow(df)
@@ -1057,6 +1061,7 @@ reuse_plate <- function(id, extra_fill = 0){
     df = plate@df,
     plate_id = plate@plate_id,
     empty_rows = plate@empty_rows, last_filled = plate@last_filled,
+    filling_scheme = plate@filling_scheme,
     last_modified = Sys.time(), descr = plate@descr)
 
   # clear all samples and replace with "X"
@@ -1159,16 +1164,20 @@ fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", 
     empty_spots[, 2] >= plate@filling_scheme$left_bound &
     empty_spots[, 2] <= plate@filling_scheme$right_bound, ]
 
-  if(plate@filling_scheme$scheme == "h"){
-    empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
-  } else if(plate@filling_scheme$scheme == "v"){
-    empty_spots <- empty_spots[order(empty_spots[, 2], empty_spots[, 1]), ]
-  } else if(plate@filling_scheme$scheme == "hv"){
-    empty_spots <- empty_spots
-    empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
-  } 
+  if(is.matrix(empty_spots)){
+    if(plate@filling_scheme$scheme == "h"){
+      empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+    } else if(plate@filling_scheme$scheme == "v"){
+      empty_spots <- empty_spots[order(empty_spots[, 2], empty_spots[, 1]), ]
+    } else if(plate@filling_scheme$scheme == "hv"){
+      empty_spots <- empty_spots
+      empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
+    } 
+    if(nrow(empty_spots) == 0) stop("No empty spots available")
+  } else{
+    empty_spots <- matrix(empty_spots, nrow = 1)
+  }
 
-  if(nrow(empty_spots) == 0) stop("No empty spots available")
 
   empty_spots
 }

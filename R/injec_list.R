@@ -149,7 +149,8 @@ write_injec_seq <- function(injec_seq){
     duckdb::dbDisconnect(db, shutdown = TRUE)
   }, error = function(e) {
     duckdb::dbDisconnect(db, shutdown = TRUE)
-    message("Previous samples with same name deteted. Change prefix or suffix to avoid duplicates.")
+    message("Error writing to database: ", e$message)
+    # message("Previous samples with same name deteted. Change prefix or suffix to avoid duplicates.")
   })
 
   sample_list

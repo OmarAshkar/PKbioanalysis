@@ -85,6 +85,5 @@ test_that("writing_increment_id", {
 
 
   .last_list_id() |> expect_equal(2)
-
 })
 

@@ -10,7 +10,6 @@
 
 
 
-
 #' Delete samples database
 #' @noRd
 .reset_samples_db <- function() {
@@ -67,6 +66,7 @@
     samples TEXT,
     type TEXT,
     std_rep INTEGER,
+    e_rep INTEGER,
     tray TEXT,
     inj_vol REAL,
 
@@ -108,6 +108,7 @@
     conc TEXT,
     time TEXT,
     factor TEXT,
+    dil TEXT,
     dosage TEXT,
     UNIQUE(file_name)
   );

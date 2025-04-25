@@ -329,7 +329,16 @@ plate_app <- function() {
                           card_header("Schema"),
                           DiagrammeR::grVizOutput("dil_graph_grviz_out", width = "100%")),
                       downloadButton("export_dil_graph", "Export", icon = icon("download"))
-            )
+            ), 
+            # design 
+          bslib::nav_panel("Design",
+            h2("Design"),
+            layout_column_wrap(
+              width = 1/2, #height = 100,
+              selectInput("design_rep", "Layout", choices = 1:10)
+            ),
+            DiagrammeR::grVizOutput("design_graph_grviz_out", width = "100%"),
+          )
           ))),
     nav_spacer(),
     bslib::nav_menu(
@@ -609,6 +618,8 @@ plate_app <- function() {
         nav_show("generator_nav", "Dilution")
       }
     })
+
+
 #########################
 
 
@@ -838,6 +849,13 @@ plate_app <- function() {
     ### Dilutions
     current_dil_df <- reactiveVal(NULL)
     parallel_dil_df <- reactiveVal(NULL)
+
+    observeEvent(input$dil_type, {
+      if(input$dil_type == "QC"){
+        updateSelectInput(session, "dil_rep", choices = 1:.last_entity(current_plate(), "QC"), selected = 1)
+      }
+    })
+
     observeEvent(input$dilute, { # click dilute button to only generate parallel table
       req(class(current_plate()) == "RegisteredPlate")
 
@@ -946,6 +964,21 @@ plate_app <- function() {
       }
     )
 
+###############################################################################################
+    ### design 
+  
+output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
+    req(class(current_plate()) ==  "RegisteredPlate")
+    tryCatch(
+      current_plate() |>
+      plot_design() |>
+      render_graph(),
+      error = function(e) {showNotification(e$message, type = "error")}
+    )
+  })
+
+    
+###############################################################################################
     # export
     exported_list <- reactiveVal(NULL)
     observeEvent(input$write_sample_list, {
