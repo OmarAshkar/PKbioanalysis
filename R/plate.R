@@ -78,7 +78,8 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
     dplyr::mutate(factor = as.character(NA)) |>
     dplyr::mutate(dosage = as.character(NA)) |>
     dplyr::mutate(TYPE = as.character(NA))  |>
-    dplyr::mutate(std_rep = as.numeric(NA))
+    dplyr::mutate(std_rep = as.numeric(NA)) |> 
+    dplyr::mutate(e_rep = as.numeric(NA)) 
 
   plates_ids <- .compile_cached_plates()
 
@@ -116,7 +117,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
 add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor = NA, dosage = NA , prefix = "S") {
-  checkmate::assertVector(samples)
+  checkmate::assertVector(samples, unique = TRUE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertNumeric(dil, null.ok = FALSE)
@@ -129,6 +130,14 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
   df <- plate@df
   plate <- plate@plate
   empty_rows <- plate_obj@empty_rows
+
+  # ensure new IDs does not exist in the plate
+  if(any(samples %in% df$samples)){
+    # print them 
+    stop(paste("Samples already exist in the plate.", 
+      samples[samples %in% df$samples],
+      "... Please use different names or remove them from the plate."))
+  }
 
 
   # check if the length of the samples samples are equal
@@ -144,6 +153,14 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
     stopifnot(length(factor) == 1)
     factor <- rep(factor, length(samples))
   }
+  if(length(dil) != length(samples)){
+    stopifnot(length(dil) == 1)
+    dil <- rep(dil, length(samples))
+  }
+  if(length(dosage) != length(samples)){
+    stopifnot(length(dosage) == 1)
+    dosage <- rep(dosage, length(samples))
+  }
 
 
   samples <- as.character(samples)
@@ -152,7 +169,7 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
   if(!is.na(time[1])) values <- paste0(values, "_T", time)
   if(!is.na(conc[1])) values <- paste0(values, "_", conc)
   if(!is.na(dosage[1])) values <- paste0(values, "_", dosage)
-  if(!is.na(dil[1])) values <- paste0(values, "_", dil, "x")
+  if(!is.na(dil[1])) values <- paste0(values, "_", dil, "X")
   if(!is.na(factor[1])) values <- paste0(values, "_", factor)
 
   empty_spots <- .spot_mask(plate_obj)
@@ -168,14 +185,20 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
         value = values[i],
         SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
         samples = samples[i],
-        conc = ifelse(is.na(conc), "x", as.character(conc[i])),
-        dil = dil,
+        conc = as.character(conc[i]),
+        dosage = dosage[i],
+        dil = dil[i],
         TYPE = "Analyte",
-        time = ifelse(is.na(time), NA, time[i]),
-        factor = ifelse(is.na(factor), NA, factor[i])
+        time = time[i],
+        factor = factor[i],
+        std_rep = NA,
+        e_rep = .last_entity(plate_obj, "Analyte") + 1
       )
     )
   }
+
+
+
   # keep only the samples, other NA
   df <- .bind_new_samples(df, new_df)
 
@@ -315,11 +338,12 @@ add_cs_curve <- function(plate, plate_std, rep = 1) {
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertNumber(rep, lower = 1, upper = 20)
 
-  std_rep <- .last_std(plate) + 1
 
   plate_obj <- plate
   df <- plate@df
   plate <- plate@plate
+
+  std_rep <- rep(seq(rep), length(plate_std)) |> sort()
 
   plate_std <- paste0("CS", seq_along(plate_std), "_", plate_std)
   plate_std <- rep(plate_std, rep)
@@ -340,7 +364,8 @@ add_cs_curve <- function(plate, plate_std, rep = 1) {
         conc =  as.character(str_extract(plate_std[i], "(\\d*\\.?\\d+)$")),
         dil = NA,
         TYPE = "Standard",
-        std_rep = std_rep
+        std_rep = std_rep[i],
+        e_rep = .last_entity(plate_obj, "Standard") + 1
       )
     )
   }
@@ -356,30 +381,25 @@ add_cs_curve <- function(plate, plate_std, rep = 1) {
 
 }
 
-#' Get last standard repetition
-#'@noRd
-.last_std <- function(plate){
-  suppressWarnings({
-  n <- plate@df |> dplyr::filter(.data$TYPE == "Standard") |>
-    pull(.data$std_rep) |>
-    max(na.rm = TRUE)
-  })
 
-  ifelse(is.finite(n), n, 0)
-}
-
-#' Get last quality control repetition
+#' Get last filled rank of entity in the plate
+#' @param plate PlateObj object
+#' @param entity character. Name of the entity to be checked.
+#' @returns integer. Last filled rank of the entity.
 #' @noRd
-.last_qc <- function(plate){
+.last_entity <- function(plate, entity){
+  checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertCharacter(entity)
 
   suppressWarnings({
-  n <- plate@df |> dplyr::filter(.data$TYPE == "QC") |>
-    pull(.data$std_rep) |>
-    max()
+    n <- plate@df |> dplyr::filter(.data$TYPE == entity) |>
+      pull(.data$e_rep) |>
+      max(na.rm = TRUE)
   })
 
   ifelse(is.finite(n), n, 0)
 }
+
 
 #' Add suitability sample to the plate
 #' @param plate PlateObj object.
@@ -480,14 +500,14 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_seri
 
 
   # assert there was a standard call, and get the last call
-  grp_std <- .last_std(plate)
+  grp_std <- .last_entity(plate, "Standard")
 
   if(grp_std == 0){
     stop("The plate does not have any standards. Use add_cs_curve")
   }
 
   # assert there is only no qc associated with last standard
-  grp_qc <- .last_qc(plate)
+  grp_qc <- .last_entity(plate, "QC")
   if(grp_qc == grp_std){
     warning("There is already a QC associated with the last standard")
   }
@@ -519,7 +539,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_seri
 
   
   dil_label <- function(x){ 
-    ifelse(dil ==1, x, paste(dil*x, "-->", x))
+    ifelse(dil ==1, x, paste0(dil, "X_", x))
   }
 
   
@@ -551,9 +571,10 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_seri
         conc =  as.character(str_extract(vec_qc_names[i], "(\\d*\\.?\\d+)$")),
         dil = dil,
         TYPE = "QC",
-        std_rep = grp_std # same as standard used (assuming one QC set per CS set)
-      )
+        std_rep = grp_std, 
+        e_rep = .last_entity(plate_obj, "QC") + 1
     )
+      )
   }
 
   df <- .bind_new_samples(df, new_df)
@@ -680,6 +701,7 @@ plot.PlateObj <- function(x,
                           Instrument = "",
                           caption = "",
                           label_size = 15,
+                          transform_dil = FALSE,
                           watermark = "auto",
                           path = NULL, ...
                           ) {
@@ -704,6 +726,15 @@ plot.PlateObj <- function(x,
     gsub("^.*:", "", plate_df$SAMPLE_LOCATION)
 
   date <- plate@last_modified |> as.Date()
+
+  if(transform_dil) {
+    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0(as.numeric(plate_df$conc) * plate_df$dil, ">"))
+  } else{
+    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0("\\1", ">"))
+  }
+  plate_df$new_value <- str_replace_all(plate_df$new_value, "_", "\n")
+
+
 
   fig <- ggplot2::ggplot(data = plate_df) +
     ggforce::geom_circle(aes(
@@ -737,7 +768,7 @@ plot.PlateObj <- function(x,
       aes(
         x = .data$col,
         y = .data$row,
-        label = str_replace_all(.data$value, "_", "\n")
+        label = .data$new_value,
       ),
       size = label_size,
       size.unit = "pt",
@@ -775,7 +806,8 @@ plot.PlateObj <- function(x,
        hjust = 1, vjust = -3)
     message("Plate not registered. To register, use register_plate()")
   }
-
+  
+  # w = 1.5 * h
   if (!is.null(path)) ggplot2::ggsave(path, fig, width = 12, height =8, dpi = 300, limitsize = FALSE, ...)
 
   fig
@@ -922,7 +954,9 @@ print.PlateObj <- function(x, ...) {
     plate = plate@plate,
     df = plate@df,
     plate_id = plate_id,
-    empty_rows = plate@empty_rows, last_filled = plate@last_filled,
+    empty_rows = plate@empty_rows, 
+    last_filled = plate@last_filled,
+    filling_scheme = plate@filling_scheme,
     last_modified = Sys.time(), descr = plate@descr)
 
   saveRDS(plate, save_path)
@@ -1142,11 +1176,15 @@ fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", 
 }
 
 
+# plot1: flow chart
+  # n= total subjects --> dose layer --> factor layer
+# plot2: stacked bar vs time 
+
 plot_design <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
 
   d <- plate@df |> 
-    dplyr::filter(.data$TYPE == "Sample") |>
+    dplyr::filter(.data$TYPE == "Analyte") |>
     dplyr::mutate(time = as.character(.data$time)) |>
     dplyr::mutate(dosage = as.character(.data$dosage)) |>
     dplyr::mutate(factor = as.character(.data$factor))
@@ -1159,17 +1197,53 @@ plot_design <- function(plate){
   test_dosage <- d |> dplyr::filter(is.na(.data$dosage)) |> nrow()
   if(test_dosage > 0) stop("Some samples do not have dosage")
   
-  # assert no conc exist
-  test_conc <- d |> dplyr::filter(is.na(.data$conc)) |> nrow()
-  if(test_conc > 0) stop("Some samples do not have concentration")
 
-  # ggplot 
-  # x time
-  # down arrow: adminstration. color = dosage
-  # up arrow: sampling
-  # facet_grid, ID~factor
+  # plot1 
+  n_total <- nrow(d)
+  dose_counts <- dplyr::count(d, dosage)
+  dose_factor_counts <- dplyr::count(d, dosage, factor)
 
-  # bar. factor number of subjects factor # TODO
+  # Start the diagram code
+  diagram_code <- "digraph flowchart {
+    graph [layout = dot, rankdir = TB]
+    node [shape = box, style = filled, fillcolor = lightblue]
+
+  root [label = 'Total Samples\\nn = " 
+
+  diagram_code <- paste0(diagram_code, n_total, "'];\n")
+
+  # Add dose nodes and links from root
+  for (i in 1:nrow(dose_counts)) {
+    dosage <- as.character(dose_counts$dosage[i])
+    n_dose <- dose_counts$n[i]
+    node_name <- paste0("dose_", i)
+    diagram_code <- paste0(diagram_code,
+                           node_name, " [label = 'Dose: ", dosage, "\\nn = ", n_dose, "'];\n",
+                           "root -> ", node_name, ";\n")
+  }
+
+  # Add factor nodes and links from dose
+  for (i in 1:nrow(dose_factor_counts)) {
+    dosage <- as.character(dose_factor_counts$dosage[i])
+    factor <- as.character(dose_factor_counts$factor[i])
+    n_df <- dose_factor_counts$n[i]
+    
+    # Find index of dose to connect correctly
+    dose_index <- which(dose_counts$dosage == dosage)
+    parent_node <- paste0("dose_", dose_index)
+    child_node <- paste0("factor_", i)
+    
+    diagram_code <- paste0(diagram_code,
+                           child_node, " [label = 'Factor: ", factor, "\\nn = ", n_df, "'];\n",
+                           parent_node, " -> ", child_node, ";\n")
+  }
+
+  diagram_code <- paste0(diagram_code, "}")
+  grViz(diagram_code)
+
+  # plot2 
+
+
 
   
 }

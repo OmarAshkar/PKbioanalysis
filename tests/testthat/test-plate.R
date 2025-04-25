@@ -45,21 +45,21 @@ test_that("plate_filled", {
 
 test_that("multiple_stds_n_qcs" ,{
   # return 0 if no std or qcs
-  generate_96() |>  add_cs_curve(1:10) |> .last_std() |> expect_equal(1)
+  generate_96() |>  add_cs_curve(1:10) |> .last_entity("Standard") |> expect_equal(1)
   generate_96() |>  add_cs_curve(1:10) |>
     add_cs_curve(1:10) |>
-   .last_std() |> expect_equal(2)
+   .last_entity("Standard") |> expect_equal(2)
 
   # retun 0, even if there is cs without qc
-  generate_96() |>  add_cs_curve(1:10) |> .last_qc() |> expect_equal(0)
+  generate_96() |>  add_cs_curve(1:10) |> .last_entity("QC") |> expect_equal(0)
 
   generate_96() |>  add_cs_curve(1:10) |> add_qcs( 3,4.5,9)  |>
-    .last_qc() |>
+    .last_entity("QC") 
     expect_equal(1)
 
 })
 
-test_that("rep_stdTest"), {
+test_that("rep_stdTest", {
 
   generate_96() |> 
     fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
@@ -80,11 +80,23 @@ test_that("rep_stdTest"), {
     plot()
 
     
-  generate_96() |> 
+  # prompt: 
+  # generate 96 well plate
+  # fill vertically from A to C. Add sample of LLOQ/4 with conc 0.25. 
+  # Fill horizontally from 2 to 9. Add 8 standards from 1 to 200 with 3 replicates.
+  # Fill horizontally from 9 to 12. Add 2 DB and 2 blanks. 
+  # Fill horizontally from D to H. 
+  # Add 6 samples of LLOQ/4 with conc 0.25 with prefix Q.
+  # Add 9 samples of LLOQ/4 with conc 0.25 with prefix DQ.
+  # fill vertically from D to G. 
+  # Add 3 QCs with 80, 180 and reg = T. Add 3 QCs with 80, 180 and reg = T with dil = 50.
+
+  # Ans:
+  x <- generate_96() |> 
     fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
-    add_samples(rep("LOQ/4", 3), conc = 0.25) |>
+    add_samples(rep("LOQ/4", 3), conc = 0.25, prefix = "S") |>
     fill_scheme("h", left_bound = 2, right_bound = 9) |>
-    add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
+    add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> # 8 points, 3 replicates
 
     fill_scheme("h", left_bound = 9, right_bound = 12) |>
     add_DB() |>
@@ -95,10 +107,15 @@ test_that("rep_stdTest"), {
     add_samples(rep("LOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
     fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
     add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) |>
-    plot(color = "conc", watermark = F)
+    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) 
+
+  register_plate(x)
+
     
-}
+  plot(x, color = "conc", watermark = F)
+  plot(x, color = "conc", watermark = F, transform_dil = T) 
+    
+})
 
 test_that("dil_qcs", {
   generate_96() |> 
@@ -185,8 +202,9 @@ test_that("qc_ranges", {
 })
 
 test_that("fill_horizontalTest", {
-  generate_96() |> fill_scheme(4, 6) |> expect_no_error()
-  
+  generate_96() |> fill_scheme("v", top_bound = "A", bottom_bound = "C")  |> 
+     add_samples(1:10)|> expect_no_error()
+
   # avoid filling previously filled spots #TODO raise warning and continue
 
   
@@ -195,8 +213,8 @@ test_that("fill_horizontalTest", {
 test_that("fill_verticalTest", {
   generate_96() |> 
     add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |>
-    fill_scheme("h",  "D", "E") |> 
-    add_qcs(50, 750 , 1750, reg = FALSE) |> 
+    fill_scheme("h",  left_bound = 1, right_bound = 12) |>
+    add_qcs(30, 758 , 1880, reg = T) |> 
     expect_no_error()
   
 })
@@ -211,6 +229,11 @@ test_that("spot_maskTest", {
 
 test_that("plotDesignTest", {
   generate_96() |> 
-    fill_scheme(fill = "v", top_bound = "D", bottom_bound = "E") |>
-    plot_design() |> expect_no_error()
+    add_samples(1:5, dosage = "A", factor = "M", time = 1:5*30) |>
+    add_samples(6:10, dosage = "A", factor = "F", time = 1:5*30) |>
+    add_samples(11:15, dosage = "B", factor = "M", time = 1:5*30) |>
+    add_samples(16:18, dosage = "B", factor = "F", time = 1:3*30) |>
+
+    plot_design() 
+    |> expect_no_error()
 })

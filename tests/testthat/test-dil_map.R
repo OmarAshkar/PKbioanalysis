@@ -55,13 +55,13 @@ serial_df <- data.frame(v3, v1, v0)
 
 
 test_that("parallel_dilution", {
-x <- generate_96() |> add_cs_curve(c(1,2,3,4,5)) |> add_qcs(2,2.5,4.5)     
-.parallel_dilution(x, type = "Standard")$TYPE |> unique() |> expect_equal("Standard")
-.parallel_dilution(x, type = "QC")$TYPE |> unique() |> expect_equal("QC")
+    x <- generate_96() |> add_cs_curve(c(1,2,3,4,5)) |> add_qcs(2,2.5,4.5)     
+    .parallel_dilution(x, type = "Standard")$TYPE |> unique() |> expect_equal("Standard")
+    .parallel_dilution(x, type = "QC")$TYPE |> unique() |> expect_equal("QC")
 
-# negative 
-.parallel_dilution(x, type = "Standard", rep = 2) |> expect_error()
+    # negative 
+    .parallel_dilution(x, type = "Standard", rep = 2) |> expect_error()
 
-.parallel_dilution(x, type = "QC", rep = 2) |> expect_error()
+    .parallel_dilution(x, type = "QC", rep = 2) |> expect_error()
 
 })

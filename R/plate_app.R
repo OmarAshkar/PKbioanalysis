@@ -179,6 +179,7 @@ plate_app <- function() {
             card_header("Plate Map", popover(
               bs_icon("gear"),
               selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "TYPE", "samples")),
+              selectInput("transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
               numericInput("plate_map_font_size", "Font Size", value = 12),
               title = "Color By")),
             plotOutput("plate_map_plot1", width = "100%", height = "100%" )
@@ -577,7 +578,7 @@ plate_app <- function() {
 
       # select last id for current plate list
       .retrieve_plate(rev(selected_ids())[[1]]) |> current_plate()
-      plot(current_plate(), color = input$plate_map_color_toggle, label_size = input$plate_map_font_size)
+      plot(current_plate(), color = input$plate_map_color_toggle, label_size = input$plate_map_font_size, transform_dil = input$transform_dilution) 
     })
 
 
@@ -602,7 +603,7 @@ plate_app <- function() {
 
     # remove dilutions tab if no std
     observeEvent(current_plate(), {
-      if(.last_std(current_plate()) == 0){
+      if(.last_entity(current_plate(), "Standard") == 0){
         nav_hide("generator_nav", "Dilution")
       } else{
         nav_show("generator_nav", "Dilution")
@@ -980,7 +981,7 @@ plate_app <- function() {
       },
       content = function(file){
         ggsave(file,  current_plate() |>
-            plot(color = input$plate_map_color_toggle, label_size = input$plate_map_font_size),
+            plot(color = input$plate_map_color_toggle, label_size = input$plate_map_font_size, transform_dil = input$transform_dilution),
             width = 12, height = 8)
       }
     )

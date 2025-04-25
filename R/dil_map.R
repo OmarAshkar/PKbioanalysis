@@ -116,11 +116,11 @@
   checkmate::assertChoice(type, choices = c("Standard", "QC") )
   df <- plate@df
 
-  if(.last_std(plate) == 0){
+  if(.last_entity(plate, "Standard") == 0){
     stop("No standard found")
   }
 
-  df <- df |> dplyr::filter(.data$TYPE == type, .data$std_rep == rep) |>
+  df <- df |> dplyr::filter(.data$TYPE == type, .data$std_rep == rep, .data$e_rep == 1) |>
     dplyr::mutate(v1 = paste0(fold * as.numeric(.data$conc), unit)) |>
     dplyr::mutate(v0 = paste0(.data$conc, unit, "_", .data$SAMPLE_LOCATION)) |>
     dplyr::select(matches("v1"), matches("v0"), matches("TYPE"))
