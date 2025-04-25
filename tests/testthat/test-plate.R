@@ -261,6 +261,15 @@ test_that("samples_combination", {
   x <- generate_96() |> 
     add_samples_c(n_rep = 2, time = 1:10*30, dosage = c("A", "B"), 
       factor = c("M", "F"))
+
+  x <- x@df |> 
+    dplyr::select("samples", "time", "dosage", "factor") |> 
+    dplyr::distinct()
+  expect_equal(nrow(x), 2*2*2*10+1) # 2*2*2*10+1 = 81
+  expect_equal(length(unique(x$time)), 10+1)
+  expect_equal(length(unique(x$dosage)), 2+1) # 2+1 = 3
+  expect_equal(length(unique(x$samples)), 2*2*2+1) # 2*2*2+1 = 9
+  expect_equal(length(unique(x$factor)), 2+1) # 2+1 = 3
 })
 
 
@@ -270,6 +279,5 @@ test_that("plotDesignTest", {
     add_samples(6:10, dosage = "A", factor = "F", time = 1:5*30) |>
     add_samples(11:15, dosage = "B", factor = "M", time = 1:5*30) |>
     add_samples(16:18, dosage = "B", factor = "F", time = 1:3*30) |>
-    plot_design() 
-    |> expect_no_error()
+    plot_design() |> expect_no_error()
 })

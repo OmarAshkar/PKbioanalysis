@@ -229,7 +229,7 @@ add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dosa
   combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor, dosage = dosage) |>
     dplyr::arrange(.data$samples, .data$dosage, .data$factor, .data$conc, .data$time) |>
     dplyr::group_by(.data$samples, .data$factor, .data$dosage, .data$conc) |>
-    dplyr::mutate(samples = paste0(prefix, dplyr::cur_group_id()))
+    dplyr::mutate(samples = dplyr::cur_group_id())
 
   plate |> add_samples(samples = unique(combined$samples),
     time = unique(combined$time),
@@ -713,7 +713,7 @@ plot.PlateObj <- function(x,
 
   descr <- plate@descr
   plate_df <- plate@df |> # zero if blanks, NA if empty cell. Conc otherwise
-    mutate(conc = ifelse(is.na(.data$conc), ifelse(.data$value == "X", NA, 0), .data$conc)) |>
+    # mutate(conc = ifelse(is.na(.data$conc), ifelse(.data$value == "X", NA, 0), .data$conc)) |>
     mutate(time = as.character(.data$time))  |>
     mutate(dosage = as.character(.data$dosage)) |>
     mutate(factor = as.character(.data$factor))
@@ -738,7 +738,8 @@ plot.PlateObj <- function(x,
       x0 = .data[["col"]],
       y0 = .data[["row"]],
       r = 0.45,
-      fill = .data[[color]], color  = .data[["TYPE"]]) , linewidth = 1, linetype = "solid") +
+      fill = .data[[color]], 
+      color  = .data[["TYPE"]]) , linewidth = 1, linetype = "solid") +
     # make unique colors for fill vs color 
     ggplot2::scale_color_viridis_d(na.translate = FALSE) +
     ggplot2::scale_fill_discrete(na.translate = TRUE) +
@@ -1173,10 +1174,10 @@ fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", 
 }
 
 
-# plot1: flow chart
-  # n= total subjects --> dose layer --> factor layer
-# plot2: stacked bar vs time 
-
+#' Plot the design of the plate
+#' @param plate PlateObj object
+#' @returns DiagrammeR object
+#' @export
 plot_design <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
 
@@ -1195,10 +1196,8 @@ plot_design <- function(plate){
   if(test_dosage > 0) stop("Some samples do not have dosage")
   
 
-  # plot1 
-  # Assume df has: sample, dosage, factor, time
-# First, sort and group time vectors per subject
 
+# concat time in single string
 df_with_time <- d |>
   arrange(samples, time) |>
   group_by(samples, dosage, factor) |>
@@ -1213,7 +1212,7 @@ grouped <- df_with_time |>
     .groups = 'drop'
   )
 
-n_total <- df_with_time$sample |> unique() |> length()
+n_total <- df_with_time$samples |> unique() |> length()
 
 # Build DiagrammeR syntax
 diagram_code <- "digraph flowchart {
