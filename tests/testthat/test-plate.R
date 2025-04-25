@@ -227,13 +227,49 @@ test_that("spot_maskTest", {
 })
 
 
+test_that("samples_vectorization", {
+  # multiple samples, multiple time, one dose
+  x <- generate_96() |> 
+    add_samples(samples = 1, time = 1:10*30, dosage = "A")
+  
+  expect_equal(length(unique(x@df$time)), 10+1)
+  expect_equal(length(unique(x@df$dosage)), 1+1)
+  expect_equal(length(unique(x@df$samples)), 1+1)
+
+  # multiple samples, one time, multiple doses 
+  x <- generate_96() |> 
+    add_samples(samples = 1:10, time = 1, dosage = "A")
+  x <- select(x@df, "samples", "time", "dosage") |> dplyr::distinct()
+  expect_equal(nrow(x), 10+1)
+  expect_equal(length(unique(x$time)), 1+1)
+  expect_equal(length(unique(x$dosage)), 1+1)
+  expect_equal(length(unique(x$samples)), 10+1)
+
+  # multiple samples, multiple time, multiple doses 
+  x <- generate_96() |> 
+    add_samples(samples = 1:5, time = 1:10*30, dosage = c("A"))
+  x <- select(x@df, "samples", "time", "dosage") |> dplyr::distinct() 
+  expect_equal(nrow(x), 5*10+1) 
+  expect_equal(length(unique(x$time)), 10+1)
+  expect_equal(length(unique(x$dosage)), 1+1)
+  expect_equal(length(unique(x$samples)), 5+1)
+})
+
+test_that("samples_combination", {
+
+  # 2 x 2 x 2 
+  x <- generate_96() |> 
+    add_samples_c(n_rep = 2, time = 1:10*30, dosage = c("A", "B"), 
+      factor = c("M", "F"))
+})
+
+
 test_that("plotDesignTest", {
   generate_96() |> 
     add_samples(1:5, dosage = "A", factor = "M", time = 1:5*30) |>
     add_samples(6:10, dosage = "A", factor = "F", time = 1:5*30) |>
     add_samples(11:15, dosage = "B", factor = "M", time = 1:5*30) |>
     add_samples(16:18, dosage = "B", factor = "F", time = 1:3*30) |>
-
     plot_design() 
     |> expect_no_error()
 })

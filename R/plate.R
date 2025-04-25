@@ -102,8 +102,8 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' Add unknown samples to a plate
 #'
 #' @param plate PlateObj
-#' @param samples A vector representing samples names
-#' @param time A vector representing time points
+#' @param samples A vector representing samples names. Must be unique.
+#' @param time A vector representing time points. 
 #' @param conc A vector representing concentration
 #' @param dil A vector representing dilution factor
 #' @param factor A vector representing factor
@@ -111,6 +111,9 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
+#' samples must be a unique vector and did not exist in the plate before. 
+#' Time is either a vector or a single value. If it is a vector, it will be repeated for each sample.
+#' Conc, dil, factor and dosage are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.
 #' @export
 #' @returns PlateObj
 #' @examples
@@ -140,57 +143,48 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
   }
 
 
+  samples_time <- expand.grid(samples = samples, time = time) |>
+    dplyr::arrange(.data$samples, .data$time)
+
+  samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil) 
+
+  samples_df <- left_join(samples_time, samples_factors, by = "samples") |>
+    dplyr::arrange(.data$samples, .data$time, .data$factor, .data$conc, .data$dosage, .data$dil) |>
+    dplyr::mutate(
+      samples = as.character(.data$samples),
+      factor = as.character(.data$factor), 
+      conc = as.character(.data$conc), 
+      dosage = as.character(.data$dosage), 
+      dil = as.numeric(.data$dil)) |> 
+    dplyr::mutate(value = ifelse(!is.null(prefix), paste0(prefix, .data$samples), .data$samples)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$time), paste0(.data$value, "_T", .data$time), .data$value)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$conc), paste0(.data$value, "_", .data$conc), .data$value)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$dosage), paste0(.data$value, "_", .data$dosage), .data$value)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$dil), paste0(.data$value, "_", .data$dil, "X"), .data$value)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$factor), paste0(.data$value, "_", .data$factor), .data$value)) 
+
+
   # check if the length of the samples samples are equal
-  if(length(samples) != length(time)){
-    stopifnot(length(time) == 1)
-    time <- rep(time, length(samples))
-  }
-  if(length(samples) != length(conc)){
-    stopifnot(length(conc) == 1)
-    conc <- rep(conc, length(samples))
-  }
-  if(length(samples) != length(factor)){
-    stopifnot(length(factor) == 1)
-    factor <- rep(factor, length(samples))
-  }
-  if(length(dil) != length(samples)){
-    stopifnot(length(dil) == 1)
-    dil <- rep(dil, length(samples))
-  }
-  if(length(dosage) != length(samples)){
-    stopifnot(length(dosage) == 1)
-    dosage <- rep(dosage, length(samples))
-  }
-
-
-  samples <- as.character(samples)
-  values <- samples
-  if(!is.null(prefix)) values <- paste0(prefix, values)
-  if(!is.na(time[1])) values <- paste0(values, "_T", time)
-  if(!is.na(conc[1])) values <- paste0(values, "_", conc)
-  if(!is.na(dosage[1])) values <- paste0(values, "_", dosage)
-  if(!is.na(dil[1])) values <- paste0(values, "_", dil, "X")
-  if(!is.na(factor[1])) values <- paste0(values, "_", factor)
 
   empty_spots <- .spot_mask(plate_obj)
   
   new_df <- df[FALSE, ]
-  for (i in seq_along(samples)) {
-    plate[empty_spots[i, 1], empty_spots[i, 2]] <- samples[i]
+  for (i in 1:nrow(samples_df)) {
+    plate[empty_spots[i, 1], empty_spots[i, 2]] <- samples_df$samples[i]
     new_df <- dplyr::bind_rows(
       new_df,
       data.frame(
         row = empty_spots[i, 1],
         col = empty_spots[i, 2],
-        value = values[i],
+        value = samples_df$value[i],
         SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
-        samples = samples[i],
-        conc = as.character(conc[i]),
-        dosage = dosage[i],
-        dil = dil[i],
+        samples = samples_df$samples[i],
+        conc = samples_df$conc[i],
+        dosage = samples_df$dosage[i],
+        dil = samples_df$dil[i],
         TYPE = "Analyte",
-        time = time[i],
-        factor = factor[i],
+        time = samples_df$time[i],
+        factor = samples_df$factor[i],
         std_rep = NA,
         e_rep = .last_entity(plate_obj, "Analyte") + 1
       )
@@ -212,7 +206,7 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
 
 #' Cartesian product of sample factors to a plate
 #' @param plate PlateObj
-#' @param samples A vector representing samples names
+#' @param n_rep number of samples to be added
 #' @param time A vector representing time points
 #' @param conc A vector representing concentration
 #' @param factor A vector representing factor
@@ -224,21 +218,24 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
 #' The function will automatically create a combination of all sample names with time, concentration and factor.
 #' final name will be of form. Prefix-SampleName-Time-Concentration-Factor
 #' @export
-add_samples_c <- function(plate, samples, time  = NA, conc = NA, factor = NA, dosage = NA , prefix = "S") {
-  checkmate::assertVector(samples)
+add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dosage = NA , prefix = "S") {
+  checkmate::assertNumber(n_rep, lower = 1, finite = TRUE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertVector(factor, null.ok = FALSE)
   checkmate::assertVector(dosage, null.ok = FALSE)
 
+  samples <- seq_len(n_rep)
   combined <- expand.grid(samples = samples, time = time, conc = conc, factor = factor, dosage = dosage) |>
-    dplyr::arrange(.data$samples, .data$factor, .data$time, .data$dosage, .data$conc)
+    dplyr::arrange(.data$samples, .data$dosage, .data$factor, .data$conc, .data$time) |>
+    dplyr::group_by(.data$samples, .data$factor, .data$dosage, .data$conc) |>
+    dplyr::mutate(samples = paste0(prefix, dplyr::cur_group_id()))
 
-  plate |> add_samples(samples = combined$samples,
-    time = combined$time,
-    conc = combined$conc,
-    factor = as.character(combined$factor),
-    dosage = as.character(combined$dosage),
+  plate |> add_samples(samples = unique(combined$samples),
+    time = unique(combined$time),
+    conc = unique(combined$conc),
+    factor = unique(as.character(combined$factor)),
+    dosage = unique(as.character(combined$dosage)),
     prefix = prefix)
 }
 
@@ -1199,51 +1196,64 @@ plot_design <- function(plate){
   
 
   # plot1 
-  n_total <- nrow(d)
-  dose_counts <- dplyr::count(d, dosage)
-  dose_factor_counts <- dplyr::count(d, dosage, factor)
+  # Assume df has: sample, dosage, factor, time
+# First, sort and group time vectors per subject
 
-  # Start the diagram code
-  diagram_code <- "digraph flowchart {
-    graph [layout = dot, rankdir = TB]
-    node [shape = box, style = filled, fillcolor = lightblue]
+df_with_time <- d |>
+  arrange(samples, time) |>
+  group_by(samples, dosage, factor) |>
+  summarise(time_vec = paste0("(", paste(time, collapse = ", "), ")"), .groups = 'drop')
 
-  root [label = 'Total Samples\\nn = " 
+# Create final groupings: by dosage + factor
+grouped <- df_with_time |>
+  group_by(dosage, factor) |>
+  summarise(
+    n = n(),
+    times = paste(samples, time_vec, collapse = "\\n"),
+    .groups = 'drop'
+  )
 
-  diagram_code <- paste0(diagram_code, n_total, "'];\n")
+n_total <- df_with_time$sample |> unique() |> length()
 
-  # Add dose nodes and links from root
-  for (i in 1:nrow(dose_counts)) {
-    dosage <- as.character(dose_counts$dosage[i])
-    n_dose <- dose_counts$n[i]
-    node_name <- paste0("dose_", i)
-    diagram_code <- paste0(diagram_code,
-                           node_name, " [label = 'Dose: ", dosage, "\\nn = ", n_dose, "'];\n",
-                           "root -> ", node_name, ";\n")
-  }
+# Build DiagrammeR syntax
+diagram_code <- "digraph flowchart {
+  graph [layout = dot, rankdir = TB]
+  node [shape = box, style = filled, fillcolor = lightblue, fontsize = 10]
 
-  # Add factor nodes and links from dose
-  for (i in 1:nrow(dose_factor_counts)) {
-    dosage <- as.character(dose_factor_counts$dosage[i])
-    factor <- as.character(dose_factor_counts$factor[i])
-    n_df <- dose_factor_counts$n[i]
-    
-    # Find index of dose to connect correctly
-    dose_index <- which(dose_counts$dosage == dosage)
-    parent_node <- paste0("dose_", dose_index)
-    child_node <- paste0("factor_", i)
-    
-    diagram_code <- paste0(diagram_code,
-                           child_node, " [label = 'Factor: ", factor, "\\nn = ", n_df, "'];\n",
-                           parent_node, " -> ", child_node, ";\n")
-  }
+  root [label = 'Total Samples\\nn = "
+diagram_code <- paste0(diagram_code, n_total, "'];\n")
+
+# Get unique dosages
+unique_dosages <- unique(df_with_time$dosage)
+
+# Add dosage layer
+for (i in seq_along(unique_dosages)) {
+  dosage <- unique_dosages[i]
+  dosage_node <- paste0("dosage_", i)
+  n_dosage <- df_with_time %>% filter(dosage == !!dosage) %>% pull(samples) %>% unique() %>% length()
+
+  diagram_code <- paste0(diagram_code,
+                        dosage_node, " [label = 'Dosage: ", dosage, "\\nn = ", n_dosage, "'];\n",
+                        "root -> ", dosage_node, ";\n")
+}
+
+# Add factor layer with time vectors
+for (i in 1:nrow(grouped)) {
+  row <- grouped[i, ]
+  dosage_index <- which(unique_dosages == row$dosage)
+  parent_node <- paste0("dosage_", dosage_index)
+  child_node <- paste0("factor_", i)
+
+  # Truncate if too long
+  times_display <- substr(row$times, 1, 500)
+
+  diagram_code <- paste0(diagram_code,
+                        child_node, " [label = 'Factor: ", row$factor, "\\nn = ", row$n, "\\n", times_display, "'];\n",
+                        parent_node, " -> ", child_node, ";\n")
+}
+  
 
   diagram_code <- paste0(diagram_code, "}")
   grViz(diagram_code)
 
-  # plot2 
-
-
-
-  
 }
