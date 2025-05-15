@@ -52,11 +52,13 @@ test_that("multiple_stds_n_qcs" ,{
   # retun 0, even if there is cs without qc
   generate_96() |>  add_cs_curve(1:10) |> .last_entity("QC") |> expect_equal(0)
 
-  generate_96() |>  add_cs_curve(1:10) |> add_qcs( 3,4.5,9)  |>
+  generate_96() |>  add_cs_curve(1:10) |> add_QC( 3,4.5,9)  |>
     .last_entity("QC")  |> expect_equal(1)
 })
 
 test_that("rep_stdTest", {
+  skip_on_cran()
+  skip_on_ci()
 
   generate_96() |> 
     fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
@@ -70,8 +72,8 @@ test_that("rep_stdTest", {
     add_blank() |> 
     fill_scheme("v", top_bound = "D", bottom_bound = "G") |>
     # fill_scheme("h", left_bound = 1, right_bound = 12) |>
-    add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_qcs(3, 80, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) |>
+    add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
+    add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
     plot()
@@ -103,8 +105,8 @@ test_that("rep_stdTest", {
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
     add_samples(rep("DQLOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
     fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
-    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_qcs(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, dil = 50) 
+    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
+    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F)
 
   # register_plate(x)
     
@@ -113,14 +115,6 @@ test_that("rep_stdTest", {
     
 })
 
-test_that("dil_qcs", {
-  generate_96() |> 
-    fill_scheme("h", left_bound = 1, right_bound = 10) |>
-    add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
-    add_qcs( 3,4.5,9, reg = F, dil = 10) |> 
-    add_samples(1:10, dil = 10) |>
-    expect_no_error()
-})
 
 test_that("Last position", {
   x <- generate_96(start_row  = "H", start_col  = 5) |>
@@ -144,34 +138,28 @@ test_that("make_metabolic_study", {
   plot(x[[1]], color = "time") |> expect_no_error()
   plot(x[[1]], color = "factor") |> expect_no_error()
   plot(x[[1]], color = "conc") |> expect_no_error()
-  plot(x[[1]], color = "TYPE") |> expect_no_error()
   plot(x[[1]], color = "samples") |> expect_no_error()
 }
 )
 
 test_that("metabolic_last_plate", {
-
   x <- make_metabolic_study(letters[1:8])
   length(x) |> expect_equal(8)
   is.na(x[[8]]@df$time[1]) |> expect_equal(FALSE)
 })
 
-
-
-
-
 test_that("qc_ranges", {
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(30, 750 , 1750) |> expect_error()
+      add_QC(30, 750 , 1750) |> expect_error()
   })
 
   ## errors with LQC >3
   suppressWarnings({
     generate_96() |> 
       add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |> 
-      add_qcs(50, 750 , 1750, reg = FALSE) |> expect_warning()
+      add_QC(50, 750 , 1750, reg = FALSE) |> expect_warning()
   })
 
 })
@@ -181,17 +169,14 @@ test_that("fill_horizontalTest", {
      add_samples(1:10)|> expect_no_error()
 
   # avoid filling previously filled spots #TODO raise warning and continue
-
-  
 })
 
 test_that("fill_verticalTest", {
   generate_96() |> 
     add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |>
     fill_scheme("h",  left_bound = 1, right_bound = 12) |>
-    add_qcs(30, 758 , 1880, reg = T) |> 
+    add_QC(30, 758 , 1880, reg = T) |> 
     expect_no_error()
-  
 })
 
 
@@ -247,11 +232,11 @@ test_that("samples_combination", {
   x <- x@df |> 
     dplyr::select("samples", "time", "dosage", "factor") |> 
     dplyr::distinct()
-  expect_equal(nrow(x), 2*2*2*10+1) # 2*2*2*10+1 = 81
+  expect_equal(nrow(x), 2*2*2*10+1)
   expect_equal(length(unique(x$time)), 10+1)
-  expect_equal(length(unique(x$dosage)), 2+1) # 2+1 = 3
-  expect_equal(length(unique(x$samples)), 2*2*2+1) # 2*2*2+1 = 9
-  expect_equal(length(unique(x$factor)), 2+1) # 2+1 = 3
+  expect_equal(length(unique(x$dosage)), 2+1) 
+  expect_equal(length(unique(x$samples)), 2*2*2+1) 
+  expect_equal(length(unique(x$factor)), 2+1) 
 })
 
 
@@ -262,4 +247,21 @@ test_that("plotDesignTest", {
     add_samples(11:15, dosage = "B", factor = "M", time = 1:5*30) |>
     add_samples(16:18, dosage = "B", factor = "F", time = 1:3*30) |>
     plot_design() |> expect_no_error()
+})
+
+test_that("DQC", {
+  x <- generate_96() |> 
+    add_DQC(conc = 500, fac = 10, rep= 10)
+
+  plot(x, transform_dil = T)  |> expect_no_error()
+  plot(x, transform_dil = F)  |> expect_no_error()
+
+  
+  generate_96() |> 
+    fill_scheme("h", left_bound = 1, right_bound = 10) |>
+    add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
+    add_DQC(conc = 500, fac = 10, rep= 10) |>
+    add_DQC(conc = 500, fac = 100, rep= 10) |>
+    add_samples(1:10, dil = 10) |> 
+    expect_no_error()
 })

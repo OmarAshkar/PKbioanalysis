@@ -178,7 +178,7 @@ plate_app <- function() {
             full_screen = TRUE,
             card_header("Plate Map", popover(
               bs_icon("gear"),
-              selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "TYPE", "samples")),
+              selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "samples")),
               selectInput("transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
               numericInput("plate_map_font_size", "Font Size", value = 12),
               title = "Color By")),
@@ -187,8 +187,8 @@ plate_app <- function() {
           bslib::card(
             max_height = 150,
               layout_columns(
-                actionBttn("create_new_plate_btn", "Add New Plate", icon = icon("plus"), color = "default"),
-                actionBttn("make_metabolic_study_btn", "Make Metabolic Study", icon = icon("flask"), color = "default"),
+                # actionBttn("create_new_plate_btn", "Add New Plate", icon = icon("plus"), color = "default"),
+                # actionBttn("make_metabolic_study_btn", "Make Metabolic Study", icon = icon("flask"), color = "default"),
                 actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary")
               )
             )),

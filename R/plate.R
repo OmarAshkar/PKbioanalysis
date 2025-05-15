@@ -103,11 +103,12 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #'
 #' @param plate PlateObj
 #' @param samples A vector representing samples names. Must be unique.
-#' @param time A vector representing time points. 
-#' @param conc A vector representing concentration
-#' @param dil A vector representing dilution factor
-#' @param factor A vector representing factor
-#' @param dosage A vector representing dosage
+#' @param time A vector representing time points. If vtime = FALSE, time will propagate to all samples.
+#' @param conc A vector representing concentration. Must be same length as samples.
+#' @param dil A vector representing dilution factor. Must be same length as samples.
+#' @param factor A vector representing factor. Must be same length as samples.
+#' @param dosage A vector representing dosage. Must be same length as samples.
+#' @param vtime A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE.
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
@@ -119,13 +120,14 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' @examples
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
-add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor = NA, dosage = NA , prefix = "S") {
+add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor = NA, dosage = NA , prefix = "S", vtime = FALSE) {
   checkmate::assertVector(samples, unique = FALSE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertNumeric(dil, null.ok = FALSE)
   checkmate::assertVector(factor, null.ok = FALSE)
   checkmate::assertVector(dosage, null.ok = FALSE)
+  checkmate::assertLogical(vtime)
   checkmate::assertClass(plate, "PlateObj")
 
 
@@ -143,13 +145,21 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
   }
 
 
-  samples_time <- expand.grid(samples = samples, time = time) |>
-    dplyr::arrange(.data$samples, .data$time)
 
-  samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil) |> 
-    distinct()
+  if(vtime){
+    samples_df <- data.frame(samples = samples, time = time, factor = factor, conc = conc, dosage = dosage, dil = dil) |>
+      dplyr::arrange(.data$samples, .data$time)
+  } else{
+    samples_time <- expand.grid(samples = samples, time = time) |>
+      dplyr::arrange(.data$samples, .data$time)
 
-  samples_df <- left_join(samples_time, samples_factors, by = "samples") |>
+    samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil)  |> distinct()
+
+    samples_df <- left_join(samples_time, samples_factors, by = "samples") 
+  }
+  
+
+  samples_df <- samples_df |>
     dplyr::arrange(.data$samples, .data$time, .data$factor, .data$conc, .data$dosage, .data$dil) |>
     dplyr::mutate(
       samples = as.character(.data$samples),
@@ -163,7 +173,6 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
     dplyr::mutate(value = ifelse(!is.na(.data$dosage), paste0(.data$value, "_", .data$dosage), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$dil), paste0(.data$value, "_", .data$dil, "X"), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$factor), paste0(.data$value, "_", .data$factor), .data$value)) 
-
 
   # check if the length of the samples samples are equal
 
@@ -381,6 +390,61 @@ add_cs_curve <- function(plate, plate_std, rep = 1) {
 }
 
 
+#' Add dilution quality control (DQC) to the plate
+#' @param plate PlateObj object
+#' @param conc numeric. Concentration of the DQC well.
+#' @param fac numeric. Factor of the DQC well.
+#' @param rep numeric. Number of replicates. Default is 5.
+#' 
+#' The current implementation does not check ULOQ or LLOQ boundaries.
+#'
+#' @export 
+add_DQC <- function(plate, conc, fac, rep = 5){
+  checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertNumeric(conc, finite = TRUE, lower = 0)
+  checkmate::assertNumeric(fac, finite = TRUE, lower = 1.1)
+  checkmate::assertNumber(rep, lower = 1, upper = 100)
+
+  plate_obj <- plate
+  df <- plate@df
+  plate <- plate@plate
+
+  empty_spots <- .spot_mask(plate_obj)
+
+  new_df <- df[FALSE, ]
+
+
+  for(i in seq_len(rep)) {
+    val_label <- paste0("DQC_", conc, "_", fac, "X")
+    plate[empty_spots[i, 1], empty_spots[i, 2]] <- val_label
+    new_df <- dplyr::bind_rows(
+      new_df,
+      data.frame(
+        row = empty_spots[i, 1],
+        col = empty_spots[i, 2],
+        value = val_label,
+        SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
+        conc = as.character(conc),
+        factor = as.character(fac),
+        TYPE = "DQC",
+        dil = fac,
+        std_rep = NA,
+        e_rep = .last_entity(plate_obj, "DQC") + 1
+      )
+    )
+  }
+
+  # add sample to the df
+  df <- .bind_new_samples(df, new_df)
+
+  plate_obj@df <- df
+  plate_obj@plate <- plate
+
+  validObject(plate_obj)
+  plate_obj
+
+}
+
 #' Get last filled rank of entity in the plate
 #' @param plate PlateObj object
 #' @param entity character. Name of the entity to be checked.
@@ -480,7 +544,7 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' @param lqc_conc low quality control concentration
 #' @param mqc_conc medium quality control concentration
 #' @param hqc_conc high quality control concentration
-#' @param dil numeric. Dilution factor. Default is 1 for no dilution
+#' @param extra numeric vector of extra QC concentrations. Default is NULL.
 #' @param n_qc number of QC sets. Default is 3
 #' @param qc_serial logical. If TRUE, QCs are placed serially
 #' @param reg logical. Indicates if restrictions should not be applied to the QC samples. Default is TRUE
@@ -490,12 +554,12 @@ add_suitability <- function(plate, conc, label = "suitability") {
 #' If you are not following this guideline, you can set `reg = TRUE` to ignore the restrictions.
 #' @returns PlateObj
 #' @export
-add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_serial=TRUE, reg = TRUE){
+add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL, n_qc=3, qc_serial=TRUE, reg = TRUE){
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertLogical(qc_serial)
   checkmate::assertLogical(reg)
   checkmate::assertNumeric(n_qc, lower = 1, finite = TRUE)
-  checkmate::assertNumeric(dil, lower = 1, finite = TRUE)
+  checkmate::assertNumeric(extra, null.ok = TRUE, lower = 0)
 
 
   # assert there was a standard call, and get the last call
@@ -536,7 +600,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_seri
 
   new_df <- df[FALSE,]
 
-  
+  dil <- 1
   dil_label <- function(x){ 
     ifelse(dil ==1, x, paste0(dil, "X_", x))
   }
@@ -568,7 +632,7 @@ add_qcs <- function(plate, lqc_conc, mqc_conc, hqc_conc, dil =1, n_qc=3, qc_seri
         value =  vec_qc_names[i],
         SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
         conc =  as.character(str_extract(vec_qc_names[i], "(\\d*\\.?\\d+)$")),
-        dil = dil,
+        dil = NA,
         TYPE = "QC",
         std_rep = grp_std, 
         e_rep = .last_entity(plate_obj, "QC") + 1
@@ -640,7 +704,7 @@ make_calibration_study <-
 
    if (!is.null(lqc_conc) & !is.null(mqc_conc) & !is.null(hqc_conc) & !is.null(n_qc)) {
        if(n_qc != 0){
-         plate <- plate |> add_qcs(lqc_conc, mqc_conc, hqc_conc, n_qc, qc_serial)
+         plate <- plate |> add_QC(lqc_conc, mqc_conc, hqc_conc, n_qc, qc_serial)
        }
    }
 
@@ -673,7 +737,7 @@ make_calibration_study <-
 #' Plotting 96 well plate
 #'
 #' @param x PlateObj
-#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage", "TYPE"
+#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
@@ -707,7 +771,7 @@ plot.PlateObj <- function(x,
 
   plate <- x
   checkmate::assertClass(plate, "PlateObj")
-  checkmate::assertChoice(color, c("conc", "time", "factor", "dosage", "samples", "TYPE"))
+  checkmate::assertChoice(color, c("conc", "time", "factor", "dosage", "samples"))
   checkmate::assertCharacter(Instrument)
   checkmate::assertCharacter(caption)
   checkmate::assertCharacter(path, null.ok = TRUE)
@@ -727,9 +791,9 @@ plot.PlateObj <- function(x,
   date <- plate@last_modified |> as.Date()
 
   if(transform_dil) {
-    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0(as.numeric(plate_df$conc) * plate_df$dil, ">"))
+    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0(">", as.numeric(plate_df$conc) / plate_df$dil))
   } else{
-    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0("\\1", ">"))
+    plate_df$new_value <- str_replace_all(plate_df$value, "(\\d+X)", paste0(">", "\\1"))
   }
   plate_df$new_value <- str_replace_all(plate_df$new_value, "_", "\n")
 
@@ -872,22 +936,29 @@ time_points = c(0, 5,10, 15, 30, 45, 60, 75, 90, 120), n_NAD =3 , n_noNAD = 2){
         time = df$time_points[vec],
         samples = df$cmpd[vec],
         prefix = "", 
-        factor = as.character(df$factor[vec]))
+        factor = as.character(df$factor[vec]), 
+        vtime = TRUE)
     } else if (x == n_plates){ # last plate
         y <- x - 1
         vec <- (y*96+1):nrow(df)
         current_df <- df[vec, ]
+        
+        stopifnot(nrow(current_df) <= 96)
+
         curr_plate <- add_samples(curr_plate, time = current_df$time_points,
           samples = current_df$cmpd,
-          prefix = "", factor = as.character(current_df$factor))
+          prefix = "", factor = as.character(current_df$factor), vtime = TRUE)
         curr_plate@plate_id <- paste0(plates_ids[x], "_1")
     } else {
         y <- x - 1
         vec <- (y*96+1):(y*96+96)
         current_df <- df[vec, ]
+
+        stopifnot(nrow(current_df) == 96)
+
         curr_plate <- add_samples(curr_plate, time = current_df$time_points,
           samples = current_df$cmpd,
-          prefix = "", factor = as.character(current_df$factor))
+          prefix = "", factor = as.character(current_df$factor), vtime = TRUE)
         curr_plate@plate_id <- paste0(plates_ids[x], "_1")
     }
     curr_plate
@@ -1147,14 +1218,7 @@ fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", 
   plate
 }
 
-
-# TODO
-# fill_at <- function(location){
-#   NULL
-# }
-
 .spot_mask <- function(plate){
-
   # get empty spots
   empty_rows <- plate@empty_rows
   empty_spots <- which(is.na(plate@plate), arr.ind = TRUE) # empty spots 

@@ -40,11 +40,11 @@ plate <- generate_96("Calibration study") |>
     add_DB() |>
     add_blank() |>   # CS0IS1
     add_suitability(conc = 20) |>
-    add_qcs(2, 200 ,400, qc_serial = FALSE) |> 
+    add_QC2, 200 ,400, qc_serial = FALSE) |> 
     add_DB() |> 
     add_blank(analyte = TRUE, IS = FALSE) |> # CS1IS0
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200, 500)) |>
-    add_qcs(lqc_conc = 2, mqc_conc =  180 , hqc_conc = 400) 
+    add_QC(lqc_conc = 2, mqc_conc =  180 , hqc_conc = 400) 
 
 plot(plate)
 plot(plate, color = "TYPE")
