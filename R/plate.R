@@ -576,7 +576,7 @@ add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL, n_qc=3, qc
   }
 
   # get the lloq from the last call
-  plate_std <- plate@df |> dplyr::filter(.data$TYPE == "Standard", .data$std_rep == grp_std) |>
+  plate_std <- plate@df |> dplyr::filter(.data$TYPE == "Standard", .data$e_rep == grp_std) |>
     dplyr::pull(.data$conc)
   loq_conc <- plate_std |>
     as.numeric() |> min(na.rm = TRUE)
