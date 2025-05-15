@@ -4,7 +4,7 @@
 \alias{add_cs_curve}
 \title{Add calibration curve to the plate}
 \usage{
-add_cs_curve(plate, plate_std)
+add_cs_curve(plate, plate_std, rep = 1)
 }
 \arguments{
 \item{plate}{PlateObj}

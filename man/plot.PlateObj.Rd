@@ -10,6 +10,8 @@
   Instrument = "",
   caption = "",
   label_size = 15,
+  transform_dil = FALSE,
+  watermark = "auto",
   path = NULL,
   ...
 )
@@ -17,7 +19,7 @@
 \arguments{
 \item{x}{PlateObj}
 
-\item{color}{character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage", "TYPE"}
+\item{color}{character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage"}
 
 \item{Instrument}{A string placed at subtitle}
 

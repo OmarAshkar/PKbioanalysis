@@ -6,7 +6,7 @@
 \usage{
 add_samples_c(
   plate,
-  samples,
+  n_rep,
   time = NA,
   conc = NA,
   factor = NA,
@@ -17,7 +17,7 @@ add_samples_c(
 \arguments{
 \item{plate}{PlateObj}
 
-\item{samples}{A vector representing samples names}
+\item{n_rep}{number of samples to be added}
 
 \item{time}{A vector representing time points}
 
