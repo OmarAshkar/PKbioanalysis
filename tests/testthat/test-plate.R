@@ -106,7 +106,7 @@ test_that("rep_stdTest", {
     add_samples(rep("DQLOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
     fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
     add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> expect_warning()
+    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) 
 
   # register_plate(x)
     

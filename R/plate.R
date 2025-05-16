@@ -333,6 +333,7 @@ add_DB <- function(plate){
 #'
 #' @param plate PlateObj
 #' @param plate_std character
+#' @param rep numeric. Number of replicates. Default is 1.
 #'
 #' @export
 #'

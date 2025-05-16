@@ -10,6 +10,8 @@ add_cs_curve(plate, plate_std, rep = 1)
 \item{plate}{PlateObj}
 
 \item{plate_std}{character}
+
+\item{rep}{numeric. Number of replicates. Default is 1.}
 }
 \value{
 PlateObj

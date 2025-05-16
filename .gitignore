@@ -9,3 +9,6 @@ inst/doc
 
 
 .Rproj.user
+docs
+/doc/
+/Meta/

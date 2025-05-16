@@ -1094,7 +1094,7 @@ output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
       # remove complete NA rows
       # switch any "" to NA
       capture_method_cmpd_df <- current_method_capture_df() |>
-        dplyr::mutate(q1 = as.numeric(q1), q3 = as.numeric(q3)) |>  # convert to numeric|>
+        dplyr::mutate(q1 = as.numeric(.data$q1), q3 = as.numeric(.data$q3)) |>  # convert to numeric|>
         dplyr::mutate(across(everything(), ~ifelse(. == "", NA, .))) |>
         dplyr::filter(dplyr::if_all(-c("qualifier"), ~!is.na(.)))  # remove complete NA rows
 
