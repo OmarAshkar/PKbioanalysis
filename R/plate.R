@@ -766,7 +766,7 @@ plot.PlateObj <- function(x,
                           color = "conc",
                           Instrument = "",
                           caption = "",
-                          label_size = 15,
+                          label_size = 1,
                           transform_dil = FALSE,
                           watermark = "auto",
                           path = NULL, ...
@@ -837,14 +837,13 @@ plot.PlateObj <- function(x,
         y = .data$row,
         label = .data$new_value,
       ),
-      size = label_size,
-      size.unit = "pt",
+      size = rel(label_size*4),
       color = "white"
     ) +
     ggplot2::geom_text(
       aes(x = .data$col, y = .data$row, label = .data$SAMPLE_LOCATION),
-      size = 10,
-      size.unit = "pt",
+      size = rel(label_size*2.5),
+      # size.unit = "pt",
       nudge_x = 0.45,
       nudge_y = -0.4,
       check_overlap = TRUE
@@ -858,8 +857,8 @@ plot.PlateObj <- function(x,
     ) +
     theme_minimal() +
     theme(
-      axis.text.x = element_text(size = 12, face = "bold"),
-      axis.text.y = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(size = rel(label_size*0.1), face = "bold"),
+      axis.text.y = element_text(size = rel(label_size*0.1), face = "bold"),
       axis.title.y = element_blank() ,
       plot.margin = unit(c(0, 0, 0, 0), "null"),
       panel.spacing = unit(c(0, 0, 0, 0), "null"),
@@ -869,7 +868,8 @@ plot.PlateObj <- function(x,
   if(!.is_registered(plate) & watermark == "auto") {
     fig <- fig +
       ggplot2::annotate("text", x = 12, y = 8, label = "Not Registered",
-       color = "grey", size = 18, alpha = 0.8, fontface = "bold",
+       color = "grey", size = rel(label_size*10),
+       alpha = 0.8, fontface = "bold",
        hjust = 1, vjust = -3)
     message("Plate not registered. To register, use register_plate()")
   }

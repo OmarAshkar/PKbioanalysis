@@ -180,7 +180,7 @@ plate_app <- function() {
               bs_icon("gear"),
               selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "samples")),
               selectInput("transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
-              numericInput("plate_map_font_size", "Font Size", value = 12),
+              numericInput("plate_map_font_size", "Font Size", value = 1, step = 0.2),
               title = "Color By")),
             plotOutput("plate_map_plot1", width = "100%", height = "100%" )
           ),

@@ -1,0 +1,23 @@
+---
+title: "Dilution Scheme"
+author: "Omar Elashkar"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Dilution Scheme}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+fig_width: 12
+fig_height: 8
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(PKbioanalysis)
+```
