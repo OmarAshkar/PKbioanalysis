@@ -7,8 +7,8 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
-fig_width: 12
-fig_height: 8
+fig_width: 15
+fig_height: 10
 ---
 
 ```{r, include = FALSE}
