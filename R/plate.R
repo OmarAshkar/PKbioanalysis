@@ -742,6 +742,8 @@ make_calibration_study <-
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
 #' @param path Default is NULL, if not null, must be a path to save plate image
+#' @param transform_dil logical. If TRUE, transform the dilution factor to the label
+#' @param watermark character. If "auto", a watermark is added to the plot. If "none", no watermark is added. Default is "auto"
 #' @param ... additional arguments passed to ggplot2::ggsave
 #'
 #' @importFrom ggplot2 coord_equal scale_fill_discrete scale_x_continuous scale_y_continuous geom_text labs theme_minimal theme expand_limits
@@ -1272,16 +1274,16 @@ plot_design <- function(plate){
 
 # concat time in single string
 df_with_time <- d |>
-  arrange(samples, time) |>
-  group_by(samples, dosage, factor) |>
+  arrange(.data$samples, .data$time) |>
+  group_by(.data$samples, .data$dosage, .data$factor) |>
   summarise(time_vec = paste0("(", paste(time, collapse = ", "), ")"), .groups = 'drop')
 
 # Create final groupings: by dosage + factor
 grouped <- df_with_time |>
-  group_by(dosage, factor) |>
+  group_by(.data$dosage, .data$factor) |>
   summarise(
     n = n(),
-    times = paste(samples, time_vec, collapse = "\\n"),
+    times = paste(.data$samples, .data$time_vec, collapse = "\\n"),
     .groups = 'drop'
   )
 
@@ -1302,7 +1304,7 @@ unique_dosages <- unique(df_with_time$dosage)
 for (i in seq_along(unique_dosages)) {
   dosage <- unique_dosages[i]
   dosage_node <- paste0("dosage_", i)
-  n_dosage <- df_with_time %>% filter(dosage == !!dosage) %>% pull(samples) %>% unique() %>% length()
+  n_dosage <- df_with_time |> filter(dosage == !!dosage) |> pull("samples") |> unique() |> length()
 
   diagram_code <- paste0(diagram_code,
                         dosage_node, " [label = 'Dosage: ", dosage, "\\nn = ", n_dosage, "'];\n",

@@ -1,4 +1,5 @@
 #'@import units
+#'@noRd 
 .conc_ratio <- function(c1, c2){
   # assert starts with digit
   stopifnot(grepl("^\\d.*", c1))

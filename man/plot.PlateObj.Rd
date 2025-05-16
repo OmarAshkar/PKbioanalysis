@@ -27,6 +27,10 @@
 
 \item{label_size}{numeric. Size of the label. Default is 15}
 
+\item{transform_dil}{logical. If TRUE, transform the dilution factor to the label}
+
+\item{watermark}{character. If "auto", a watermark is added to the plot. If "none", no watermark is added. Default is "auto"}
+
 \item{path}{Default is NULL, if not null, must be a path to save plate image}
 
 \item{...}{additional arguments passed to ggplot2::ggsave}
