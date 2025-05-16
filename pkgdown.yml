@@ -2,8 +2,11 @@ pandoc: 3.1.11
 pkgdown: 2.1.2
 pkgdown_sha: ~
 articles:
-  PKbioanalysis_overview: PKbioanalysis_overview.html
-last_built: 2025-05-16T13:50Z
+  DilutionScheme: DilutionScheme.html
+  InjectionSequences: InjectionSequences.html
+  Plate Design: Plate Design.html
+  Study Design: Study Design.html
+last_built: 2025-05-16T15:14Z
 urls:
   reference: https://omarashkar.github.io/PKbioanalysis/reference
   article: https://omarashkar.github.io/PKbioanalysis/articles
