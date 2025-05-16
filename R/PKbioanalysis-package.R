@@ -28,6 +28,7 @@
 #' @importFrom ggplot2 geom_hline
 #' @importFrom ggplot2 ggsave
 #' @importFrom ggplot2 margin
+#' @importFrom ggplot2 rel
 #' @importFrom ggplot2 sec_axis
 #' @importFrom ggplot2 unit
 #' @importFrom grDevices colorRampPalette

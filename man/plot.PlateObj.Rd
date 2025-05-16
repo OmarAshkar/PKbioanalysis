@@ -9,7 +9,7 @@
   color = "conc",
   Instrument = "",
   caption = "",
-  label_size = 15,
+  label_size = 1,
   transform_dil = FALSE,
   watermark = "auto",
   path = NULL,
