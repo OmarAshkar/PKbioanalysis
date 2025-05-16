@@ -17,8 +17,16 @@
   # assert either both has units or not
   is.empty <- \(x) x == ""
 
-  stopifnot(is.empty(unit_c2) == is.empty(unit_c1))
+  if(is.empty(unit_c2) != is.empty(unit_c1)) {
+    stop("Either both c1 and c2 have units or neither has units")
+  }
+
+
   stopifnot(is.numeric(c1) & is.numeric(c2))
+
+  if(c1 < c2){
+    stop("c1 must be greater than c2")
+  }
 
 
   if(!is.empty(unit_c1)) {
@@ -51,11 +59,13 @@
     }
   }
 
-  dplyr::distinct(edges) |> 
-    dplyr::mutate(color = sample(grDevices::colors(), n())) |>
-    dplyr::rowwise() |>
-    dplyr::mutate(label = paste0("1:", .conc_ratio(.data$from, .data$to)))
+  edges_df  <- dplyr::distinct(edges) |> 
+    dplyr::mutate(color = sample(grDevices::colors(), n())) 
 
+  .conc_ratio <- Vectorize(.conc_ratio)
+  edges_df$label <- paste0("1:", .conc_ratio(edges_df$from, edges_df$to))
+
+  edges_df
 }
 
 
@@ -114,14 +124,14 @@
 .parallel_dilution <- function(plate, fold = 10, unit = "ng/ml", type, rep = 1){
   checkmate::assertNumeric(fold, lower = 0.1, upper = 10000)
   checkmate::assertNumber(rep, lower = 1, upper = 20)
-  checkmate::assertChoice(type, choices = c("Standard", "QC") )
+  checkmate::assertChoice(type, choices = c("Standard", "QC", "DQC") )
   df <- plate@df
 
   if(.last_entity(plate, "Standard") == 0){
     stop("No standard found")
   }
 
-  df <- df |> dplyr::filter(.data$TYPE == type, .data$std_rep == rep, .data$e_rep == 1) |>
+  df <- df |> dplyr::filter(.data$TYPE == type, .data$std_rep == 1, .data$e_rep == !!rep) |>
     dplyr::mutate(v1 = paste0(fold * as.numeric(.data$conc), unit)) |>
     dplyr::mutate(v0 = paste0(.data$conc, unit, "_", .data$SAMPLE_LOCATION)) |>
     dplyr::select(matches("v1"), matches("v0"), matches("TYPE"))

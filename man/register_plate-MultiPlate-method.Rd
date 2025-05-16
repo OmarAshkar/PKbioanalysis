@@ -15,3 +15,4 @@ a list of RegisteredPlate objects
 \description{
 Register a multiple plates at once
 }
+\keyword{internal}

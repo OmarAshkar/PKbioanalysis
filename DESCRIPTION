@@ -3,7 +3,9 @@ Package: PKbioanalysis
 Title: Pharmacokinetic Bioanalysis Experiments Design and Exploration
 Version: 0.3.0
 Authors@R: c(
-    person("Omar", "Elashkar", email = "omar.i.elashkar@gmail.com", role = c("aut", "cre")))
+    person("Omar", "Elashkar", email = "omar.i.elashkar@gmail.com", 
+      role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5505-778X"))
+      )
 Maintainer: Omar Elashkar <omar.i.elashkar@gmail.com>
 Description: Automate pharmacokinetic/pharmacodynamic bioanalytical procedures based on best practices and regulatory recommendations.
     The package impose regulatory constrains and sanity checking for common bioanalytical procedures. 

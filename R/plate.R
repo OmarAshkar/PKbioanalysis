@@ -429,7 +429,7 @@ add_DQC <- function(plate, conc, fac, rep = 5){
         factor = as.character(fac),
         TYPE = "DQC",
         dil = fac,
-        std_rep = NA,
+        std_rep = i,
         e_rep = .last_entity(plate_obj, "DQC") + 1
       )
     )
@@ -857,8 +857,8 @@ plot.PlateObj <- function(x,
     ) +
     theme_minimal() +
     theme(
-      axis.text.x = element_text(size = rel(label_size*0.1), face = "bold"),
-      axis.text.y = element_text(size = rel(label_size*0.1), face = "bold"),
+      axis.text.x = element_text(size = rel(label_size*1.5), face = "bold"),
+      axis.text.y = element_text(size = rel(label_size*1.5), face = "bold"),
       axis.title.y = element_blank() ,
       plot.margin = unit(c(0, 0, 0, 0), "null"),
       panel.spacing = unit(c(0, 0, 0, 0), "null"),

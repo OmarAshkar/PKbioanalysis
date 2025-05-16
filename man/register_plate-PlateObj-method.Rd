@@ -17,3 +17,4 @@ Registered PlateObj object
 Register a plate
 This will save the plate to the database
 }
+\keyword{internal}

@@ -107,6 +107,7 @@ setGeneric("build_injec_seq", function(plate, method,
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
 #' @export
+#' @keywords internal
 #' @returns InjecListObj object
 setMethod("build_injec_seq" , "PlateObj" , function(plate,
                         method,
@@ -386,9 +387,9 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 #' @param explore_mode options either TRUE or FALSE. Default if FALSE.
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
-#' 
-#'@export
-#'@returns InjecListObj object
+#' @keywords internal
+#' @export
+#' @returns InjecListObj object
 setMethod("build_injec_seq", "MultiPlate",  function(plate, method,
   repeat_std = 1, repeat_qc = 1, repeat_analyte = 1,
   blank_after_top_conc = TRUE, blank_at_end = TRUE, system_suitability = 0,
@@ -513,6 +514,7 @@ setGeneric("register_plate", function(plate) standardGeneric("register_plate"))
 #' This will save the plate to the database
 #' @param plate PlateObj object
 #' @export
+#' @keywords internal
 #' @returns Registered PlateObj object
 setMethod("register_plate", "PlateObj", function(plate){
   .register_plate_logic(plate)
@@ -520,8 +522,9 @@ setMethod("register_plate", "PlateObj", function(plate){
 
 #' Register a multiple plates at once
 #' @param plate MultiPlate object
-#'@export
-#'@return a list of RegisteredPlate objects
+#' @export
+#' @keywords internal
+#' @return a list of RegisteredPlate objects
 setMethod("register_plate", "MultiPlate", function(plate){
   lapply(plate@plates, .register_plate_logic)
 })

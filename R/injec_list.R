@@ -98,12 +98,9 @@ combine_injec_lists <-
     print(x)
   }
 
-#' Export injection sequence to vendor specific format
+#' Write injection sequence to database
 #'
 #' @param injec_seq InjecListObj object
-#'
-#' @import checkmate
-#' @import dplyr
 #'
 #' @export
 #' @returns dataframe
@@ -157,7 +154,7 @@ write_injec_seq <- function(injec_seq){
 }
 
 
-#' Download sample list from database to local spreadsheet
+#' Download sample list from database to local spreadsheet with vendor specific format
 #'@param sample_list dataframe of sample list either from db or from write_injec_seq
 #'@param vendor currently only 'masslynx', 'masshunter' and 'analyst' are supported
 #'

@@ -303,7 +303,7 @@ plate_app <- function() {
                         width = 1/2, #height = 100,
                         numericInput("dil_factor", "Parallel Dilution Factor", value = "10"),
                         textInput("dil_unit", "Dilution Unit", value = "ng"),
-                        selectInput("dil_type", "Vial Type", choices = c("Standard", "QC")),
+                        selectInput("dil_type", "Vial Type", choices = c("Standard", "QC", "DQC")),
                         selectInput("dil_rep", "Replicate", choices = 1:10)
                       ),
                       actionButton("dilute", "Dilute", icon = icon("flask")),
@@ -325,7 +325,7 @@ plate_app <- function() {
                       bslib::card(
                           id = "dil_graph_grviz_card",
                           full_screen = TRUE,
-                          height = 500,
+                          height = 700,
                           card_header("Schema"),
                           DiagrammeR::grVizOutput("dil_graph_grviz_out", width = "100%")),
                       downloadButton("export_dil_graph", "Export", icon = icon("download"))
@@ -907,21 +907,26 @@ plate_app <- function() {
       req(class(current_plate()) ==  "RegisteredPlate")
       req(current_dil_df())
 
-      d <- current_dil_df()
-      d[d == ""] <- NA
-      x <- d |>
-        select( where(function(x) !all(is.na(x)))) |> # FIXME
-        # group_by(TYPE) |> # to make sure not mixing both things
-        tidyr::fill(everything(), .direction = "downup") |>
-        select(-"TYPE") |>
-        # ungroup() |>
-        # .multi_graph()
-        .gen_graph()
+      tryCatch(
+        {
+          d <- current_dil_df()
+          d[d == ""] <- NA
+          x <- d |>
+            select( where(function(x) !all(is.na(x)))) |> # FIXME
+            # group_by(TYPE) |> # to make sure not mixing both things
+            tidyr::fill(everything(), .direction = "downup") |>
+            select(-"TYPE") |>
+            # ungroup() |>
+            # .multi_graph()
+            .gen_graph()
 
-      dil_graphs_observer(x)
+          dil_graphs_observer(x)
 
-      shinyjs::show("dil_graph_grviz_card")
-      shinyjs::show("export_dil_graph")
+          shinyjs::show("dil_graph_grviz_card")
+          shinyjs::show("export_dil_graph")
+        },
+        error = function(e) {showNotification(e$message, type = "error")}
+      )
     })
 
 

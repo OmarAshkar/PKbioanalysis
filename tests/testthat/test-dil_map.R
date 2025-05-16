@@ -42,7 +42,6 @@ v3 <- c("1mg", "2000ng", "1000ng", "500ng", "100ng","50ng")
 serial_df <- data.frame(v3, v1, v0)
 
 
-
 # done parallel
 .gen_graph(par_df) |> expect_no_error()
 # done serial 
@@ -55,12 +54,21 @@ serial_df <- data.frame(v3, v1, v0)
 
 
 test_that("parallel_dilution", {
-    x <- generate_96() |> add_cs_curve(c(1,2,3,4,5)) |> add_QC(2,2.5,4.5)     
+    x <- generate_96() |> 
+        add_cs_curve(c(1,2,3,4,5), rep = 3) |> 
+        add_QC(2,2.5,4.5)  |> 
+        add_cs_curve(c(2,4,6,8,9), rep = 3) |> 
+        add_DQC(100, 10)   
+
     .parallel_dilution(x, type = "Standard")$TYPE |> unique() |> expect_equal("Standard")
+    .parallel_dilution(x, type = "Standard", rep = 2)$TYPE |> unique() |> expect_equal("Standard")
+
     .parallel_dilution(x, type = "QC")$TYPE |> unique() |> expect_equal("QC")
 
+    .parallel_dilution(x, type = "DQC")$TYPE |> unique() |> expect_equal("DQC")
+
     # negative 
-    .parallel_dilution(x, type = "Standard", rep = 2) |> expect_error()
+    .parallel_dilution(x, type = "Standard", rep = 3) |> expect_error()
 
     .parallel_dilution(x, type = "QC", rep = 2) |> expect_error()
 

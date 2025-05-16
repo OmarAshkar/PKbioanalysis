@@ -20,7 +20,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Omar Elashkar \email{omar.i.elashkar@gmail.com}
+\strong{Maintainer}: Omar Elashkar \email{omar.i.elashkar@gmail.com} (\href{https://orcid.org/0000-0002-5505-778X}{ORCID})
 
 }
 \keyword{internal}
