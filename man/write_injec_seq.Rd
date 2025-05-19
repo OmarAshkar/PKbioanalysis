@@ -2,7 +2,7 @@
 % Please edit documentation in R/injec_list.R
 \name{write_injec_seq}
 \alias{write_injec_seq}
-\title{Write Injection Sequence to Database}
+\title{Write injection sequence to database}
 \usage{
 write_injec_seq(injec_seq)
 }
@@ -13,5 +13,5 @@ write_injec_seq(injec_seq)
 dataframe
 }
 \description{
-Write Injection Sequence to Database
+Write injection sequence to database
 }

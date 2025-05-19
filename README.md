@@ -30,17 +30,20 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
 ```
 
 
+## Main Features
+
+- 96-well plate design and visualization 
+- Support Pharmacokinetic samples attributes on the plate
+- Automatically propagate and design injection sequences
+- Export injection sequences to CSV compatible with Masslynx and MassHunter
+- Interactive dilution scheme with unit conversion
+
 ## Milestones
-- [x]  96-well plate design and visualization 
-- [x]  Support Pharmacokinetic samples attributes on the plate
-- [x]  Automatically propagate and design injection sequences
-- [x]  Export injection sequences to CSV compatible with Masslynx and MassHunter
-- [x]  Interactive dilution scheme with unit conversion
-- [ ]  Support import peak areas from TargetLynx or other formats
-- [ ]  Support interactive chromatography integration and visualization 
-- [ ]  Linearity 
-- [ ]  Suitability 
-- [ ]  MLE of additive and proportional errors 
-- [ ]  Automatically estimate LOD
-- [ ]  Estimate UAD (dilution threshold) recommendation
-- [ ]  Export to NONMEM-formated dataset
+- Support import peak areas from TargetLynx or other formats
+- Support interactive chromatography integration and visualization 
+- Linearity 
+- Suitability 
+- MLE of additive and proportional errors 
+- Automatically estimate LOD
+- Estimate UAD (dilution threshold) recommendation
+- Export to NONMEM-formated dataset

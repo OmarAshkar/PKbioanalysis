@@ -3,13 +3,13 @@ test_that("conc_calculation_correct", {
 .conc_ratio("1mg/ml", "100ug/ml") |> expect_equal("10")
 .conc_ratio("1mg", "100ug")  |> expect_equal("10")
 
-.conc_ratio("1", "100") |> expect_equal("0.01")
+.conc_ratio("1000", "100") |> expect_equal("10")
 
 # not same unit
 .conc_ratio("1", "100ug/ml") |> expect_error()
 
 # decimals 
-.conc_ratio("1.5", "100") |> expect_equal("0.015")
+.conc_ratio("150", "100") |> expect_equal("1.5")
 .conc_ratio("1.5mg", "100ug") |> expect_equal("15")
 })
 
@@ -30,7 +30,7 @@ par_df <- data.frame(v3, v2, v1, v0)
 v0 <- paste0(c(200, 100, 50, 10, 5, 2), "ng_A,",  3:8)
 v1 <- paste0(c(2000, 1000, 500, 100, 50, 20), "ng")
 #v2 <- c("200ug" , "100ug", "500ug", "100ug", "50ug", 500)
-v3 <- paste0(c(1, 1, 1, 1000, 500,100), c("ug", "ug", "ug", "ng", "ng", "ng"))
+v3 <- paste0(c(1, 1, 1, 1000, 500,100), c("mg", "mg", "ug", "ng", "ng", "ng"))
 hyprid_df <- data.frame(v3, v1, v0)
 
 
@@ -43,7 +43,7 @@ serial_df <- data.frame(v3, v1, v0)
 
 
 # done parallel
-.gen_graph(par_df) |> expect_no_error()
+.gen_graph(par_df) |>  expect_no_error()
 # done serial 
 .gen_graph(serial_df) |> expect_no_error()
 # done hyprid

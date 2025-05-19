@@ -231,7 +231,7 @@ print.InjecListObj <- function(x, ...) {
   cat("Check if total volume is OK. Volume will depend on injection and filtration modes")
   sprintf("Total number of injections %s", nrow(x$injec_list))
   x$injec_list |>
-    summarize(total_volume = sum(.data$INJ_VOL), .by = "SAMPLE_LOCATION") |>
+    summarise(total_volume = sum(.data$INJ_VOL), .by = "SAMPLE_LOCATION") |>
     arrange(desc(.data$total_volume)) |> print()
 
   return(invisible(x))

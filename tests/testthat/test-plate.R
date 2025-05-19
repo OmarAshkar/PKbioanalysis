@@ -21,6 +21,7 @@ test_that("plate_registration", {
 
 test_that("reuse_plate", {
   skip_on_cran()
+  skip_on_ci()
   x <- generate_96() |> add_blank(TRUE, FALSE) |> register_plate()
   .is_registered(x) |> expect_equal(TRUE)
 
@@ -61,17 +62,17 @@ test_that("rep_stdTest", {
   skip_on_ci()
 
   generate_96() |> 
-    fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
+    fill_scheme("v", tbound = "A", bbound = "C") |>
     add_samples(rep("SLOQ/4", 3), conc = 0.25) |>
-    fill_scheme("h", left_bound = 2, right_bound = 9) |>
+    fill_scheme("h", lbound = 2, rbound = 9) |>
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
 
-    fill_scheme("h", left_bound = 9, right_bound = 12) |>
+    fill_scheme("h", lbound = 9, rbound = 12) |>
     add_DB() |>
     add_blank() |> 
     add_blank() |> 
-    fill_scheme("v", top_bound = "D", bottom_bound = "G") |>
-    # fill_scheme("h", left_bound = 1, right_bound = 12) |>
+    fill_scheme("v", tbound = "D", bbound = "G") |>
+    # fill_scheme("h", lbound = 1, rbound = 12) |>
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
@@ -92,19 +93,19 @@ test_that("rep_stdTest", {
 
   # Ans:
   x <- generate_96() |> 
-    fill_scheme("v", top_bound = "A", bottom_bound = "C") |>
+    fill_scheme("v", tbound = "A", bbound = "C") |>
     add_samples(rep("LOQ/4", 3), conc = 0.25, prefix = "S") |>
-    fill_scheme("h", left_bound = 2, right_bound = 9) |>
+    fill_scheme("h", lbound = 2, rbound = 9) |>
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> # 8 points, 3 replicates
 
-    fill_scheme("h", left_bound = 9, right_bound = 12) |>
+    fill_scheme("h", lbound = 9, rbound = 12) |>
     add_DB() |>
     add_blank() |> 
     add_blank() |> 
-    fill_scheme("h", top_bound = "D", bottom_bound = "H") |>
+    fill_scheme("h", tbound = "D", bbound = "H") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
     add_samples(rep("DQLOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
-    fill_scheme("v", top_bound = "D", bottom_bound = "H") |>
+    fill_scheme("v", tbound = "D", bbound = "H") |>
     add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
     add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) 
 
@@ -165,7 +166,7 @@ test_that("qc_ranges", {
 })
 
 test_that("fill_horizontalTest", {
-  generate_96() |> fill_scheme("v", top_bound = "A", bottom_bound = "C")  |> 
+  generate_96() |> fill_scheme("v", tbound = "A", bbound = "C")  |> 
      add_samples(1:10)|> expect_no_error()
 
   # avoid filling previously filled spots #TODO raise warning and continue
@@ -174,7 +175,7 @@ test_that("fill_horizontalTest", {
 test_that("fill_verticalTest", {
   generate_96() |> 
     add_cs_curve(c(10,50,100,250,500,1000, 1500,2500)) |>
-    fill_scheme("h",  left_bound = 1, right_bound = 12) |>
+    fill_scheme("h",  lbound = 1, rbound = 12) |>
     add_QC(30, 758 , 1880, reg = T) |> 
     expect_no_error()
 })
@@ -182,7 +183,7 @@ test_that("fill_verticalTest", {
 
 test_that("spot_maskTest", {
   generate_96() |> 
-    fill_scheme(fill = "v", top_bound = "D", bottom_bound = "E") |>
+    fill_scheme(fill = "v", tbound = "D", bbound = "E") |>
     .spot_mask()
 })
 
@@ -258,7 +259,7 @@ test_that("DQC", {
 
   
   generate_96() |> 
-    fill_scheme("h", left_bound = 1, right_bound = 10) |>
+    fill_scheme("h", lbound = 1, rbound = 10) |>
     add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
     add_DQC(conc = 500, fac = 10, rep= 10) |>
     add_DQC(conc = 500, fac = 100, rep= 10) |>

@@ -894,6 +894,7 @@ plate_app <- function() {
         rhandsontable::hot_col(c("v1"), readOnly = TRUE)  |>
         rhandsontable::hot_col(c("v0"), readOnly = TRUE) |>
         rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |>
+        rhandsontable::hot_col(c("dil"), readOnly = TRUE) |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     })
 
@@ -915,7 +916,7 @@ plate_app <- function() {
             select( where(function(x) !all(is.na(x)))) |> # FIXME
             # group_by(TYPE) |> # to make sure not mixing both things
             tidyr::fill(everything(), .direction = "downup") |>
-            select(-"TYPE") |>
+            select(-"TYPE", -"dil") |>
             # ungroup() |>
             # .multi_graph()
             .gen_graph()

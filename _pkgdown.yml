@@ -1,35 +1,38 @@
 url: https://omarashkar.github.io/PKbioanalysis/
 template:
   bootstrap: 5
-
 home:
-  title: "PKbioanalysis: Streamline The Interplay Between Pharmacokinetics and Bioanalysis"
-  sidebar: 
-    structure: [links, license, authors, citation, custom]
+  title: 'PKbioanalysis: Streamline The Interplay Between Pharmacokinetics and Bioanalysis'
+  sidebar:
+    structure:
+    - links
+    - license
+    - authors
+    - citation
+    - custom
     components:
       custom:
-        title: Copyrights 
+        title: Copyrights
         text: Sharma Lab, University of Florida
-  
-
+footer:
+  structure:
+    left: 
+    right: 
 authors:
-  sidebar: 
-    roles: [aut, ctb, cph]
+  sidebar:
+    roles:
+    - aut
+    - ctb
+    - cph
   Omar Elashkar:
-      href: "http://linkedin.com/in/omarelashkar"
-
-
+    href: http://linkedin.com/in/omarelashkar
 development:
   mode: auto
-
 reference:
 - title: Plate Design
-
 - subtitle: Generate Plate
-  contents:
-  - generate_96
-
-- subtitle: Add to Plate
+  contents: generate_96
+- subtitle: Add Entries to Plate
   contents:
   - add_DB
   - add_blank
@@ -39,41 +42,31 @@ reference:
   - add_samples
   - add_samples_c
   - add_suitability
-
+- subtitle: Plate Filling Orientation
+  contents: fill_scheme
 - subtitle: Multiple Plates
   contents:
   - combine_plates
   - length,MultiPlate-method
-  - "[[,MultiPlate-method"
-
+  - '[[,MultiPlate-method'
 - subtitle: Study Starters
   contents:
   - make_calibration_study
   - make_metabolic_study
-
 - subtitle: Plate and Study Inspection
   contents:
   - plot.PlateObj
   - plot_design
   - plate_metadata
-
 - subtitle: Plate Registration
-  contents:
-  - register_plate
-
-
+  contents: register_plate
 - title: Injection Sequences
   contents:
   - build_injec_seq
   - combine_injec_lists
   - write_injec_seq
   - download_sample_list
-
 - title: UI for Injection Sequence and Dilution Scheme
-  contents:
-  - plate_app
-
+  contents: plate_app
 - title: internal
-
-
 

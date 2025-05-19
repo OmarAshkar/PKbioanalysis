@@ -95,7 +95,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 
   # .plate(m, df, plate_id, empty_rows, descr = descr)
   PlateObj(m, df, plate_id, empty_rows, descr = descr, 
-    filling_scheme =  list(scheme = "h", top_bound = "A", bottom_bound = "H", left_bound = 1, right_bound = 12))
+    filling_scheme =  list(scheme = "h", tbound = "A", bbound = "H", lbound = 1, rbound = 12))
 }
 
 
@@ -371,7 +371,7 @@ add_cs_curve <- function(plate, plate_std, rep = 1) {
         value = plate_std[i],
         SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
         conc =  as.character(str_extract(plate_std[i], "(\\d*\\.?\\d+)$")),
-        dil = NA,
+        dil = 1,
         TYPE = "Standard",
         std_rep = std_rep[i],
         e_rep = .last_entity(plate_obj, "Standard") + 1
@@ -633,7 +633,7 @@ add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL, n_qc=3, qc
         value =  vec_qc_names[i],
         SAMPLE_LOCATION = paste0(LETTERS[empty_spots[i, 1]], ",", empty_spots[i, 2]),
         conc =  as.character(str_extract(vec_qc_names[i], "(\\d*\\.?\\d+)$")),
-        dil = NA,
+        dil = 1,
         TYPE = "QC",
         std_rep = grp_std, 
         e_rep = .last_entity(plate_obj, "QC") + 1
@@ -705,7 +705,10 @@ make_calibration_study <-
 
    if (!is.null(lqc_conc) & !is.null(mqc_conc) & !is.null(hqc_conc) & !is.null(n_qc)) {
        if(n_qc != 0){
-         plate <- plate |> add_QC(lqc_conc, mqc_conc, hqc_conc, n_qc, qc_serial)
+         plate <- plate |> add_QC(
+          lqc_conc = lqc_conc, 
+          mqc_conc = mqc_conc, hqc_conc = hqc_conc, 
+          n_qc = n_qc, qc_serial = qc_serial)
        }
    }
 
@@ -1197,25 +1200,38 @@ combine_plates <- function(plates){
     dplyr::slice_tail(by = c(row, col))
 }
 
-fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", left_bound = 1, right_bound = 12){
+#' Filling orientation of the plate
+#' @param plate PlateObj
+#' @param fill character. Filling scheme. Either "h" for horizontal, "v" for vertical. 
+#' @param tbound character. Top bound of the filling scheme. Default is "A"
+#' @param bbound character. Bottom bound of the filling scheme. Default is "H"
+#' @param lbound numeric. Left bound of the filling scheme. Default is 1
+#' @param rbound numeric. Right bound of the filling scheme. Default is 12
+#' @description
+#' This function sets the filling scheme of the plate. The filling scheme is used to determine the order in which the samples are filled in the plate.
+#' The default filling scheme is horizontal, which means that the samples are filled from left to right and top to bottom. 
+#' The vertical filling scheme means that the samples are filled from top to bottom and left to right.
+#' @returns PlateObj
+#' @export
+fill_scheme <- function(plate, fill = "h", tbound = "A", bbound = "H", lbound = 1, rbound = 12){
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertChoice(fill, c("h", "v", "hv"))
-  checkmate::assertCharacter(top_bound)
-  checkmate::assertCharacter(bottom_bound)
-  checkmate::assertNumeric(left_bound)
-  checkmate::assertNumeric(right_bound)
+  checkmate::assertCharacter(tbound)
+  checkmate::assertCharacter(bbound)
+  checkmate::assertNumeric(lbound)
+  checkmate::assertNumeric(rbound)
 
-  top_bound <- match(toupper(top_bound), LETTERS)
-  bottom_bound <- match(toupper(bottom_bound), LETTERS)
+  tbound <- match(toupper(tbound), LETTERS)
+  bbound <- match(toupper(bbound), LETTERS)
 
-  if(top_bound > bottom_bound) stop("Top bound should be less than bottom bound")
-  if(left_bound > right_bound) stop("Left bound should be less than right bound")
+  if(tbound > bbound) stop("Top bound should be less than bottom bound")
+  if(lbound > rbound) stop("Left bound should be less than right bound")
 
-  top_bound <- LETTERS[top_bound]
-  bottom_bound <- LETTERS[bottom_bound]
+  tbound <- LETTERS[tbound]
+  bbound <- LETTERS[bbound]
 
-  plate@filling_scheme <- list(scheme = fill, top_bound = top_bound, bottom_bound = bottom_bound, 
-    left_bound = left_bound, right_bound = right_bound)
+  plate@filling_scheme <- list(scheme = fill, tbound = tbound, bbound = bbound, 
+    lbound = lbound, rbound = rbound)
     
   validObject(plate)
   plate
@@ -1226,10 +1242,10 @@ fill_scheme <- function(plate, fill = "h", top_bound = "A", bottom_bound = "H", 
   empty_rows <- plate@empty_rows
   empty_spots <- which(is.na(plate@plate), arr.ind = TRUE) # empty spots 
 
-  empty_spots <- empty_spots[empty_spots[, 1] >= match(plate@filling_scheme$top_bound, LETTERS) &
-    empty_spots[, 1] <= match(plate@filling_scheme$bottom_bound, LETTERS) & 
-    empty_spots[, 2] >= plate@filling_scheme$left_bound &
-    empty_spots[, 2] <= plate@filling_scheme$right_bound, ]
+  empty_spots <- empty_spots[empty_spots[, 1] >= match(plate@filling_scheme$tbound, LETTERS) &
+    empty_spots[, 1] <= match(plate@filling_scheme$bbound, LETTERS) & 
+    empty_spots[, 2] >= plate@filling_scheme$lbound &
+    empty_spots[, 2] <= plate@filling_scheme$rbound, ]
 
   if(is.matrix(empty_spots)){
     if(plate@filling_scheme$scheme == "h"){
