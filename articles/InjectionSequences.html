@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,8 +40,8 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
-    <li><a class="dropdown-item" href="../articles/Plate%20Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study%20Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -76,17 +76,61 @@ Elashkar</h4>
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/OmarAshkar/PKbioanalysis" class="external-link">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_96.html">generate_96</a></span><span class="op">(</span><span class="st">"Dilution integerity"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"v"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_DB.html">add_DB</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_blank.html">add_blank</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/add_blank.html">add_blank</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, lbound <span class="op">=</span> <span class="fl">2</span>, rbound <span class="op">=</span> <span class="fl">9</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_cs_curve.html">add_cs_curve</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span><span class="op">)</span>, rep <span class="op">=</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, tbound <span class="op">=</span> <span class="st">"D"</span>, bbound <span class="op">=</span> <span class="st">"E"</span>, lbound <span class="op">=</span> <span class="fl">1</span>, rbound <span class="op">=</span> <span class="fl">12</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_QC.html">add_QC</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">90</span>, <span class="fl">180</span>, reg <span class="op">=</span> <span class="cn">T</span>, n_qc <span class="op">=</span> <span class="fl">6</span>, qc_serial <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, lbound <span class="op">=</span> <span class="fl">11</span>, rbound <span class="op">=</span> <span class="fl">12</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_DQC.html">add_DQC</a></span><span class="op">(</span>conc <span class="op">=</span> <span class="fl">1000</span>, <span class="fl">100</span>, rep <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
+<span><span class="co">#&gt; Warning: Removed 39 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
+<p><img src="InjectionSequences_files/figure-html/unnamed-chunk-4-1.png" width="1440"></p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/register_plate.html">register_plate</a></span><span class="op">(</span><span class="va">plate</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plate_app.html">plate_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>For here, you may select one or more plate and generate injection
+sequences.</p>
+<p>If you have different compounds with different concentrations and
+wish to propagate the concentrations, you have to use the
+<code>methods</code> tab to create a table that for all compounds
+associated with your bioanalytical method. This will be used also to
+match chromatographs with the correct transition.</p>
+<div class="float">
+<img src="../reference/figures/methods_table_plateapp.png" alt="Compounds table"><div class="figcaption">Compounds table</div>
+</div>
+<div class="float">
+<img src="../reference/figures/injec_seq_diff_cmpds.png" alt="Compounds with different concentrations"><div class="figcaption">Compounds with different concentrations</div>
+</div>
+<p><code>summary</code> tab can show the injection volume from each
+well. This can help to estimate roughtly if the aliquots are enough for
+that much of injections.</p>
+<p>After filling generating the injection sequence, export it to your
+vendor-specific format. You can import this list directly without any
+further manual modification.</p>
+<div class="float">
+<img src="../reference/figures/injec_seq.gif" alt="Injection sequence animation"><div class="figcaption">Injection sequence animation</div>
+</div>
   </main>
 </div>
 
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Omar Elashkar.</p>
+
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+
 </div>
 
     </footer>

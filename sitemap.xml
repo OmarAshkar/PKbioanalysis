@@ -3,8 +3,8 @@
 <url><loc>https://omarashkar.github.io/PKbioanalysis/LICENSE.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/articles/DilutionScheme.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/articles/InjectionSequences.html</loc></url>
-<url><loc>https://omarashkar.github.io/PKbioanalysis/articles/Plate Design.html</loc></url>
-<url><loc>https://omarashkar.github.io/PKbioanalysis/articles/Study Design.html</loc></url>
+<url><loc>https://omarashkar.github.io/PKbioanalysis/articles/Plate_Design.html</loc></url>
+<url><loc>https://omarashkar.github.io/PKbioanalysis/articles/Study_Design.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/articles/index.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/authors.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/index.html</loc></url>
@@ -24,6 +24,7 @@
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/combine_injec_lists.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/combine_plates.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/download_sample_list.html</loc></url>
+<url><loc>https://omarashkar.github.io/PKbioanalysis/reference/fill_scheme.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/generate_96.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/index.html</loc></url>
 <url><loc>https://omarashkar.github.io/PKbioanalysis/reference/length-MultiPlate-method.html</loc></url>

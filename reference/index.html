@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,8 +20,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
-    <li><a class="dropdown-item" href="../articles/Plate%20Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study%20Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -38,8 +38,31 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="plate-design">Plate Design<a class="anchor" aria-label="anchor" href="#plate-design"></a></h2>
 
+
+
+
+    </div><div class="section level2">
+
+      <h3 id="generate-plate">Generate Plate<a class="anchor" aria-label="anchor" href="#generate-plate"></a></h3>
+
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="generate_96.html">generate_96()</a></code>
+
+        </dt>
+        <dd>Generate 96 Plate Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="add-entries-to-plate">Add Entries to Plate<a class="anchor" aria-label="anchor" href="#add-entries-to-plate"></a></h3>
 
 
 
@@ -56,18 +79,6 @@
         <dd>Add double blank (DB) to a plate</dd>
       </dl><dl><dt>
 
-          <code><a href="add_DQC.html">add_DQC()</a></code>
-
-        </dt>
-        <dd>Add dilution quality control (DQC) to the plate</dd>
-      </dl><dl><dt>
-
-          <code><a href="add_QC.html">add_QC()</a></code>
-
-        </dt>
-        <dd>Add quality control samples to the plate</dd>
-      </dl><dl><dt>
-
           <code><a href="add_blank.html">add_blank()</a></code>
 
         </dt>
@@ -78,6 +89,18 @@
 
         </dt>
         <dd>Add calibration curve to the plate</dd>
+      </dl><dl><dt>
+
+          <code><a href="add_QC.html">add_QC()</a></code>
+
+        </dt>
+        <dd>Add quality control samples to the plate</dd>
+      </dl><dl><dt>
+
+          <code><a href="add_DQC.html">add_DQC()</a></code>
+
+        </dt>
+        <dd>Add dilution quality control (DQC) to the plate</dd>
       </dl><dl><dt>
 
           <code><a href="add_samples.html">add_samples()</a></code>
@@ -96,31 +119,35 @@
 
         </dt>
         <dd>Add suitability sample to the plate</dd>
-      </dl><dl><dt>
+      </dl></div><div class="section level2">
 
-          <code><a href="build_injec_seq-MultiPlate-method.html">build_injec_seq(<i>&lt;MultiPlate&gt;</i>)</a></code>
+      <h3 id="plate-filling-orientation">Plate Filling Orientation<a class="anchor" aria-label="anchor" href="#plate-filling-orientation"></a></h3>
 
-        </dt>
-        <dd>Create Injection Sequence from MultiPlate (Multiple Plates)</dd>
-      </dl><dl><dt>
 
-          <code><a href="build_injec_seq-PlateObj-method.html">build_injec_seq(<i>&lt;PlateObj&gt;</i>)</a></code>
 
-        </dt>
-        <dd>Create Injection Sequence from PlateObj (Single Plate)</dd>
-      </dl><dl><dt>
+    </div><div class="section level2">
 
-          <code><a href="build_injec_seq.html">build_injec_seq()</a></code>
 
-        </dt>
-        <dd>Create Injection Sequence</dd>
-      </dl><dl><dt>
 
-          <code><a href="combine_injec_lists.html">combine_injec_lists()</a></code>
+
+      <dl><dt>
+
+          <code><a href="fill_scheme.html">fill_scheme()</a></code>
 
         </dt>
-        <dd>Create Sample List with rigorous design</dd>
-      </dl><dl><dt>
+        <dd>Filling orientation of the plate</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="multiple-plates">Multiple Plates<a class="anchor" aria-label="anchor" href="#multiple-plates"></a></h3>
+
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="combine_plates.html">combine_plates()</a></code>
 
@@ -128,23 +155,28 @@
         <dd>Combine plates in MultiPlate object</dd>
       </dl><dl><dt>
 
-          <code><a href="download_sample_list.html">download_sample_list()</a></code>
-
-        </dt>
-        <dd>Download sample list from database to local spreadsheet</dd>
-      </dl><dl><dt>
-
-          <code><a href="generate_96.html">generate_96()</a></code>
-
-        </dt>
-        <dd>Generate 96 Plate Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.</dd>
-      </dl><dl><dt>
-
           <code><a href="length-MultiPlate-method.html">length(<i>&lt;MultiPlate&gt;</i>)</a></code>
 
         </dt>
         <dd>Length method for MultiPlate</dd>
       </dl><dl><dt>
+
+          <code><a href="sub-sub-MultiPlate-method.html">`[[`(<i>&lt;MultiPlate&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Subsetting method for MultiPlate</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="study-starters">Study Starters<a class="anchor" aria-label="anchor" href="#study-starters"></a></h3>
+
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="make_calibration_study.html">make_calibration_study()</a></code>
 
@@ -156,19 +188,18 @@
 
         </dt>
         <dd>Create a metabolic study layout</dd>
-      </dl><dl><dt>
+      </dl></div><div class="section level2">
 
-          <code><a href="plate_app.html">plate_app()</a></code>
+      <h3 id="plate-and-study-inspection">Plate and Study Inspection<a class="anchor" aria-label="anchor" href="#plate-and-study-inspection"></a></h3>
 
-        </dt>
-        <dd>bioanalytic_app</dd>
-      </dl><dl><dt>
 
-          <code><a href="plate_metadata.html">plate_metadata()</a></code>
 
-        </dt>
-        <dd>Set plate description</dd>
-      </dl><dl><dt>
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="plot.PlateObj.html">plot(<i>&lt;PlateObj&gt;</i>)</a></code>
 
@@ -182,44 +213,90 @@
         <dd>Plot the design of the plate</dd>
       </dl><dl><dt>
 
-          <code><a href="register_plate-MultiPlate-method.html">register_plate(<i>&lt;MultiPlate&gt;</i>)</a></code>
+          <code><a href="plate_metadata.html">plate_metadata()</a></code>
 
         </dt>
-        <dd>Register a multiple plates at once</dd>
-      </dl><dl><dt>
+        <dd>Set plate description</dd>
+      </dl></div><div class="section level2">
 
-          <code><a href="register_plate-PlateObj-method.html">register_plate(<i>&lt;PlateObj&gt;</i>)</a></code>
+      <h3 id="plate-registration">Plate Registration<a class="anchor" aria-label="anchor" href="#plate-registration"></a></h3>
 
-        </dt>
-        <dd>Register a plate This will save the plate to the database</dd>
-      </dl><dl><dt>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="register_plate.html">register_plate()</a></code>
 
         </dt>
         <dd>Register a plate This will save the plate to the database</dd>
-      </dl><dl><dt>
+      </dl></div><div class="section level2">
+      <h2 id="injection-sequences">Injection Sequences<a class="anchor" aria-label="anchor" href="#injection-sequences"></a></h2>
 
-          <code><a href="sub-sub-MultiPlate-method.html">`[[`(<i>&lt;MultiPlate&gt;</i>)</a></code>
+
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="build_injec_seq.html">build_injec_seq()</a></code>
 
         </dt>
-        <dd>Subsetting method for MultiPlate</dd>
+        <dd>Create Injection Sequence</dd>
+      </dl><dl><dt>
+
+          <code><a href="combine_injec_lists.html">combine_injec_lists()</a></code>
+
+        </dt>
+        <dd>Create Sample List with rigorous design</dd>
       </dl><dl><dt>
 
           <code><a href="write_injec_seq.html">write_injec_seq()</a></code>
 
         </dt>
-        <dd>Export injection sequence to vendor specific format</dd>
+        <dd>Write injection sequence to database</dd>
+      </dl><dl><dt>
+
+          <code><a href="download_sample_list.html">download_sample_list()</a></code>
+
+        </dt>
+        <dd>Download sample list from database to local spreadsheet with vendor specific format</dd>
+      </dl></div><div class="section level2">
+      <h2 id="ui-for-injection-sequence-and-dilution-scheme">UI for Injection Sequence and Dilution Scheme<a class="anchor" aria-label="anchor" href="#ui-for-injection-sequence-and-dilution-scheme"></a></h2>
+
+
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="plate_app.html">plate_app()</a></code>
+
+        </dt>
+        <dd>bioanalytic_app</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Omar Elashkar.</p>
+
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+
 </div>
 
     </footer></div>
