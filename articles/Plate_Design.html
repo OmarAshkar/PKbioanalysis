@@ -79,7 +79,7 @@ design and management. The plate will carry all information needed not
 only for bioanalytical purposes, but also the pharmacokinetic
 information needed for the study.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/OmarAshkar/PKbioanalysis" class="external-link">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="plate-generation-reusing-and-managing-plates">Plate generation, reusing and managing plates<a class="anchor" aria-label="anchor" href="#plate-generation-reusing-and-managing-plates"></a>
 </h2>
@@ -104,7 +104,7 @@ the metadata associated with it.</p>
 <span><span class="co">#&gt;  Last Fill: A,1 </span></span>
 <span><span class="co">#&gt;  Remaining Empty Spots: 96 </span></span>
 <span><span class="co">#&gt;  Description:  </span></span>
-<span><span class="co">#&gt;  Last Modified: 2025-05-19 16:43:03.350674 </span></span>
+<span><span class="co">#&gt;  Last Modified: 2025-05-21 16:56:02.918059 </span></span>
 <span><span class="co">#&gt;  Scheme h </span></span>
 <span><span class="co">#&gt;  Plate ID: 1_1 </span></span>
 <span><span class="co">#&gt;  Registered: FALSE </span></span>
@@ -114,7 +114,7 @@ the metadata associated with it.</p>
 <code>plate_metadata(plate, descr = "plate1")</code>.</p>
 <p>The first part of the plate ID is unique to the plate itself, while
 the second part indicated the reuse of the plate. You can reuse the
-plate by calling <code>reuse_plate(plate_id)</code>. <img src="../reference/figures/plate_db.png" alt="Plate Database"></p>
+plate by calling <code>reuse_plate(plate_id)</code>. <img src="https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/plate_db.png" alt="Plate Database"></p>
 <p>To find all previous plate, you can use <code><a href="../reference/plate_app.html">plate_app()</a></code> to
 find it and retrieve it for reuse.</p>
 <p>Calibration study examples</p>
