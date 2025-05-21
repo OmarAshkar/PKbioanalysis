@@ -51,4 +51,3 @@ Suggests:
 URL: https://omarashkar.github.io/PKbioanalysis/
 BugReports: https://github.com/OmarAshkar/PKbioanalysis/issues
 Config/testthat/edition: 3
-VignetteBuilder: knitr
