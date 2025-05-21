@@ -46,7 +46,7 @@ print(plate)
 Plate name can be specified during plate generation `generate_96(descr = "plate1")` or modified by using `plate_metadata(plate, descr = "plate1")`.
 
 The first part of the plate ID is unique to the plate itself, while the second part indicated the reuse of the plate. You can reuse the plate by calling `reuse_plate(plate_id)`.
-![Plate Database](../man/figures/plate_db.png)
+![Plate Database](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/plate_db.png)
 
 
 To find all previous plate, you can use `plate_app()` to find it and retrieve it for reuse.

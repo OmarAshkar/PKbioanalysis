@@ -73,7 +73,7 @@ Make sure to select the plate you want to generate dilution scheme for. The last
 - Finally, select which replicate you need to generat the dilution scheme for and hit `Dilute`
 
 
-![Access Dilution Scheme Generator](../man/figures/step1_dilution.gif)
+![Access Dilution Scheme Generator](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/step1_dilution.gif)
 
 The table generated is interactive. It will also fill down if no concentration is specified. Again, must just units will be consistent.
 
@@ -88,7 +88,7 @@ Click on any non-terminal node, and specify the final volume needed. The calcula
 
 > Warning: Currently, PKbioanalysis does not have database for dilution scheme. You must export the dilution scheme images by using `Export` button.
 
-![Interactivity](../man/figures/step2_dilution_CS.gif)
+![Interactivity](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/step2_dilution_CS.gif)
 
 
 

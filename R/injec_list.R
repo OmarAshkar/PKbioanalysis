@@ -173,8 +173,11 @@ download_sample_list <- function(sample_list, vendor){
         matches("FILE_TEXT"),
         matches("TYPE"), matches("INJ_VOL"),
         starts_with("CONC"), starts_with("COMPOUND")) |>
-      dplyr::mutate(Index = dplyr::row_number())
-
+      dplyr::mutate(Index = dplyr::row_number()) |> 
+      dplyr::mutate(TYPE = dplyr::case_when(
+        .data$TYPE == "DQC" ~ "QC",
+        TRUE ~ .data$TYPE
+      )) 
   } else if(vendor == "masshunter"){
 
     sample_list <- sample_list |>

@@ -170,9 +170,10 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
   # locate positive blanks
   blank_list <- dplyr::filter(plate, .data$TYPE == "Blank")
   # find top conc in std
-  std_list <- dplyr::filter(plate, .data$TYPE == "Standard") |> dplyr::arrange(as.numeric(.data$std_rep), as.numeric(.data$conc))
+  std_list <- dplyr::filter(plate, .data$TYPE == "Standard") |> dplyr::arrange(as.numeric(.data$e_rep), as.numeric(.data$conc))
   # find top conc in qc
-  qc_list <- dplyr::filter(plate, .data$TYPE == "QC") |>  dplyr::arrange(as.numeric(.data$std_rep), .data$value)
+  qc_list <- dplyr::filter(plate, .data$TYPE == "QC") |>  dplyr::arrange(as.numeric(.data$e_rep), .data$value)
+  dqc_list <- dplyr::filter(plate, .data$TYPE == "DQC") |> dplyr::arrange(as.numeric(.data$e_rep), .data$value)
   analyte_list <- dplyr::filter(plate, .data$TYPE == "Analyte") |> dplyr::arrange(.data$samples)
 
   suitability_list <- filter(plate, .data$TYPE == "Suitability")
@@ -181,6 +182,8 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 
   no_qc <- ifelse(nrow(qc_list) == 0, TRUE, FALSE) #
   no_analyte <- ifelse(nrow(analyte_list) == 0, TRUE, FALSE)
+  no_dqc <- ifelse(nrow(dqc_list) == 0, TRUE, FALSE)
+
 
 
   if (!no_qc) {
@@ -193,8 +196,8 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     stopifnot(length(qc_replicates) == 1)
   }
 
-  ## 1. xplore mode
-  if(explore_mode){
+  ## 1. xplore mode. 1 sample from each group
+  if(explore_mode){ 
     xplore_df <- df[FALSE, ] # empty df
     # add random sample from each group
     if(nrow(std_list) > 0){
@@ -211,6 +214,14 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
         dplyr::sample_n(1) |>
         dplyr::ungroup()
         xplore_df <-  rbind(xplore_df, qc_xplore)
+    }
+
+    if(nrow(dqc_list) > 0){
+      dqc_xplore <- dqc_list |>
+        dplyr::group_by(.data$std_rep) |>
+        dplyr::sample_n(1) |>
+        dplyr::ungroup()
+        xplore_df <-  rbind(xplore_df, dqc_xplore)
     }
 
     if(nrow(analyte_list) > 0){
@@ -231,6 +242,7 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     df <- bind_rows(df, xplore_df)
   }
 
+  # 2. blanks
   for(i in 1:2){
   # double blank
     df <- add_row(df, double_blanks)
@@ -238,7 +250,7 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     df <- add_row(df, IS_blanks)
   }
 
-  # add suitability
+  #3. suitability
   if (system_suitability > 0) {
     stopifnot("There is no suitability well in the plate. Please add it using add_suitability()" = nrow(suitability_list) >= 1)
     # n_blanks <- nrow(blank_list)
@@ -254,10 +266,10 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     }
   }
 
-  #add blanks
+  # blanks
   df <- add_row(df, blank_list)
 
-  # add standards
+  # standards
   for (i in seq(repeat_std)) {
     df <- bind_rows(df, std_list)
 
@@ -266,6 +278,7 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     }
   }
 
+  # no qc, but analyte
   if (no_qc & !no_analyte) {
     # inject analyte if no QCs
     for (i in seq(repeat_analyte)) {
@@ -281,6 +294,7 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     }
   }
 
+  # qc
   if (!no_qc) {
     # TODO repeat analytes and qcs  with n_analyte and n_qc
     if (!no_analyte) {
@@ -314,6 +328,13 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 
     if (!blank_after_top_conc & blank_at_end) {
       df <- bind_rows(df, blank_list)
+    }
+  }
+
+  # dqc
+  if (!no_dqc) {
+    for (i in seq(repeat_qc)) {
+      df <- bind_rows(df, dqc_list)
     }
   }
 

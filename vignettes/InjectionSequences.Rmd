@@ -57,9 +57,9 @@ For here, you may select one or more plate and generate injection sequences.
 If you have different compounds with different concentrations and wish to propagate the concentrations, you have to use the `methods` tab to create a table that for all compounds associated with your bioanalytical method. 
 This will be used also to match chromatographs with the correct transition.
 
-![Compounds table](../man/figures/methods_table_plateapp.png)
+![Compounds table](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/methods_table_plateapp.png)
 
-![Compounds with different concentrations](../man/figures/injec_seq_diff_cmpds.png)
+![Compounds with different concentrations](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/injec_seq_diff_cmpds.png)
 
 
 `summary` tab can show the injection volume from each well. This can help to estimate roughtly if the aliquots are enough for that much of injections.
@@ -68,5 +68,5 @@ This will be used also to match chromatographs with the correct transition.
 After filling generating the injection sequence, export it to your vendor-specific format. You can import this list directly without any further manual modification. 
 
 
-![Injection sequence animation](../man/figures/injec_seq.gif)
+![Injection sequence animation](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/injec_seq.gif)
 

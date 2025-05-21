@@ -7,3 +7,6 @@
 ^pkgdown$
 ^doc$
 ^Meta$
+^vignettes$
+^.vscode$
+^\\.vscode/
