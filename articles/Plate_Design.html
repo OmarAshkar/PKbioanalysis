@@ -104,7 +104,7 @@ the metadata associated with it.</p>
 <span><span class="co">#&gt;  Last Fill: A,1 </span></span>
 <span><span class="co">#&gt;  Remaining Empty Spots: 96 </span></span>
 <span><span class="co">#&gt;  Description:  </span></span>
-<span><span class="co">#&gt;  Last Modified: 2025-05-21 17:27:27.921642 </span></span>
+<span><span class="co">#&gt;  Last Modified: 2025-05-22 16:51:35.753659 </span></span>
 <span><span class="co">#&gt;  Scheme h </span></span>
 <span><span class="co">#&gt;  Plate ID: 1_1 </span></span>
 <span><span class="co">#&gt;  Registered: FALSE </span></span>
@@ -170,35 +170,43 @@ plates or to generate injection sequences and dilution schemes.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plate_app.html">plate_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="adding-samples">Adding samples<a class="anchor" aria-label="anchor" href="#adding-samples"></a>
+<h2 id="adding-samples-with-pharmackinetic-information">Adding samples with pharmackinetic information<a class="anchor" aria-label="anchor" href="#adding-samples-with-pharmackinetic-information"></a>
 </h2>
+<p>PKbioanalysis offers multiple ways to add samples to plate. We
+recommend having external spreadsheet with the pharmacokinetic data in
+it, and then use <code><a href="../reference/add_samples.html">add_samples()</a></code> to add the samples with
+<code>vtime = TRUE</code> to the plate.</p>
+<p>Current supported pharmacokinetic information are: - Sample ID -
+Dosage - Route - CMT - Time - Factor (i.e strata)</p>
+<p>You might also specify the dilution factor for each sample with
+<code>dil</code>.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span></span>
-<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
 <span><span class="co">#&gt; Warning: Removed 76 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
 <p><img src="Plate_Design_files/figure-html/unnamed-chunk-10-1.png" width="1440"></p>
 <div class="section level3">
-<h3 id="adding-samples-manually-or-from-external-spreadsheet">Adding samples manually or from external spreadsheet<a class="anchor" aria-label="anchor" href="#adding-samples-manually-or-from-external-spreadsheet"></a>
+<h3 id="adding-samples-manually">Adding samples manually<a class="anchor" aria-label="anchor" href="#adding-samples-manually"></a>
 </h3>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="va">plate</span> <span class="op">|&gt;</span> </span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"sample1"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"sample2"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"sample3"</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"1"</span>, dosage <span class="op">=</span> <span class="st">"20mg"</span>, factor <span class="op">=</span> <span class="st">"M"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"2"</span>, dosage <span class="op">=</span> <span class="st">"30mg"</span>, factor <span class="op">=</span> <span class="st">"F"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="st">"3"</span>, dosage <span class="op">=</span> <span class="st">"50mg"</span>, factor <span class="op">=</span> <span class="st">"M"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> </span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"factor"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
 <span><span class="co">#&gt; Warning: Removed 93 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
 <p><img src="Plate_Design_files/figure-html/unnamed-chunk-11-1.png" width="1440"></p>
 </div>
 <div class="section level3">
-<h3 id="define-samples-by-attributes">Define samples by attributes<a class="anchor" aria-label="anchor" href="#define-samples-by-attributes"></a>
+<h3 id="adding-samples-from-external-spreadsheet-by-pharmacokinetic-data">Adding samples from external spreadsheet by pharmacokinetic
+data<a class="anchor" aria-label="anchor" href="#adding-samples-from-external-spreadsheet-by-pharmacokinetic-data"></a>
 </h3>
 <p>In this example, will will pass pharmacokinetic data to
 <code><a href="../reference/add_samples.html">add_samples()</a></code>. In this case, we don’t need to repeat time

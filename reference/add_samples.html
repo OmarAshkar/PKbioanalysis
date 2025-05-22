@@ -53,6 +53,8 @@
 <span>  dil <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  factor <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  dosage <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  route <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  cmt <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  prefix <span class="op">=</span> <span class="st">"S"</span>,</span>
 <span>  vtime <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -75,7 +77,7 @@
 
 
 <dt id="arg-conc">conc<a class="anchor" aria-label="anchor" href="#arg-conc"></a></dt>
-<dd><p>A vector representing concentration. Must be same length as samples.</p></dd>
+<dd><p>A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.</p></dd>
 
 
 <dt id="arg-dil">dil<a class="anchor" aria-label="anchor" href="#arg-dil"></a></dt>
@@ -90,12 +92,20 @@
 <dd><p>A vector representing dosage. Must be same length as samples.</p></dd>
 
 
+<dt id="arg-route">route<a class="anchor" aria-label="anchor" href="#arg-route"></a></dt>
+<dd><p>A vector representing route of administration. Must be same length as samples.</p></dd>
+
+
+<dt id="arg-cmt">cmt<a class="anchor" aria-label="anchor" href="#arg-cmt"></a></dt>
+<dd><p>A vector representing compartment. Must be same length as samples.</p></dd>
+
+
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
 <dd><p>A prefix to be added before samples names. Default is "S"</p></dd>
 
 
 <dt id="arg-vtime">vtime<a class="anchor" aria-label="anchor" href="#arg-vtime"></a></dt>
-<dd><p>A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE.</p></dd>
+<dd><p>A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -114,6 +124,27 @@ Conc, dil, factor and dosage are either a vector or a single value. If it is a v
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span> <span class="fu">add_samples</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"T"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">12</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">Indometh</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span></span>
+<span class="r-in"><span> <span class="fu">add_samples</span><span class="op">(</span></span></span>
+<span class="r-in"><span>   samples <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">Subject</span>, </span></span>
+<span class="r-in"><span>   time <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">time</span>, </span></span>
+<span class="r-in"><span>   dosage <span class="op">=</span> <span class="st">"100mg"</span>,</span></span>
+<span class="r-in"><span>   route <span class="op">=</span> <span class="st">"IV"</span>,</span></span>
+<span class="r-in"><span>   cmt <span class="op">=</span> <span class="st">"plasma"</span>,</span></span>
+<span class="r-in"><span>   vtime <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"samples"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Plate not registered. To register, use register_plate()</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 30 rows containing missing values or values outside the scale range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_text()`).</span>
+<span class="r-plt img"><img src="add_samples-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Plate not registered. To register, use register_plate()</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 30 rows containing missing values or values outside the scale range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_text()`).</span>
+<span class="r-plt img"><img src="add_samples-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
