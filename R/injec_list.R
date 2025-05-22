@@ -122,14 +122,14 @@ write_injec_seq <- function(injec_seq){
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
 
   # find last unqiue ID and add 1
-  max_id_query <- "SELECT MAX(id) AS max_id FROM metadata"
+  max_id_query <- "SELECT MAX(list_id) AS max_id FROM platesdb"
   max_id_result <- DBI::dbGetQuery(db, max_id_query)
   max_id <- max_id_result$max_id
   max_id <- ifelse(is.na(max_id), 1, as.numeric(max_id) + 1)
 
-  # metadata table
+  # platesdb table
   sample_list <- sample_list |> dplyr::mutate(list_id = as.integer(max_id))
-  metadatadb <- data.frame(id = max_id,
+  platesdb <- data.frame(list_id = max_id,
     date = as.character(Sys.Date()),
     description = injec_seq$injec_list$FILE_TEXT[1],
     assoc_plates = paste(injec_seq$plates, collapse = ","))
@@ -141,8 +141,8 @@ write_injec_seq <- function(injec_seq){
 
   ## against db
   tryCatch({
+    DBI::dbWriteTable(db, "platesdb", platesdb, append = TRUE, row.names = FALSE)
     DBI::dbWriteTable(db, "samples", sample_list, append = TRUE, row.names = FALSE)
-    DBI::dbWriteTable(db, "metadata", metadatadb, append = TRUE, row.names = FALSE)
     duckdb::dbDisconnect(db, shutdown = TRUE)
   }, error = function(e) {
     duckdb::dbDisconnect(db, shutdown = TRUE)
@@ -250,7 +250,7 @@ print.InjecListObj <- function(x, ...) {
         file.path("samples.db")
 
     db <- duckdb::dbConnect( duckdb::duckdb(), dbdir = db_path)
-    max_id_query <- "SELECT MAX(id) AS max_id FROM metadata"
+    max_id_query <- "SELECT MAX(list_id) AS max_id FROM platesdb"
     max_id_result <- DBI::dbGetQuery(db, max_id_query)
     max_id <- max_id_result$max_id
     duckdb::dbDisconnect(db, shutdown = TRUE)

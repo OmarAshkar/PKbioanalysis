@@ -30,10 +30,10 @@
   db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
-  metadata <- DBI::dbGetQuery(db, "SELECT * FROM metadata")
+  platesdb <- DBI::dbGetQuery(db, "SELECT * FROM platesdb")
   duckdb::dbDisconnect(db, shutdown = TRUE)
 
-  metadata
+  platesdb
 }
 
 .get_samplelist <- function(id){
@@ -54,10 +54,25 @@
 
   # Check if the database file exists
   db <- duckdb::dbConnect(duckdb::duckdb(), db_path)
+
+  # This id auto increments and is assigned to list_id above
+  DBI::dbExecute(db, "
+    CREATE TABLE IF NOT EXISTS platesdb (
+      list_id INTEGER PRIMARY KEY, 
+      date TEXT,
+      assoc_plates TEXT,
+      description TEXT,
+      UNIQUE(list_id)
+    );
+  ") # id, date, assoc_plates
+
   DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS samples (
     file_name TEXT PRIMARY KEY,
-    list_id INTEGER,
+
+    list_id INTEGER REFERENCES platesdb(list_id),
+    plate_id INTEGER,
+
     inlet_method TEXT,
     row INTEGER,
     col INTEGER,
@@ -110,20 +125,13 @@
     factor TEXT,
     dil TEXT,
     dosage TEXT,
+    route TEXT,
+    cmt TEXT,
+
     UNIQUE(file_name)
   );
 ")
 
-# This id auto increments and is assigned to list_id above
-DBI::dbExecute(db, "
-  CREATE TABLE IF NOT EXISTS metadata (
-    id INTEGER PRIMARY KEY,
-    date TEXT,
-    assoc_plates TEXT,
-    description TEXT,
-    UNIQUE(id)
-  );
-") # id, date, assoc_plates
 
 # chromatogram table
 DBI::dbExecute(db, "
@@ -146,18 +154,12 @@ CREATE TABLE IF NOT EXISTS chroms (
 DBI::dbExecute(db, " 
   CREATE TABLE IF NOT EXISTS chrom_files_metadata (
     chrom_id INTEGER PRIMARY KEY,
-    file_name TEXT NOT NULL,
+    file_name TEXT NOT NULL REFERENCES samples(file_name),
     type TEXT,
     std_rep INTEGER,
     sample_location TEXT,
     inj_vol REAL,
     date TEXT,
-
-    conc TEXT,
-    time TEXT,
-    factor TEXT,
-    dosage TEXT,
-
     UNIQUE(file_name)
   )
 ")

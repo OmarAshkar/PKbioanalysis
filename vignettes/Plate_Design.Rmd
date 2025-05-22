@@ -101,28 +101,39 @@ Finally, you can use `plate_app()` to further inspect the plates or to generate 
 plate_app()
 ```
 
-## Adding samples
+## Adding samples with pharmackinetic information
+
+PKbioanalysis offers multiple ways to add samples to plate. We recommend having external spreadsheet with the pharmacokinetic data in it, and then use `add_samples()` to add the samples with `vtime = TRUE` to the plate.
+
+Current supported pharmacokinetic information are: 
+    - Sample ID 
+    - Dosage
+    - Route
+    - CMT
+    - Time
+    - Factor (i.e strata)
+
+You might also specify the dilution factor for each sample with `dil`.
 
 ```{r}
 plate <- generate_96() |> add_samples(1:20)
-
 plot(plate)
 ```
 
-### Adding samples manually or from external spreadsheet
+### Adding samples manually 
 
 ```{r}
 plate <- generate_96()
 
 plate <- plate |> 
-    add_samples("sample1") |> 
-    add_samples("sample2") |>
-    add_samples("sample3")
+    add_samples("sample1", dosage = "A", factor = "M", time = 1) |>
+    add_samples("sample2", dosage = "A", factor = "F", time = 1) |>
+    add_samples("sample3", dosage = "B", factor = "M", time = 1) |>
 
 plot(plate)
 ```
 
-### Define samples by attributes
+### Adding samples from external spreadsheet by pharmacokinetic data
 
 In this example, will will pass pharmacokinetic data to `add_samples()`. 
 In this case, we don't need to repeat time for each sample, hence we set `vtime = TRUE`. 

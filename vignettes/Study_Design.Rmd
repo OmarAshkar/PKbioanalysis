@@ -39,3 +39,25 @@ plot(study)
 ```{r}
 plot_design(study)
 ```
+
+
+```{r}
+data(Indometh)
+plate <- generate_96() |> 
+  add_samples(
+    samples = Indometh$Subject, 
+    time = Indometh$time, 
+    dosage = "100mg",
+    route = "IV",
+    cmt = "plasma",
+    vtime = TRUE)
+```
+
+```{r}
+plot(plate, color = "samples")
+plot(plate, color = "time")
+```
+
+```{r}
+plot_design(plate)
+```

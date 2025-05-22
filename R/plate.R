@@ -77,6 +77,8 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
     dplyr::mutate(time = as.numeric(NA)) |>
     dplyr::mutate(factor = as.character(NA)) |>
     dplyr::mutate(dosage = as.character(NA)) |>
+    dplyr::mutate(route = as.character(NA)) |>
+    dplyr::mutate(cmt = as.character(NA)) |>
     dplyr::mutate(TYPE = as.character(NA))  |>
     dplyr::mutate(std_rep = as.numeric(NA)) |> 
     dplyr::mutate(e_rep = as.numeric(NA)) 
@@ -104,11 +106,13 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' @param plate PlateObj
 #' @param samples A vector representing samples names. Must be unique.
 #' @param time A vector representing time points. If vtime = FALSE, time will propagate to all samples.
-#' @param conc A vector representing concentration. Must be same length as samples.
+#' @param conc A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.
 #' @param dil A vector representing dilution factor. Must be same length as samples.
 #' @param factor A vector representing factor. Must be same length as samples.
+#' @param route A vector representing route of administration. Must be same length as samples.
+#' @param cmt A vector representing compartment. Must be same length as samples.
 #' @param dosage A vector representing dosage. Must be same length as samples.
-#' @param vtime A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE.
+#' @param vtime A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE
 #' @param prefix A prefix to be added before samples names. Default is "S"
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
@@ -120,13 +124,30 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' @examples
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
-add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor = NA, dosage = NA , prefix = "S", vtime = FALSE) {
+#' 
+#' data(Indometh)
+#' plate <- generate_96() |> 
+#'  add_samples(
+#'    samples = Indometh$Subject, 
+#'    time = Indometh$time, 
+#'    dosage = "100mg",
+#'    route = "IV",
+#'    cmt = "plasma",
+#'    vtime = TRUE)
+#' plot(plate, color = "samples")
+#' plot(plate, color = "time")
+#' 
+add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, 
+  factor = NA, dosage = NA, 
+  route = NA, cmt  = NA , prefix = "S", vtime = FALSE) {
   checkmate::assertVector(samples, unique = FALSE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
   checkmate::assertNumeric(dil, null.ok = FALSE)
   checkmate::assertVector(factor, null.ok = FALSE)
   checkmate::assertVector(dosage, null.ok = FALSE)
+  checkmate::assertVector(route, null.ok = FALSE)
+  checkmate::assertVector(cmt, null.ok = FALSE)
   checkmate::assertLogical(vtime)
   checkmate::assertClass(plate, "PlateObj")
 
@@ -147,13 +168,14 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
 
 
   if(vtime){
-    samples_df <- data.frame(samples = samples, time = time, factor = factor, conc = conc, dosage = dosage, dil = dil) |>
+    samples_df <- data.frame(samples = samples, time = time, factor = factor, conc = conc, dosage = dosage, dil = dil, route = route, cmt = cmt) |>
       dplyr::arrange(.data$samples, .data$time)
   } else{
     samples_time <- expand.grid(samples = samples, time = time) |>
       dplyr::arrange(.data$samples, .data$time)
 
-    samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil)  |> distinct()
+    samples_factors <- data.frame(samples = samples, factor = factor, conc = conc, dosage = dosage, dil = dil, route = route, cmt = cmt) |>
+      distinct()
 
     samples_df <- left_join(samples_time, samples_factors, by = "samples") 
   }
@@ -166,13 +188,20 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
       factor = as.character(.data$factor), 
       conc = as.character(.data$conc), 
       dosage = as.character(.data$dosage), 
-      dil = as.numeric(.data$dil)) |> 
+      dil = as.numeric(.data$dil), 
+      time = as.numeric(.data$time), 
+      route = as.character(.data$route),
+      cmt = as.character(.data$cmt)) |> 
     dplyr::mutate(value = ifelse(!is.null(prefix), paste0(prefix, .data$samples), .data$samples)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$time), paste0(.data$value, "_T", .data$time), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$conc), paste0(.data$value, "_", .data$conc), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$dosage), paste0(.data$value, "_", .data$dosage), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$dil), paste0(.data$value, "_", .data$dil, "X"), .data$value)) |>
-    dplyr::mutate(value = ifelse(!is.na(.data$factor), paste0(.data$value, "_", .data$factor), .data$value)) 
+    dplyr::mutate(value = ifelse(!is.na(.data$factor), paste0(.data$value, "_", .data$factor), .data$value))  |>
+    dplyr::mutate(value = ifelse(!is.na(.data$route), paste0(.data$value, "_", .data$route), .data$value)) |>
+    dplyr::mutate(value = ifelse(!is.na(.data$cmt), paste0(.data$value, "_", .data$cmt), .data$value)) 
+
+
 
   # check if the length of the samples samples are equal
 
@@ -195,6 +224,8 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, factor 
         TYPE = "Analyte",
         time = samples_df$time[i],
         factor = samples_df$factor[i],
+        route = samples_df$route[i],
+        cmt = samples_df$cmt[i],
         std_rep = NA,
         e_rep = .last_entity(plate_obj, "Analyte") + 1
       )
@@ -741,7 +772,7 @@ make_calibration_study <-
 #' Plotting 96 well plate
 #'
 #' @param x PlateObj
-#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage"
+#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dosage", "route", "cmt"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
@@ -777,7 +808,7 @@ plot.PlateObj <- function(x,
 
   plate <- x
   checkmate::assertClass(plate, "PlateObj")
-  checkmate::assertChoice(color, c("conc", "time", "factor", "dosage", "samples"))
+  checkmate::assertChoice(color, c("conc", "time", "factor", "dosage", "samples", "route", "cmt"))
   checkmate::assertCharacter(Instrument)
   checkmate::assertCharacter(caption)
   checkmate::assertCharacter(path, null.ok = TRUE)

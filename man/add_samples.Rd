@@ -12,6 +12,8 @@ add_samples(
   dil = NA,
   factor = NA,
   dosage = NA,
+  route = NA,
+  cmt = NA,
   prefix = "S",
   vtime = FALSE
 )
@@ -23,7 +25,7 @@ add_samples(
 
 \item{time}{A vector representing time points. If vtime = FALSE, time will propagate to all samples.}
 
-\item{conc}{A vector representing concentration. Must be same length as samples.}
+\item{conc}{A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.}
 
 \item{dil}{A vector representing dilution factor. Must be same length as samples.}
 
@@ -31,9 +33,13 @@ add_samples(
 
 \item{dosage}{A vector representing dosage. Must be same length as samples.}
 
+\item{route}{A vector representing route of administration. Must be same length as samples.}
+
+\item{cmt}{A vector representing compartment. Must be same length as samples.}
+
 \item{prefix}{A prefix to be added before samples names. Default is "S"}
 
-\item{vtime}{A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE.}
+\item{vtime}{A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE}
 }
 \value{
 PlateObj
@@ -50,4 +56,17 @@ Conc, dil, factor and dosage are either a vector or a single value. If it is a v
 \examples{
 plate <- generate_96() |>
  add_samples(paste0("T", 1:12))
+
+data(Indometh)
+plate <- generate_96() |> 
+ add_samples(
+   samples = Indometh$Subject, 
+   time = Indometh$time, 
+   dosage = "100mg",
+   route = "IV",
+   cmt = "plasma",
+   vtime = TRUE)
+plot(plate, color = "samples")
+plot(plate, color = "time")
+
 }
