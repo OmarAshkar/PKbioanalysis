@@ -126,11 +126,11 @@ plot(plate)
 plate <- generate_96()
 
 plate <- plate |> 
-    add_samples("sample1", dosage = "A", factor = "M", time = 1) |>
-    add_samples("sample2", dosage = "A", factor = "F", time = 1) |>
-    add_samples("sample3", dosage = "B", factor = "M", time = 1) |>
+    add_samples("1", dosage = "A", factor = "M", time = 1, dosage = 10) |>
+    add_samples("2", dosage = "A", factor = "F", time = 1, dosage = 30) |>
+    add_samples("3", dosage = "B", factor = "M", time = 1, dosage = 20) 
 
-plot(plate)
+plot(plate, color = "factor")
 ```
 
 ### Adding samples from external spreadsheet by pharmacokinetic data
