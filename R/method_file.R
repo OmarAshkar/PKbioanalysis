@@ -3,7 +3,8 @@
     res <- yaml::read_yaml(path)
     res$compounds <- do.call(rbind,
         lapply(res$compounds, function(x){
-            data.frame(compound = x$cmpd, q1 = x$q1, q3 = x$q3, qualifier = x$qualifier)
+            data.frame(compound = x$cmpd, q1 = x$q1, q3 = x$q3, 
+            qualifier = x$qualifier)
         }))
     res
 }
@@ -13,7 +14,7 @@
 
     # check there is one method, description and compounds
     checkmate::assertNames(names(cmpds_list),
-        must.include = c("method", "description", "gradient", "compounds"), type = "unique")
+        must.include = c("method", "description", "gradient", "compounds", "column"), type = "unique")
     checkmate::assertDataFrame(cmpds_list$compounds)
     # drop empty rows
     cmpds_list$compounds <- cmpds_list$compounds[!is.na(cmpds_list$compounds$compound), ]
@@ -24,12 +25,18 @@
 
     db <- .connect_to_db()
     # create new method ID
-    q <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
-    method_id <- ifelse(is.na(q), 1, q+1)
+    max_method_id <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
+    method_id <- ifelse(is.na(max_method_id), 1, max_method_id+1)
 
+    max_cmpd_id <- DBI::dbGetQuery(db, "SELECT MAX(compound_id) FROM compoundstab") |> as.numeric() |> max()
+    cmpd_id <- ifelse(is.na(max_cmpd_id), 1, max_cmpd_id+1)
+
+    max_trans_id <- DBI::dbGetQuery(db, "SELECT MAX(transition_id) FROM transtab") |> as.numeric() |> max()
+    trans_id <- ifelse(is.na(max_trans_id), 1, max_trans_id+1)
 
     unique_methods_df <-  data.frame(method_id = method_id) |>
         dplyr::mutate(method = cmpds_list$method) |>
+        dplyr::mutate(method_column = cmpds_list$column) |>
         dplyr::mutate(method_descr = cmpds_list$description) |>
         dplyr::mutate(method_gradient = cmpds_list$gradient) |>
         dplyr::distinct()
@@ -42,19 +49,18 @@
         dplyr::arrange("q1", "q3") |>
         dplyr::distinct() |>
         dplyr::mutate(method_id = method_id) |>
-        dplyr::mutate(method_gradient = cmpds_list$gradient) |>
         dplyr::mutate(transition_label = paste0(.data$q1, " > ", .data$q3)) |>
-        dplyr::mutate(transition_id = paste0("T", dplyr::row_number()))
+        dplyr::mutate(transition_id = seq(trans_id, trans_id+dplyr::n()-1)) 
 
     # avoid repeated transitions in the same method
     checkmate::assertVector(unique_trans_df$transition_label, unique = TRUE)
 
     checkmate::assertNames(names(unique_methods_df),
-        must.include = c("method_id", "method_descr", "method_gradient"))
+        must.include = c("method_id", "method_descr", "method_gradient",
+            "method_column", "method"), type = "unique")
 
-    # create sequence for autoincrement compound_id
-    cmpd_id <- seq(1, nrow(cmpds_list$compounds))
-    cmpd_id <- paste0("C", cmpd_id)
+    # autoincrement compound_id
+    cmpd_id <- seq(cmpd_id, nrow(cmpds_list$compounds) + cmpd_id - 1)
 
     # join transition_id to compoundstab
     transitions_df <- cmpds_list$compounds |>
@@ -65,11 +71,13 @@
     DBI::dbBegin(db)
 
     tryCatch({
+        
+        # Add to methodstab
+        DBI::dbAppendTable(db, "methodstab", unique_methods_df)
+        
         # Add trans first to check if they were added before adding the entire method.
         DBI::dbAppendTable(db, "transtab", unique_trans_df)
 
-        # Add to methodstab
-        DBI::dbAppendTable(db, "methodstab", unique_methods_df)
 
         # Add to compoundstab. Add all compound names, but only one method_id
         DBI::dbAppendTable(db, "compoundstab",
@@ -77,7 +85,6 @@
                 dplyr::mutate(method_id = method_id) |>
                 dplyr::mutate(compound_id = cmpd_id) |>
                 dplyr::select(
-                    "method_id",
                     "compound_id",
                     "compound",
                     "qualifier",
@@ -107,23 +114,30 @@
     methods
 }
 
+.get_method_transitions <- function(method_id){
+    .check_sample_db()
+    db <- .connect_to_db()
+    transitions <- DBI::dbGetQuery(db, paste0("SELECT * FROM transtab WHERE method_id = ", method_id)) |> 
+        as.data.frame()
+    duckdb::dbDisconnect(db, shutdown = TRUE)
+    transitions
+}
+
 .get_method_cmpds <- function(method_id){
     .check_sample_db()
     db <- .connect_to_db()
-    cmpds <- DBI::dbGetQuery(db, paste0("SELECT * FROM compoundstab WHERE method_id = ", method_id)) |> 
+
+    transitions <- .get_method_transitions(method_id)
+
+    cmpds <- DBI::dbGetQuery(db, paste0("SELECT * FROM compoundstab WHERE transition_id IN (", paste(transitions$transition_id, collapse = ","), ")")) |>
         as.data.frame()
     
     if(nrow(cmpds) == 0){
         stop("No compounds found for method_id ", method_id)
     }
 
-    transitionsdf <- DBI::dbGetQuery(db, paste0("SELECT * FROM transtab WHERE method_id = ", method_id)) |> 
-        as.data.frame() |> 
-        dplyr::select(-"method_id")
-    duckdb::dbDisconnect(db, shutdown = TRUE)
-
     cmpds |>
-        dplyr::left_join(transitionsdf, by = "transition_id")
+        dplyr::left_join(transitions, by = "transition_id")
 
 }
 

@@ -22,7 +22,9 @@ test_that("save_injecseq_csv", {
   x |> build_injec_seq(inject_vol = 2, suffix = "4", tray = "1", method = "method.q") |> # suffix changed
     write_injec_seq()  |> expect_no_error() # changed the suffix
 
-  write_injec_seq(mylist)  |> expect_message()  # already written
+  write_injec_seq(mylist)  |> expect_error("Error writing")  # already written
+
+  .get_samplesdb_metadata() |> expect_no_error()
 
 })
 

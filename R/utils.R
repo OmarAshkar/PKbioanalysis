@@ -1,4 +1,3 @@
-
 #'@noRd
 .connect_to_db <- function(){
   db_path <- PKbioanalysis_env$data_dir |>
@@ -7,7 +6,6 @@
   db
 
 }
-
 
 
 #' Delete samples database
@@ -26,7 +24,6 @@
 #' @noRd
 .get_samplesdb_metadata <- function(){
   .check_sample_db()
-
   db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
@@ -54,7 +51,6 @@
 
   # Check if the database file exists
   db <- duckdb::dbConnect(duckdb::duckdb(), db_path)
-
   # This id auto increments and is assigned to list_id above
   DBI::dbExecute(db, "
     CREATE TABLE IF NOT EXISTS platesdb (
@@ -133,36 +129,41 @@
 ")
 
 
+DBI::dbExecute(db, " 
+  CREATE TABLE IF NOT EXISTS chromexpdb (
+    exp_id INTEGER PRIMARY KEY,
+    exp_name TEXT NOT NULL
+  )
+")
+
+# methods tab
+## method_descr: description of the method
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS methodstab (
+  method_id INTEGER PRIMARY KEY,
+  method TEXT NOT NULL,
+  method_descr TEXT,
+  method_gradient TEXT,
+  method_column TEXT,
+  UNIQUE(method_id),
+  UNIQUE(method)
+);" )
+
 # chromatogram table
 DBI::dbExecute(db, "
 CREATE TABLE IF NOT EXISTS chroms (
   chrom_id INTEGER PRIMARY KEY,
+  exp_id INTEGER NOT NULL REFERENCES chromexpdb(exp_id),
+  method_id INTEGER NOT NULL REFERENCES methodstab(method_id),
   file_name TEXT NOT NULL,
-  compound TEXT,
-  compound_id INTEGER NOT NULL,
-  transition_id INTEGER NOT NULL,
-  observed_rt REAL,
-  observed_rt_start REAL,
-  observed_rt_end REAL,
-  observed_peak_height REAL,
-  area REAL,
-  manual INTEGER NOT NULL DEFAULT 0,
+  type TEXT,
+  sample_location TEXT,
+  inj_vol REAL,
   date TEXT,
-  UNIQUE(chrom_id)
+  UNIQUE(file_name)
 );")
 
-DBI::dbExecute(db, " 
-  CREATE TABLE IF NOT EXISTS chrom_files_metadata (
-    chrom_id INTEGER PRIMARY KEY,
-    file_name TEXT NOT NULL REFERENCES samples(file_name),
-    type TEXT,
-    std_rep INTEGER,
-    sample_location TEXT,
-    inj_vol REAL,
-    date TEXT,
-    UNIQUE(file_name)
-  )
-")
+
 
 
 # gradient methods table
@@ -177,47 +178,13 @@ DBI::dbExecute(db, "
 
 DBI::dbExecute(db, "
 CREATE TABLE IF NOT EXISTS transtab (
-  method_id INTEGER,
-  method_gradient TEXT,
+  transition_id INTEGER PRIMARY KEY,
+  transition_label TEXT,
+  method_id INTEGER NOT NULL REFERENCES methodstab(method_id),
   q1 REAL,
   q3 REAL,
-  inlet_method TEXT,
-  transition_label TEXT,
-  transition_id TEXT,
   UNIQUE(method_id, transition_id)
 );" )
-
-# methods tab
-## method_descr: description of the method
-DBI::dbExecute(db, "
-CREATE TABLE IF NOT EXISTS methodstab (
-  method_id INTEGER PRIMARY KEY,
-  method TEXT NOT NULL,
-  method_descr TEXT,
-  method_gradient TEXT,
-  UNIQUE(method_id),
-  UNIQUE(method)
-);" )
-
-
-DBI::dbExecute(db, "
-  CREATE TABLE IF NOT EXISTS peakstab (
-    peak_id INTEGER PRIMARY KEY,
-    file_name TEXT NOT NULL,
-    compound TEXT,
-    compound_id INTEGER NOT NULL,
-    transition_id INTEGER NOT NULL,
-    observed_rt REAL,
-    observed_rt_start REAL,
-    observed_rt_end REAL,
-    observed_peak_height REAL,
-    area REAL,
-    manual INTEGER NOT NULL DEFAULT 0,
-    date TEXT,
-    UNIQUE(peak_id)
-  );
-
-")
 
 
 # non on the three first columns are unique.
@@ -225,21 +192,38 @@ DBI::dbExecute(db, "
 # IS is a property of compound. Call get_IS_name to get the IS for a compound
 DBI::dbExecute(db, "
   CREATE TABLE IF NOT EXISTS compoundstab (
-    method_id INTEGER NOT NULL,
-    transition_id TEXT NOT NULL,
-    compound_id TEXT NOT NULL,
+    compound_id INTEGER NOT NULL PRIMARY KEY,
+    transition_id INTEGER NOT NULL REFERENCES transtab(transition_id),
     qualifier BOOLEAN NOT NULL,
     compound TEXT,
     expected_peak_start REAL,
     expected_peak_end REAL,
     expected_rt REAL,
     IS_id TEXT,
-    UNIQUE(method_id, transition_id, compound_id)
+    UNIQUE(transition_id, compound_id)
   );
 
 ")
 
-duckdb::dbDisconnect(db, shutdown = TRUE)
+DBI::dbExecute(db, "
+  CREATE TABLE IF NOT EXISTS peakstab (
+    peak_id INTEGER PRIMARY KEY,
+    chrom_id INTEGER NOT NULL REFERENCES chroms(chrom_id),
+    compound_id INTEGER NOT NULL REFERENCES compoundstab(compound_id),
+    observed_rt REAL,
+    observed_rt_start REAL,
+    observed_rt_end REAL,
+    observed_peak_height REAL,
+    area REAL,
+    manual INTEGER NOT NULL DEFAULT 0,
+    date TEXT
+  );
+
+")
+
+
+
+  duckdb::dbDisconnect(db, shutdown = TRUE)
 }
 
 

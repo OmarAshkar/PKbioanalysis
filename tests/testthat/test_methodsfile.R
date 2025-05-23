@@ -6,10 +6,14 @@ test_that("retreive database", {
         .parse_cmpds()  |> suppressWarnings()
     .save_cmpd_db(x)
     .get_methodsdb() |> expect_no_error()
+    .get_method_transitions(1) |> nrow() |> expect_equal(7)
     .get_method_cmpds(1)$compound |> 
         expect_equal(x$compounds$compound)
 
-    # repeat the call on same transitons is not allowed.
+    # repeat the call on same everything. Error due to duplicated method name
     .save_cmpd_db(x) |> expect_error()
+
+    x$method <- "new_method"
+    .save_cmpd_db(x) |> expect_no_error()
 })
 

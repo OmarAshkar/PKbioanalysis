@@ -101,9 +101,8 @@ combine_injec_lists <-
 #' Write injection sequence to database
 #'
 #' @param injec_seq InjecListObj object
-#'
+#' @return dataframe 
 #' @export
-#' @returns dataframe
 write_injec_seq <- function(injec_seq){
   checkmate::assertClass(injec_seq, "InjecListObj")
 
@@ -138,19 +137,23 @@ write_injec_seq <- function(injec_seq){
   ## against itself
   stopifnot(anyDuplicated(sample_list$file_name) == 0)
 
-
-  ## against db
   tryCatch({
-    DBI::dbWriteTable(db, "platesdb", platesdb, append = TRUE, row.names = FALSE)
-    DBI::dbWriteTable(db, "samples", sample_list, append = TRUE, row.names = FALSE)
-    duckdb::dbDisconnect(db, shutdown = TRUE)
+    DBI::dbBegin(db)
+  
+    DBI::dbAppendTable(db, "platesdb", platesdb)
+    DBI::dbAppendTable(db, "samples", sample_list)
+  
+    DBI::dbCommit(db)
   }, error = function(e) {
-    duckdb::dbDisconnect(db, shutdown = TRUE)
-    message("Error writing to database: ", e$message)
-    # message("Previous samples with same name deteted. Change prefix or suffix to avoid duplicates.")
+    DBI::dbRollback(db)
+    stop("Error writing to database: Might be due to duplicates. Try changing the suffix or plate.")
+  }, finally = {
+    DBI::dbDisconnect(db, shutdown = TRUE)
+    gc()
   })
 
   sample_list
+  
 }
 
 
@@ -182,13 +185,13 @@ download_sample_list <- function(sample_list, vendor){
 
     sample_list <- sample_list |>
       dplyr::rename_all(toupper) |>
-      dplyr::rename(`Sample Name` = .data$FILE_NAME) |>
-      dplyr::rename(`Data File` = .data$FILE_NAME) |>
-      dplyr::rename(Description = .data$FILE_TEXT) |>
-      dplyr::rename(Vial = .data$SAMPLE_LOCATION) |>
-      dplyr::rename(Volume = .data$INJ_VOL) |>
-      dplyr::rename(`Sample Type` = .data$TYPE) |>
-      dplyr::rename(`Dil. factor 1` = .data$CONC_A) |>
+      dplyr::rename(`Sample Name` = "FILE_NAME") |>
+      dplyr::rename(`Data File` = "FILE_NAME") |>
+      dplyr::rename(Description = "FILE_TEXT") |>
+      dplyr::rename(Vial = "SAMPLE_LOCATION") |>
+      dplyr::rename(Volume = "INJ_VOL") |>
+      dplyr::rename(`Sample Type` = "TYPE") |>
+      dplyr::rename(`Dil. factor 1` = "CONC_A") |>
       dplyr::select(matches("Data file"), matches("Description"),
         matches("Vial"), matches("Volume"), starts_with("Dil. factor")) |>
       dplyr::mutate(Vial = \(x){ # to
@@ -204,13 +207,13 @@ download_sample_list <- function(sample_list, vendor){
 
     sample_list <- sample_list |>
       dplyr::rename_all(toupper) |>
-      dplyr::rename(`Sample Name` = .data$FILE_NAME) |>
-      dplyr::rename(`Data File` = .data$FILE_NAME) |>
-      dplyr::rename(Description = .data$FILE_TEXT) |>
-      dplyr::rename(Vial = .data$SAMPLE_LOCATION) |>
-      dplyr::rename(Volume = .data$INJ_VOL) |>
-      dplyr::rename(`Sample Type` = .data$TYPE) |>
-      dplyr::rename(`Dil. factor 1` = .data$CONC_A) |>
+      dplyr::rename(`Sample Name` = "FILE_NAME") |>
+      dplyr::rename(`Data File` = "FILE_NAME") |>
+      dplyr::rename(Description = "FILE_TEXT") |>
+      dplyr::rename(Vial = "SAMPLE_LOCATION") |>
+      dplyr::rename(Volume = "INJ_VOL") |>
+      dplyr::rename(`Sample Type` = "TYPE") |>
+      dplyr::rename(`Dil. factor 1` = "CONC_A") |>
       dplyr::select(matches("Data file"), matches("Description"),
         matches("Vial"), matches("Volume"), starts_with("Dil. factor")) |>
       dplyr::mutate(Vial = \(x){ # to

@@ -333,10 +333,6 @@ plate_app <- function() {
             # design 
           bslib::nav_panel("Design",
             h2("Design"),
-            layout_column_wrap(
-              width = 1/2, #height = 100,
-              selectInput("design_rep", "Layout", choices = 1:10)
-            ),
             DiagrammeR::grVizOutput("design_graph_grviz_out", width = "100%"),
           )
           ))),
@@ -368,7 +364,7 @@ plate_app <- function() {
       # get row id and recover sample list from db
       index <- input$sample_list_metatable_DT_rows_selected
       id <- current_sample_list_metatable() |>
-        filter(row_number() == index) |> pull(id)
+        filter(row_number() == index) |> pull("list_id")
       .get_samplelist(id)  |> select(-"row", -"col", -"list_id") |>
         current_visible_sample_db()
     })
@@ -676,6 +672,16 @@ plate_app <- function() {
           index_prot <- if(index_prot == 1) 1 else seq(1, index_prot, 1)
 
           for(i in index_prot){
+             
+             if(!is.null(current_cmpd_df())){
+                # filter only correct method
+                cmpd_df <- current_cmpd_df() |>
+                    filter(.data$method == input[[paste0("inlet_method_select_prot", i)]]) |>    # filter only correct method
+                    dplyr::select("compound", "ratio")
+             } else {
+                cmpd_df <- NULL
+             }
+
              injseq_list[[i]] <- plates_list |>
               build_injec_seq(descr = input[[paste0("descr_prot", i)]],
                 method =   input[[paste0("inlet_method_select_prot", i)]],
@@ -689,9 +695,7 @@ plate_app <- function() {
                 repeat_analyte = input[[paste0("repeat_sample_prot", i)]],
                 repeat_qc = input[[paste0("repeat_qc_prot", i)]],
                 explore_mode = input[[paste0("exploratory_samples_alg_prot", i)]],
-                conc_df = current_cmpd_df() |>
-                  filter(.data$method == input[[paste0("inlet_method_select_prot", i)]]) |>    # filter only correct method
-                  dplyr::select("compound", "ratio"), # only compound and ratio columns
+                conc_df = cmpd_df,
                 inject_vol = input[[paste0("injec_vol_prot", i)]])
           } # filter only correct method
 
@@ -784,11 +788,6 @@ plate_app <- function() {
 
     current_injec_seq_summary <- reactiveVal(NULL)
 
-    # outputOptions(output, "sample_list_summary", suspendWhenHidden = FALSE)
-    # outputOptions(output, "total_injections", suspendWhenHidden = FALSE)
-    # outputOptions(output, "max_vol", suspendWhenHidden = FALSE)
-    # outputOptions(output, "min_vol", suspendWhenHidden = FALSE)
-
     output$sample_list_summary <- DT::renderDT({
       req(class(current_plate()) == "RegisteredPlate")
       req(current_injec_seq())
@@ -796,7 +795,8 @@ plate_app <- function() {
       if(!lock_export()){
         d <- current_injec_seq()$injec_list  |>
           dplyr::select("INJ_VOL", "SAMPLE_LOCATION", "value") |>
-          dplyr::summarise(total_vol = sum(.data$INJ_VOL), .by = c("SAMPLE_LOCATION", "value"))
+          dplyr::summarise(total_vol = sum(.data$INJ_VOL), .by = c("SAMPLE_LOCATION", "value")) |> 
+          dplyr::arrange(.data$total_vol) 
 
         current_injec_seq_summary(d)
 
@@ -949,12 +949,16 @@ plate_app <- function() {
         dplyr::filter(.data$to == node_label) |>
         dplyr::pull("label") |> dilution_factor_label()
 
-      showModal(modalDialog(
-        node_id$nodeValues[[1]],
-        paste0("Dilution factor: ", dilution_factor_label()),
-        numericInput("final_dil_vol", "Final Volume", value = 1, min = 0.1, max = 10000),
-        textOutput("final_vol_output")
-      ))
+      if(length(dilution_factor_label()) == 0){
+        showNotification("Vial has no precedents", type = "warning")
+      } else{
+        showModal(modalDialog(
+          node_id$nodeValues[[1]],
+          paste0("Dilution factor: ", dilution_factor_label()),
+          numericInput("final_dil_vol", "Final Volume", value = 1, min = 0.1, max = 10000),
+          textOutput("final_vol_output")
+        ))
+      }
     })
 
     output$final_vol_output <- renderText({
@@ -998,7 +1002,6 @@ output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
       },
         error = function(e) {showNotification(e$message, type = "error")}
       )
-
       current_sample_list_metatable(.get_samplesdb_metadata())
     })
     output$plate_id_plateview_output <- renderText({
@@ -1076,6 +1079,7 @@ output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
           textInput("method_name", "Method Name"),
           textInput("method_description", "Description"),
           textInput("method_gradient", "Gradient"),
+          textInput("method_column", "Column"),
           bslib::tooltip( bsicons::bs_icon("question-circle"),
             "For more compounds: Right-click > Insert row.",
               placement = "right"),
@@ -1125,6 +1129,7 @@ output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
       res <- list(method = input$method_name,
         description = input$method_description,
         gradient = input$method_gradient,
+        column = input$method_column,
         compounds = capture_method_cmpd_df)
 
       tryCatch(
