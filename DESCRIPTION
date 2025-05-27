@@ -17,7 +17,7 @@ RoxygenNote: 7.3.2
 Depends: 
     R (>= 4.3.0)
 Imports: 
-    dplyr (>= 1.1.3),
+    dplyr,
     tidyselect,
     stringr (>= 1.5.1),
     ggplot2 (>= 3.5.1),
@@ -43,11 +43,19 @@ Imports:
     utils,
     yaml,
     rhandsontable,
-    methods
+    methods,
+    reticulate,
+    janitor,
+    cli,
+    tibble,
+    xml2,
+    RaMS
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+SystemRequirements: 
+    python (>= 3.10)
 URL: https://omarashkar.github.io/PKbioanalysis/
 BugReports: https://github.com/OmarAshkar/PKbioanalysis/issues
 Config/testthat/edition: 3

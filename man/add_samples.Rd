@@ -2,7 +2,7 @@
 % Please edit documentation in R/plate.R
 \name{add_samples}
 \alias{add_samples}
-\title{Add unknown samples to a plate}
+\title{Add samples to plate with pharmacokinetic attributes}
 \usage{
 add_samples(
   plate,
@@ -14,7 +14,7 @@ add_samples(
   dosage = NA,
   route = NA,
   cmt = NA,
-  prefix = "S",
+  prefix = "",
   vtime = FALSE
 )
 }
@@ -45,7 +45,7 @@ add_samples(
 PlateObj
 }
 \description{
-Add unknown samples to a plate
+Add samples to plate with pharmacokinetic attributes
 }
 \details{
 final name will be of form. Prefix-SampleName-Time-Concentration-Factor

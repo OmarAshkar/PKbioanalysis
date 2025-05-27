@@ -3,7 +3,7 @@
 \name{add_blank}
 \alias{add_blank}
 \title{Add blank to the plate
-Can be either double blank (DB), CS0IS+ or CS1IS-}
+Can be either double blank (DB), CS0IS+ or CS+IS0}
 \usage{
 add_blank(plate, IS = TRUE, analyte = FALSE)
 }
@@ -19,5 +19,5 @@ PlateObj
 }
 \description{
 Add blank to the plate
-Can be either double blank (DB), CS0IS+ or CS1IS-
+Can be either double blank (DB), CS0IS+ or CS+IS0
 }

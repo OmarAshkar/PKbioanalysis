@@ -1,0 +1,116 @@
+
+Parameters for C:\MassLynx\Projects\Kratom_Analysis.PRO\ACQUDB\070819_Mitra_7OH_Simul_4Min.EXP
+
+Data Processing:
+SIR / MRM Chromatogram Spike Removal	ON
+SIR / MRM Smoothing		ON
+Smoothing window size (scans)	3
+Number of smooths		2
+
+
+Prescan Statistics:
+Initial Average Intensity	3728.2125
+Initial Average Std Dev		2.1391
+Bunch Zero Level		0.0000
+Bunch Std Dev			0.0000
+Bunch Threshold			0.0000
+
+
+Method Events:
+Initial Stop Flow:	No Change
+Initial Switch 2:	No Change
+Initial Switch 3:	No Change
+Initial Switch 4:	No Change
+Initial Infusion:	No Change
+Initial Flow State:	LC
+Initial Flow Rate:	5
+Initial Reservoir:	No Action
+API Probe Delay Temp:	20
+Initial Refill:		No Action
+Timed Events Enabled
+Event	Time(Sec)	Name		Action
+1	0.00		Flow State	Waste
+2	48.00		Flow State	LC
+3	204.00		Flow State	Waste
+
+
+Source Information:
+Type - ESI
+Status - Option Connector Disconnected
+
+Ion Count Threshold:	350.0000
+
+Instrument Parameters - Function 1:
+Parameter File - C:\MassLynx\Projects\Kratom_Analysis.PRO\ACQUDB\Default.ipr
+Polarity	ES+
+Calibration	Static 2
+Capillary (kV)	0.50
+Cone (V)	40.00
+Source Temperature (°C)	150
+Desolvation Temperature (°C)	450
+Cone Gas Flow (L/Hr)	50
+Desolvation Gas Flow (L/Hr)	900
+Collision Gas Flow (mL/Min)	ON
+LM 1 Resolution	4.50
+HM 1 Resolution	14.60
+Ion Energy 1	-0.50
+MS Mode Collision Energy	20.00
+MS Mode Entrance (Gas On)	1.00
+MS Mode Exit (Gas On)	1.00
+MS Mode Entrance (Gas Off)	30.00
+MS Mode Exit (Gas Off)	30.00
+MSMS Mode Collision Energy	30.00
+MSMS Mode Entrance (Gas On)	1.00
+MSMS Mode Exit (Gas On)	1.00
+MSMS Mode Entrance (Gas Off)	30.00
+MSMS Mode Exit (Gas Off	30.00
+LM 2 Resolution	8.30
+HM 2 Resolution	14.50
+Ion Energy 2	0.50
+Gas On MS Mode Entrance	1.00
+Gas On MS Mode Exit	1.00
+Gas On MSMS Mode Entrance	1.00
+Gas On MSMS Mode Exit	1.00
+Gas Off MS Mode Entrance	30.00
+Gas Off MS Mode Exit	30.00
+Gas Off MSMS Mode Entrance	30.00
+Gas Off MSMS Mode Exit	30.00
+Gain	1.00
+Active Reservoir	B
+Cone Energy Ramp :Disabled
+Probe Temperature Ramp :Disabled
+Collision Energy Ramp :Disabled
+
+
+Engineers Settings:
+MS1 Low Mass Position      	519
+MS1 High Mass Position     	222
+MS1 Low Mass Resolution    	511
+MS1 High Mass Resolution   	1960
+MS1 Resolution Linearity   	889
+MS1 High Mass DC Balance   	-0.10
+MS1 DC Polarity            	Positive
+MS2 Low Mass Position      	520
+MS2 High Mass Position     	205
+MS2 Low Mass Resolution    	513
+MS2 High Mass Resolution   	1346
+MS2 Resolution Linearity   	863
+MS2 High Mass DC Balance   	0.05
+MS2 DC Polarity            	Negative
+HM RF Lens Correction + 	0.00
+HM RF Lens Correction - 	0.00
+
+
+   Instrument Readbacks   
+Capillary (kV)	0.54
+Cone (V)	54.46
+Extractor (V)	0.00
+Source Temperature (°C)	148
+Desolvation Temperature (°C)	448
+Cone Gas Flow (L/Hr)	50
+Desolvation Gas Flow (L/Hr)	897
+Collision Gas Flow (mL/Min)	ON
+
+
+Inter-scan delays:
+Automatic Mode - See Help Files for details

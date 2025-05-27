@@ -32,12 +32,14 @@ PlateObj <- function(m, df, plate_id, empty_rows = NULL, filling_scheme, last_mo
 
 
 
-#' Generate 96 Plate
-#' Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.
+#' Generate 96 well plate
+#' 
 #' @param descr plate description.
 #' @param start_row A letter corresponding to empty rows in a 96 well plate. Default is A.
 #' @param start_col A number indicating a column number to start with, given the start row. Default is 1.
 #'
+#' Generate a typical 96 well plate. User need to specify the empty rows which a going to be used across the experiment.
+#' 
 #' @importFrom dplyr slice_tail
 #' @importFrom tidyr pivot_longer
 #' @export
@@ -101,7 +103,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 }
 
 
-#' Add unknown samples to a plate
+#' Add samples to plate with pharmacokinetic attributes
 #'
 #' @param plate PlateObj
 #' @param samples A vector representing samples names. Must be unique.
@@ -139,7 +141,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' 
 add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA, 
   factor = NA, dosage = NA, 
-  route = NA, cmt  = NA , prefix = "S", vtime = FALSE) {
+  route = NA, cmt  = NA , prefix = "", vtime = FALSE) {
   checkmate::assertVector(samples, unique = FALSE)
   checkmate::assertNumeric(time, null.ok = FALSE)
   checkmate::assertNumeric(conc, null.ok = FALSE)
@@ -164,7 +166,6 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA,
       samples[samples %in% df$samples],
       "... Please use different names or remove them from the plate."))
   }
-
 
 
   if(vtime){
@@ -192,6 +193,7 @@ add_samples <- function(plate, samples, time  = NA, conc = NA, dil = NA,
       time = as.numeric(.data$time), 
       route = as.character(.data$route),
       cmt = as.character(.data$cmt)) |> 
+    rowwise() |>
     dplyr::mutate(value = ifelse(!is.null(prefix), paste0(prefix, .data$samples), .data$samples)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$time), paste0(.data$value, "_T", .data$time), .data$value)) |>
     dplyr::mutate(value = ifelse(!is.na(.data$conc), paste0(.data$value, "_", .data$conc), .data$value)) |>
@@ -283,7 +285,7 @@ add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dosa
 
 
 #' Add blank to the plate
-#' Can be either double blank (DB), CS0IS+ or CS1IS-
+#' Can be either double blank (DB), CS0IS+ or CS+IS0
 #' @param plate PlateObj object
 #' @param IS logical. If TRUE, add IS to the well.
 #' @param analyte logical. If TRUE, add analyte to the well.

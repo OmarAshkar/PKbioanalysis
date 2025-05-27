@@ -1,3 +1,6 @@
+#' Create a new methods database from a YAML file
+#' @param path Path to the YAML file containing method information
+#' @keywords internal
 .parse_cmpds <- function(path){
     checkmate::assert_file_exists(path)
     res <- yaml::read_yaml(path)
@@ -127,12 +130,23 @@
     .check_sample_db()
     db <- .connect_to_db()
 
+    if(!(method_id %in% .get_methodsdb()$method_id)){
+        duckdb::dbDisconnect(db, shutdown = TRUE)
+        stop("Method ID ", method_id, " not found in database.")
+    }
+
     transitions <- .get_method_transitions(method_id)
+
+    if(nrow(transitions) == 0){
+        duckdb::dbDisconnect(db, shutdown = TRUE)
+        stop("No transitions found for method_id ", method_id)
+    }
 
     cmpds <- DBI::dbGetQuery(db, paste0("SELECT * FROM compoundstab WHERE transition_id IN (", paste(transitions$transition_id, collapse = ","), ")")) |>
         as.data.frame()
     
-    if(nrow(cmpds) == 0){
+    if(is.null(cmpds) | nrow(cmpds) == 0){
+        duckdb::dbDisconnect(db, shutdown = TRUE)
         stop("No compounds found for method_id ", method_id)
     }
 
@@ -148,3 +162,17 @@
     duckdb::dbDisconnect(db, shutdown = TRUE)
     method_id
 }
+
+modify_method <- function(method_id, new_list){
+    checkmate::assertNumeric(method_id, len = 1)
+    .check_sample_db()
+    # check if method_id exists
+    existing_method_id <- .get_method_id(new_list$method)
+    if(is.na(existing_method_id)) {
+        stop("Method ID ", method_id, " not found in database.")
+    }
+
+}
+
+
+

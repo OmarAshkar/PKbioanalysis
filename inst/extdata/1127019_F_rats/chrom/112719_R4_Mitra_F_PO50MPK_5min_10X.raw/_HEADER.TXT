@@ -1,0 +1,54 @@
+$$ Version: 01.00
+$$ Acquired Name: 112719_R4_Mitra_F_PO50MPK_5min_10X
+$$ Acquired Date: 27-Nov-2019
+$$ Acquired Time: 21:55:41
+$$ Job Code: 11272019_Mitra_F_PO_50MPK_IP_5MPK
+$$ Task Code: 
+$$ User Name: 
+$$ Instrument: XEVO-TQSmicro#QEB0179
+$$ Conditions: 
+$$ Laboratory Name: 
+$$ Sample Description: 79
+$$ Solvent Delay: 0.0000
+$$ Submitter: 
+$$ SampleID: 
+$$ Bottle Number: 1:G,7
+$$ Plate Desc: 01TL,YX,LN,1: 8,2:12,3: 90.0,4: 90.0,5:  0.0,6:  0.0,7:O,8:O,9:1280.0,10:860.0,11:290.0,12: 70.0,13:144.0,14:112.0
+$$ Cal MS1 Static: 5.179270579919405e-2,1.000281281919202e0,-1.378943387490549e-6,1.247621750849872e-9,-3.219271004572750e-13,T0
+$$ Cal MS2 Static: 2.395337080936325e-2,1.000063256682215e0,3.384969088356594e-7,-6.426763409694425e-10,2.207123031102883e-13,T0
+$$ Associated Datafile: 
+$$ Cal MS1 Static Params: 72,2020,0.00,5.00,4.5,14.6,-0.5,ESI Calibration TQ ResCal,STATMS1
+$$ Cal MS1 Dynamic Params: 10,2048,20.3800,-1.00,4.5,14.6,-0.5,ESI Calibration TQ ResCal,SCNMS1
+$$ Cal MS1 Fast Params: 10,2048,1.0190,-1.00,4.5,14.6,-0.5,ESI Calibration TQ ResCal,FASTMS1
+$$ Cal MS2 Static Params: 72,2020,0.00,5.00,8.3,14.5,0.5,ESI Calibration TQ ResCal,STATMS2
+$$ Cal MS2 Dynamic Params: 10,2048,20.3800,-1.00,8.3,14.5,0.5,ESI Calibration TQ ResCal,SCNMS2
+$$ Cal MS2 Fast Params: 10,2048,0.2038,-1.00,8.3,14.5,0.5,ESI Calibration TQ ResCal,FASTMS2
+$$ Cal Time: 16:11
+$$ Cal Date: 09/30/19
+$$ Analog Channel 1 Offset: 0.000
+$$ Analog Channel 2 Offset: 0.000
+$$ Analog Channel 3 Offset: 0.000
+$$ Analog Channel 4 Offset: 0.000
+$$ Mux Stream: 0
+$$ Cal Temperature: 0.0000000
+$$ Inlet Method: C:\MassLynx\Projects\Kratom_Analysis.PRO\ACQUDB\short_gradient_AS
+$$ Inlet Prerun Method: 
+$$ Inlet Postrun Method: 
+$$ Inlet Switch Method: 
+$$ HPLC Method: 
+$$ MS Method: C:\MassLynx\Projects\Kratom_Analysis.PRO\ACQUDB\070819_Mitra_7OH_Simul_4Min.EXP
+$$ Tune Method: C:\MassLynx\Projects\Kratom_Analysis.PRO\ACQUDB\Default.ipr
+$$ FractionLynx Method: 
+$$ Spare1: 
+$$ Spare2: 
+$$ Spare3: 
+$$ Spare4: 
+$$ Spare5: 
+$$ Reinjections: 0
+$$ PIC MRM Function:  
+$$ PIC Scan Function: 0,0
+$$ ScanWave Func List: 
+$$ Calibration File: C:\MassLynx\IntelliStart\Results\Quantitative\Calibration_20190930.cal
+$$ Cal Function 1: 0.000000000000000e0,1.000000000000000e0,T0
+$$ Cal StdDev Function 1: 0.000000000000000e0
+$$ Cal CoVar 1: 0.000000000000000e0,0.000000000000000e0,0.000000000000000e0

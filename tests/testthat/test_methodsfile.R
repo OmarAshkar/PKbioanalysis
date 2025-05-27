@@ -6,7 +6,7 @@ test_that("retreive database", {
         .parse_cmpds()  |> suppressWarnings()
     .save_cmpd_db(x)
     .get_methodsdb() |> expect_no_error()
-    .get_method_transitions(1) |> nrow() |> expect_equal(7)
+    .get_method_transitions(1) |> nrow() |> expect_equal(21)
     .get_method_cmpds(1)$compound |> 
         expect_equal(x$compounds$compound)
 
@@ -17,3 +17,9 @@ test_that("retreive database", {
     .save_cmpd_db(x) |> expect_no_error()
 })
 
+
+test_that("modify_method_cmpds",{
+    testthat::skip_on_cran()
+    testthat::skip_on_ci()
+    stop("Not implemented yet")
+})

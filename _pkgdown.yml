@@ -68,5 +68,19 @@ reference:
   - download_sample_list
 - title: UI for Injection Sequence and Dilution Scheme
   contents: plate_app
-- title: internal
+- title: Chromatogram Analysis
+  contents:
+  - read_chrom
+  - plot_chrom
+  - filter_chrom 
+  - get_compound_ID 
+  - get_sample_ID 
+  - get_sample_names 
+  - has_default_RT 
+  - is_smoothed 
+  - is_integrated
+  - read_experiment_results 
+  - smooth_chrom
+  - precision
+
 

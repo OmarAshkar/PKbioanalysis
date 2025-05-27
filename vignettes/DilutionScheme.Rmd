@@ -88,9 +88,7 @@ Click on any non-terminal node, and specify the final volume needed. The calcula
 
 > Warning: Currently, PKbioanalysis does not have database for dilution scheme. You must export the dilution scheme images by using `Export` button.
 
-![Interactivity](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/step2_dilution_CS.gif)
-
-
+![](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/step2_dilution_CS.gif)
 
 
 Currently, checking if DQC having starting concentration higher than ULOQ or if the dilution scheme include the specified dilution factor is no supported.
