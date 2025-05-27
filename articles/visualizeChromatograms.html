@@ -78,7 +78,7 @@ Elashkar</h4>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
 <p>We will load Waters <code>.raw</code> Chromatograms using
-<code><a href="../reference/read_chrom.html">read_chrom()</a></code>. We need to have method spefied in the
+<code><a href="../reference/read_chrom.html">read_chrom()</a></code>. We need to have method specified in the
 <code>method</code> argument. This can be done or edited using the
 interface in <code><a href="../reference/plate_app.html">plate_app()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -88,16 +88,16 @@ interface in <code><a href="../reference/plate_app.html">plate_app()</a></code>.
 <span><span class="co">#&gt; ── Reading Waters Raw Files</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Found 7 raw files</span></span>
 <span><span class="co">#&gt; → Loading</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Loaded 7 chromatograms</span></span>
 <span><span class="co">#&gt; → loading</span></span>
-<span><span class="co">#&gt; /tmp/RtmpzWnlmT/temp_libpath1e4b41a04b44/PKbioanalysis/extdata/waters…</span></span></code></pre></div>
+<span><span class="co">#&gt; /tmp/RtmpLc96E9/temp_libpath1e03518893d9/PKbioanalysis/extdata/waters…</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_sample_names.html">get_sample_names</a></span><span class="op">(</span><span class="va">chroms</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                     sample sample_id</span></span>
@@ -111,6 +111,8 @@ interface in <code><a href="../reference/plate_app.html">plate_app()</a></code>.
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_chrom.html">plot_chrom</a></span><span class="op">(</span><span class="va">chroms</span>, sample_id <span class="op">=</span> <span class="fl">3</span>, ncol  <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizeChromatograms_files/figure-html/unnamed-chunk-6-1.png" width="1440"></p>
+<p>More interactive features for integeration and visualization are to
+be added in the future.</p>
   </main>
 </div>
 
