@@ -17,3 +17,8 @@
 - Import Waters raw data files and plot chromatograms.
 - Allow replications for samples.
 - 
+## Version 0.5.0
+- Bioanalytical `group` adding allowing more systematic injection sequence creation. 
+- Support for plate generation from `plate_app` GUI 
+- plate generation undo support 
+- tree visualization for plate
