@@ -116,13 +116,17 @@
     compound_p TEXT,
 
     file_text TEXT,
-    conc TEXT,
+    a_group TEXT,
+    conc REAL,
     time TEXT,
     factor TEXT,
-    dil TEXT,
-    dosage TEXT,
+    dil REAL,
+    dose TEXT,
+    II REAL,
+    addl INTEGER,
     route TEXT,
     cmt TEXT,
+    sex TEXT,
 
     UNIQUE(file_name)
   );
@@ -222,8 +226,63 @@ DBI::dbExecute(db, "
 ")
 
 
+# studiesdb 
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS studiesdb (
+  STUDYID TEXT PRIMARY KEY,
+  STUDYNAME TEXT,
+  SPONSOR TEXT,
+  PROTOCOL TEXT,
+  UNIQUE(STUDYID)
+);
+")
 
-  duckdb::dbDisconnect(db, shutdown = TRUE)
+
+# study design
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS armsdb (
+  STUDYID TEXT REFERENCES studiesdb(STUDYID),
+  ARMID TEXT PRIMARY KEY,
+  DOSE REAL,
+  DOSEUNIT TEXT,
+  DOSFRM TEXT,
+  ROUTE TEXT,
+  ADDL INTEGER,
+  II REAL,
+  FREQUNIT TEXT, 
+  unique(ARMID, STUDYID)
+);
+")
+
+# subject is unique and not repeated within a study
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS adsl (
+  USUBJID TEXT PRIMARY KEY,
+  STUDYID TEXT REFERENCES studiesdb(STUDYID),
+  TRT1 TEXT REFERENCES armsdb(ARMID),
+  TRT2 TEXT REFERENCES armsdb(ARMID),
+  SEX TEXT,
+  AGE REAL,
+  AGEU TEXT, 
+  UNIQUE(USUBJID, STUDYID) 
+);
+")
+
+# obsdb
+DBI::dbExecute(db, "
+CREATE TABLE IF NOT EXISTS obsdb (
+  STUDYID TEXT REFERENCES studiesdb(STUDYID),
+  USUBJID TEXT REFERENCES adsl(USUBJID),
+  TRT TEXT REFERENCES armsdb(ARMID),
+  NOMINALTIME REAL,
+  ANALYZED_IN TEXT,
+  DV REAL,
+  CMT TEXT,
+  UNIQUE(USUBJID, STUDYID, NOMINALTIME, CMT)
+);
+")
+
+duckdb::dbDisconnect(db, shutdown = TRUE)
 }
 
 

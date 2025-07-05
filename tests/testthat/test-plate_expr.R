@@ -16,6 +16,14 @@ test_that("extract_last_layout", {
        
     check_last_fill(x) |> expect_equal(FALSE)
 
+    x <- quote(
+        generate_96(descr = "My Plate") |> 
+            add_blank(group = "A") 
+       )
+    check_last_fill(x) |> expect_equal(NULL)
+
+
+
 })
 
 test_that("undo 1 step", {
@@ -59,6 +67,7 @@ test_that("print_expr", {
             fill_scheme(tbound = 1, fill  = "v")
        )
 
-    cat(print_expr(x))
+    cat(print_expr(x)) 
 
 })
+

@@ -10,7 +10,7 @@ add_samples_c(
   time = NA,
   conc = NA,
   factor = NA,
-  dosage = NA,
+  dose = NA,
   prefix = "S"
 )
 }
@@ -25,7 +25,7 @@ add_samples_c(
 
 \item{factor}{A vector representing factor}
 
-\item{dosage}{A vector representing dosage}
+\item{dose}{A vector representing dose}
 
 \item{prefix}{A prefix to be added before samples names. Default is "S"}
 }

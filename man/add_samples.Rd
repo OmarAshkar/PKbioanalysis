@@ -11,7 +11,7 @@ add_samples(
   conc = NA,
   dil = NA,
   factor = NA,
-  dosage = NA,
+  dose = NA,
   route = NA,
   cmt = NA,
   prefix = "",
@@ -31,7 +31,7 @@ add_samples(
 
 \item{factor}{A vector representing factor. Must be same length as samples.}
 
-\item{dosage}{A vector representing dosage. Must be same length as samples.}
+\item{dose}{A vector representing dose. Must be same length as samples.}
 
 \item{route}{A vector representing route of administration. Must be same length as samples.}
 
@@ -51,7 +51,7 @@ Add samples to plate with pharmacokinetic attributes
 final name will be of form. Prefix-SampleName-Time-Concentration-Factor
 samples must be a unique vector and did not exist in the plate before. 
 Time is either a vector or a single value. If it is a vector, it will be repeated for each sample.
-Conc, dil, factor and dosage are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.
+Conc, dil, factor and dose are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.
 }
 \examples{
 plate <- generate_96() |>
@@ -62,7 +62,7 @@ plate <- generate_96() |>
  add_samples(
    samples = Indometh$Subject, 
    time = Indometh$time, 
-   dosage = "100mg",
+   dose = "100mg",
    route = "IV",
    cmt = "plasma",
    vtime = TRUE)

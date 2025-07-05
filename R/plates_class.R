@@ -1,7 +1,6 @@
 
 
-#'
-#' @param m a 96-well matrix
+#' @param plate a 96-well matrix
 #' @param df data.frame contains plate's metadata
 #' @param empty_rows a vector for current active rows
 #' @param last_modified last modified date
@@ -65,26 +64,34 @@ setMethod("length", signature(x = "MultiPlate"),
 #' @param repeat_qc number of re-injections for QC wells. Default is 1
 #' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
 #' @param blank_at_end If True, adding blank at the end of queue.
-#' @param system_suitability Number of re-injections for suitability vial.
+#' @param rep_suitability Number of re-injections for suitability vial.
 #' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
 #' @param inject_vol volume of injection in micro liters.
 #' @param descr Run description.
 #' @param suffix string to be added to the end of the filename. Default is "1".
 #' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param explore_mode options either TRUE or FALSE. Default if FALSE.
+#' @param n_explore. A number of exploratory samples to be injected at the top of the entire sequence. Default is 0 
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
 #'
 #' @details
-#' explore_mode controls if exploratory samples are to be injected. A random sample from each CS and QC group will be sampled along with 1 blank sample.
+#' n_explore controls if exploratory samples are to be injected. A random sample from each CS and QC group will be sampled along with 1 blank sample.
 #' @returns InjecListObj object
 #'@export
 setGeneric("build_injec_seq", function(plate, method, 
-  repeat_std = 1, repeat_qc = 1, repeat_analyte = 1, 
+                        rep_DB = 2,
+                        rep_ISblank = 1,
+                        rep_suitability = 1,
+                        rep_blank = 2,
+                        repeat_std = 1,
+                        repeat_qc = 1,
+                        repeat_analyte = 1,
+                        repeat_dqc = 1,
+                        n_explore = 0,
   blank_after_top_conc = TRUE, blank_at_end = TRUE, 
-  system_suitability = 0, blank_every_n = NULL, 
+  blank_every_n = NULL, 
   inject_vol, descr = "", prefix = Sys.Date(), 
-  suffix = "1", tray = 1, explore_mode = FALSE, conc_df = NULL) standardGeneric("build_injec_seq"))
+  suffix = "1", tray = 1, conc_df = NULL, grouped = TRUE) standardGeneric("build_injec_seq"))
 
 
 
@@ -97,42 +104,58 @@ setGeneric("build_injec_seq", function(plate, method,
 #' @param repeat_qc number of re-injections for QC wells. Default is 1
 #' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
 #' @param blank_at_end If True, adding blank at the end of queue.
-#' @param system_suitability Number of re-injections for suitability vial.
+#' @param rep_suitability Number of re-injections for suitability vial.
 #' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
 #' @param inject_vol volume of injection in micro liters.
 #' @param descr Run description.
 #' @param suffix string to be added to the end of the filename. Default is "1".
 #' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param explore_mode options either TRUE or FALSE. Default if FALSE.
+#' @param n_explore A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
+#' @param grouped If TRUE, the injections will be grouped by specified groups in the plate.
 #' @export
 #' @keywords internal
 #' @returns InjecListObj object
 setMethod("build_injec_seq" , "PlateObj" , function(plate,
                         method,
+
+                        rep_DB = 2,
+                        rep_ISblank = 1,
+                        rep_suitability = 1,
+                        rep_blank = 2,
                         repeat_std = 1,
-                        repeat_qc = 1,
+                        repeat_qc = 2,
                         repeat_analyte = 1,
+                        repeat_dqc = 1,
+                        n_explore = 0,
+
                         blank_after_top_conc = TRUE,
                         blank_at_end = TRUE,
-                        system_suitability = 0,
                         blank_every_n = NULL,
                         inject_vol,
                         descr = "",
                         prefix = Sys.Date(),
                         suffix = "1",
                         tray = 1,
-                        explore_mode = FALSE,
-                        conc_df = NULL) {
+                        conc_df = NULL, 
+                        grouped = TRUE) {
 
   checkmate::assertNumber(repeat_std, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_qc, finite = TRUE, lower = 1)
   checkmate::assertNumber(repeat_analyte, finite = TRUE, lower = 1)
   checkmate::assertNumeric(inject_vol, finite = TRUE, lower = 0.1)
   checkmate::assertNumber(blank_every_n, null.ok = TRUE, lower = 1, finite = TRUE)
-  checkmate::assertNumber(system_suitability, lower = 0, finite = TRUE)
-  checkmate::assertChoice(explore_mode, choices = c(TRUE, FALSE))
+  checkmate::assertNumber(rep_DB, finite = TRUE, lower = 1)
+  checkmate::assertNumber(rep_ISblank, finite = TRUE, lower = 1)
+  checkmate::assertNumber(rep_suitability, finite = TRUE, lower = 0)
+  checkmate::assertNumber(rep_blank, finite = TRUE, lower = 1)
+  checkmate::assertNumber(n_explore, finite = TRUE, lower = 0, upper = 4)
+
+  checkmate::assertLogical(blank_after_top_conc, len = 1)
+  checkmate::assertLogical(blank_at_end, len = 1)
+  checkmate::assertLogical(grouped, len = 1)
+
   checkmate::checkString(descr, null.ok = TRUE)
   # checkmate::assertString(prefix)
   checkmate::assertString(suffix)
@@ -163,181 +186,96 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
   plate <-
     plate@df |> dplyr::mutate(SAMPLE_LOCATION = paste0(tray, ":", .data$SAMPLE_LOCATION))
 
+
+# group/type/vial(s)
+
+# Group:
+## double blanks
+## IS blanks
+## suitability 
+## blank 
+## standards 
+  # CS tec rep1
+  # blank if blank after high conc
+  # CS tec rep2
+  # blank if blank after high conc
+  # CS tec rep3
+  # blank if blank after high conc
+## if has QCs and samples
+  # QC set 1
+  # samples set 1 
+  # QC set 2
+  # samples set 2
+  # QC set 3
+  # samples set 3
+  # QC set 4
+  # samples set 4
+  # ...
+## if has samples but no QCs Xn
+## if has QCs but no samples Xn
+# blank if blank at the end
+
+
+  core_template <- list(
+    "DB" = list(type= "DoubleBlank", nrep = rep_DB),
+    "ISBlank" = list(type = "ISBlank", nrep = rep_ISblank),
+    "Blank" = list(type = "Blank", nrep = rep_blank),
+    "CS" = list(type = "Standard", nrep = repeat_std),
+    "QC" = list(type = "QC", nrep = repeat_qc),
+    "Analyte" = list(type = "Analyte", nrep = repeat_analyte),
+    "DQC" = list(type = "DQC", nrep = repeat_dqc)
+  )
+
+
   df <- plate[FALSE, ] # empty df, same dims
 
-  double_blanks <- dplyr::filter(plate, .data$TYPE == "DoubleBlank")
-  IS_blanks <- dplyr::filter(plate, .data$TYPE == "ISBlank")
-  # locate positive blanks
-  blank_list <- dplyr::filter(plate, .data$TYPE == "Blank")
-  # find top conc in std
-  std_list <- dplyr::filter(plate, .data$TYPE == "Standard") |> dplyr::arrange(as.numeric(.data$e_rep), as.numeric(.data$conc))
-  # find top conc in qc
-  qc_list <- dplyr::filter(plate, .data$TYPE == "QC") |>  dplyr::arrange(as.numeric(.data$e_rep), .data$value)
-  dqc_list <- dplyr::filter(plate, .data$TYPE == "DQC") |> dplyr::arrange(as.numeric(.data$e_rep), .data$value)
-  analyte_list <- dplyr::filter(plate, .data$TYPE == "Analyte") |> dplyr::arrange(.data$samples)
 
-  suitability_list <- filter(plate, .data$TYPE == "Suitability")
+  groups <- unique(plate$a_group)
+  results <- lapply(groups, function(grp) {
+    lapply(core_template, function(args) {
+      do.call(.get_item, c(args, list("group" = grp), list("platedf" = plate)))
+  })
+})
+  names(results) <- groups
 
 
+  results <- lapply(results, .merge_qc_analyte)
 
-  no_qc <- ifelse(nrow(qc_list) == 0, TRUE, FALSE) #
-  no_analyte <- ifelse(nrow(analyte_list) == 0, TRUE, FALSE)
-  no_dqc <- ifelse(nrow(dqc_list) == 0, TRUE, FALSE)
+  results <- .clean_list(results)
 
-
-
-  if (!no_qc) {
-    stopifnot(nrow(qc_list) %% 4 == 0)
-    qc_replicates <-
-      qc_list |>
-      dplyr::count(.data$value, .by = "value") |>
-      dplyr::pull(n) |>
-      unique()
-    stopifnot(length(qc_replicates) == 1)
+  if(blank_after_top_conc){
+    results <- lapply(results, .add_blank_after_high_conc)
   }
 
-  ## 1. xplore mode. 1 sample from each group
-  if(explore_mode){ 
-    xplore_df <- df[FALSE, ] # empty df
-    # add random sample from each group
-    if(nrow(std_list) > 0){
-      std_xplore <- std_list |>
-        dplyr::group_by(.data$std_rep) |>
-        dplyr::sample_n(1) |>
-        dplyr::ungroup()
-        xplore_df <-  rbind(xplore_df, std_xplore)
-    }
-
-    if(nrow(qc_list) > 0){
-      qc_xplore <- qc_list |>
-        dplyr::group_by(.data$std_rep) |>
-        dplyr::sample_n(1) |>
-        dplyr::ungroup()
-        xplore_df <-  rbind(xplore_df, qc_xplore)
-    }
-
-    if(nrow(dqc_list) > 0){
-      dqc_xplore <- dqc_list |>
-        dplyr::group_by(.data$std_rep) |>
-        dplyr::sample_n(1) |>
-        dplyr::ungroup()
-        xplore_df <-  rbind(xplore_df, dqc_xplore)
-    }
-
-    if(nrow(analyte_list) > 0){
-      analyte_xplore <- analyte_list |>
-        dplyr::sample_n(1)
-        xplore_df <-  rbind(xplore_df, analyte_xplore)
-    }
-
-    if(nrow(blank_list) > 0){
-      blank_xplore <- blank_list |>
-        dplyr::sample_n(1)
-      xplore_df <-  rbind(xplore_df, blank_xplore)
-    }
-
-    xplore_df <- xplore_df |>
-      mutate(value = paste0(.data$value, "_explore"))
-
-    df <- bind_rows(df, xplore_df)
+  if(blank_at_end){
+    results <- lapply(results, .add_blank_at_end)
   }
 
-  # 2. blanks
-  for(i in 1:2){
-  # double blank
-    df <- add_row(df, double_blanks)
-    # IS blank
-    df <- add_row(df, IS_blanks)
+
+  results <- lapply(results, function(x) {
+    x <- do.call(rbind, x)
+  })
+
+  results <- do.call(rbind, results)
+
+  results$injec_rep <- NULL 
+
+  # suitability
+  if(rep_suitability > 0){
+    suitability_df <- .get_suitability(plate, rep_suitability)
+    if(is.null(suitability_df)) {
+      stop("Suitability is not present in the plate. Must have valid replicate")
+    }
+    results <- rbind(suitability_df, results)
+  } else if (rep_suitability == 0 || is.null(rep_suitability)) {
+    if("Suitability" %in% plate$TYPE) stop("Suitability is already present in the plate. Must have valid replicate")
   }
 
-  #3. suitability
-  if (system_suitability > 0) {
-    stopifnot("There is no suitability well in the plate. Please add it using add_suitability()" = nrow(suitability_list) >= 1)
-    # n_blanks <- nrow(blank_list)
-    # stopifnot(n_blanks >=2) # FIXME
-
-    # df <- add_row(df,
-    #     mutate(blank_list, value = paste0(value, "-suitability"))[rep(1, system_suitability),]
-    #  )
-    # df <- add_row(df, blank_list[-1,])
-
-    for (i in seq(system_suitability)) {
-      df <- add_row(df, suitability_list)
-    }
+  # explore mode
+  if(n_explore > 0){
+    xplore_df <- .get_xplore(plate, n_explore)
+    results <- rbind(xplore_df, results)
   }
-
-  # blanks
-  df <- add_row(df, blank_list)
-
-  # standards
-  for (i in seq(repeat_std)) {
-    df <- bind_rows(df, std_list)
-
-    if (blank_after_top_conc) {
-      df <- bind_rows(df, blank_list)
-    }
-  }
-
-  # no qc, but analyte
-  if (no_qc & !no_analyte) {
-    # inject analyte if no QCs
-    for (i in seq(repeat_analyte)) {
-      if (!is.null(blank_every_n)) {
-        analyte_list <- .add_every_n(analyte_list, blank_list, blank_every_n)
-      }
-
-      df <- bind_rows(df, analyte_list)
-
-      if (blank_after_top_conc) {
-        df <- bind_rows(df, blank_list)
-      }
-    }
-  }
-
-  # qc
-  if (!no_qc) {
-    # TODO repeat analytes and qcs  with n_analyte and n_qc
-    if (!no_analyte) {
-      # divide analyte list by number of QCs
-      fac <- round(nrow(analyte_list) / qc_replicates)
-      fac <-
-        sort(rep(
-          1:qc_replicates,
-          by = fac,
-          length.out = nrow(analyte_list)
-        ))
-      analyte_list <- analyte_list |> split(fac)
-    }
-
-    group <- rep(1:qc_replicates, length.out = nrow(qc_list))
-    qc_list <- qc_list |> split(group)
-
-    # add qc
-    for (i in seq_along(qc_list)) {
-      df <- bind_rows(df, qc_list[[i]])
-      if (!no_analyte) {
-        df <- bind_rows(df, analyte_list[[i]])
-      }
-
-      if (blank_after_top_conc) {
-        df <- bind_rows(df, blank_list)
-      }
-    }
-
-
-
-    if (!blank_after_top_conc & blank_at_end) {
-      df <- bind_rows(df, blank_list)
-    }
-  }
-
-  # dqc
-  if (!no_dqc) {
-    for (i in seq(repeat_qc)) {
-      df <- bind_rows(df, dqc_list)
-    }
-  }
-
 
 
   if(!is.null(conc_df)){
@@ -353,12 +291,12 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     conc_df[(length(cmpd_vec)+1):(length(cmpd_vec)*2)] <- conc_vec
 
     # min_conc <- min(as.numeric(df$conc))
-    df <- df |> dplyr::bind_cols(conc_df) |>  # bind conc_df
+    df <- results |> dplyr::bind_cols(conc_df) |>  # bind conc_df
           dplyr::mutate(dplyr::across(starts_with("CONC_"),
                                 \(x) (as.numeric(x) * as.numeric(.data$conc)))) # multiply conc_df with conc and divide by min conc
 
   } else{
-    df <- dplyr::mutate(df, CONC_A = .data$conc)
+    df <- dplyr::mutate(results, CONC_A = .data$conc)
 
   }
 
@@ -375,15 +313,6 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
     )
 
 
-  # TODO
-  # if(!is.null(conc_df)){
-  #   names <- names(conc_df)
-  #   for(i in seq_along(names)){
-  #     df <- df |> mutate( {{LETTERS[i]}} = names[i])
-  #   }
-  #   df |> mutate("Compound_A" = names[1], "Compound_B" = names[2])
-  # }
-
   x <- .injecList(df, current_plate_id)
   print(x)
 })
@@ -399,23 +328,31 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 #' @param repeat_qc number of re-injections for QC wells. Default is 1
 #' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
 #' @param blank_at_end If True, adding blank at the end of queue.
-#' @param system_suitability Number of re-injections for suitability vial.
+#' @param rep_suitability Number of re-injections for suitability vial.
 #' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
 #' @param inject_vol volume of injection in micro liters.
 #' @param descr Run description.
 #' @param suffix string to be added to the end of the filename. Default is "1".
 #' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param explore_mode options either TRUE or FALSE. Default if FALSE.
+#' @param n_explore A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
 #' @keywords internal
 #' @export
 #' @returns InjecListObj object
 setMethod("build_injec_seq", "MultiPlate",  function(plate, method,
-  repeat_std = 1, repeat_qc = 1, repeat_analyte = 1,
-  blank_after_top_conc = TRUE, blank_at_end = TRUE, system_suitability = 0,
+                        rep_DB = 2,
+                        rep_ISblank = 1,
+                        rep_suitability = 1,
+                        rep_blank = 2,
+                        repeat_std = 1,
+                        repeat_qc = 1,
+                        repeat_analyte = 1,
+                        repeat_dqc = 1,
+                        n_explore = 0,
+  blank_after_top_conc = TRUE, blank_at_end = TRUE,
   blank_every_n = NULL, inject_vol, descr = "",
-  prefix = Sys.Date(), suffix = "1", tray, explore_mode = FALSE, conc_df = NULL) {
+  prefix = Sys.Date(), suffix = "1", tray, conc_df = NULL, grouped = TRUE) {
 
   checkmate::assertCharacter(tray, min.len = 1, max.len = 12, unique = TRUE)
 
@@ -461,9 +398,9 @@ setMethod("build_injec_seq", "MultiPlate",  function(plate, method,
   build_injec_seq(plate, method = method,
                   repeat_std = repeat_std, repeat_qc = repeat_qc, repeat_analyte = repeat_analyte,
                   blank_after_top_conc = blank_after_top_conc, blank_at_end = blank_at_end,
-                  system_suitability = system_suitability, blank_every_n = blank_every_n,
+                  rep_suitability = rep_suitability, blank_every_n = blank_every_n,
                   inject_vol = inject_vol, descr = descr, prefix = prefix, suffix = suffix,
-                  tray = tray, explore_mode = explore_mode, conc_df = conc_df)
+                  tray = tray,  n_explore = n_explore, conc_df = conc_df)
 
 })
 
@@ -483,7 +420,7 @@ setValidity("PlateObj", function(object) {
   col_type <- c("integer", "integer", "character", "character", "character", "character", 
         "numeric", "character", "character", "integer", "integer")
   cols <- c("row", "col", "value", "SAMPLE_LOCATION", "samples", "conc", 
-   "time", "factor", "dosage", "TYPE", "std_rep", "e_rep", 'dil')
+   "time", "factor", "dose", "TYPE", "std_rep", "e_rep", 'dil')
   checkmate::assertNames(names(object@df), must.include = cols)
 
 
@@ -549,3 +486,5 @@ setMethod("register_plate", "PlateObj", function(plate){
 setMethod("register_plate", "MultiPlate", function(plate){
   lapply(plate@plates, .register_plate_logic)
 })
+
+

@@ -107,7 +107,7 @@ PKbioanalysis offers multiple ways to add samples to plate. We recommend having 
 
 Current supported pharmacokinetic information are: 
     - Sample ID 
-    - Dosage
+    - dose
     - Route
     - CMT
     - Time
@@ -126,9 +126,9 @@ plot(plate)
 plate <- generate_96()
 
 plate <- plate |> 
-    add_samples("1", dosage = "20mg", factor = "M", time = 1) |>
-    add_samples("2", dosage = "30mg", factor = "F", time = 1) |>
-    add_samples("3", dosage = "50mg", factor = "M", time = 1) 
+    add_samples("1", dose = "20mg", factor = "M", time = 1) |>
+    add_samples("2", dose = "30mg", factor = "F", time = 1) |>
+    add_samples("3", dose = "50mg", factor = "M", time = 1) 
 
 plot(plate, color = "factor")
 ```

@@ -1,3 +1,140 @@
+
+.get_item <- function(platedf, type, nrep, group){
+  res <- dplyr::filter(
+    platedf,
+    .data$TYPE == type,
+    (is.na(group) & is.na(.data$a_group)) | (!is.na(group) & .data$a_group == group)
+  )
+  rep_vec <- rep(seq_len(nrow(res)), each = nrep)
+  res <-  res[rep_vec, ]
+  res$injec_rep <-  ave(rep_vec, rep_vec , FUN = seq_along)
+  res <- dplyr::arrange(res, .data$injec_rep, .data$e_rep, .data$std_rep)
+
+  if (nrow(res) == 0) {
+    NULL
+  } else {
+    res
+  }
+}
+
+.get_xplore <- function(platedf, n){
+  sample_from <- c("Blank", "Standard", "QC", "DQC")[seq_len(n)]
+  platedf |> 
+    filter(.data$TYPE %in% !!sample_from) |>
+    dplyr::slice_sample(n = 1, by = "TYPE")
+}
+
+.get_suitability <- function(platedf, nrep){
+  res <- dplyr::filter(platedf, .data$TYPE == "Suitability")
+  res <- res[rep(seq_len(nrow(res)), each = nrep), ]
+  if (nrow(res) == 0) {
+    return(NULL)
+  } else{
+    return(res)
+  }
+}
+
+.add_blank_at_end <- function(tmpseq){
+  
+  if(is.null(tmpseq$Blank)){
+    stop("A group does not have any blanks. Cannot add blank at the end.")
+  }
+  blanks_df <- tmpseq$Blank |> filter(.data$injec_rep == min(.data$injec_rep)  &  e_rep == max(.data$e_rep))
+
+  tmpseq$last_blank <- blanks_df
+
+  tmpseq 
+}
+
+.add_blank_after_high_conc <- function(tmpseq){
+  # getting the last added one regardless of injec_rep
+  
+  if(is.null(tmpseq$Blank)){
+    stop("A group does not have any blanks. Cannot add blank after high concentration.")
+  }
+
+  blanks_df <- tmpseq$Blank |> filter(.data$injec_rep == min(.data$injec_rep)  &  e_rep == max(.data$e_rep))
+
+  if(!is.null(tmpseq$CS)){
+    dummy <- paste0(tmpseq$CS$e_rep, "_", tmpseq$CS$std_rep, "_", tmpseq$CS$injec_rep)
+    cs_split <- tmpseq$CS |> split(dummy)
+
+
+    cs_split <- lapply(cs_split, function(x) { rbind(x, blanks_df) })
+    tmpseq$CS <- do.call(rbind, cs_split) 
+  }
+
+  if(!is.null(tmpseq$Analyte_QC)){
+    if("QC" %in% tmpseq$Analyte_QC$TYPE){
+      max_conc <- tmpseq$Analyte_QC |> dplyr::filter(.data$TYPE == "QC") |> 
+        dplyr::pull("conc") |> max()
+      idx <- which(tmpseq$Analyte_QC$conc == max_conc)
+
+      increment <- 0
+      for (i in idx) {
+        tmpseq$Analyte_QC <- dplyr::add_row(tmpseq$Analyte_QC, blanks_df, .after = i + increment)
+        increment <- increment + 1
+      }
+    }
+  }
+
+  tmpseq
+}
+
+.clean_list <- function(tmpseq) {
+  Filter(function(x) !all(sapply(x, is.null)), tmpseq)
+}
+
+.merge_qc_analyte <- function(tmpseq) {
+
+  if(!is.null(tmpseq$QC)){
+    qc_list <- split(tmpseq$QC, paste(tmpseq$QC$std_rep, tmpseq$QC$injec_rep, tmpseq$QC$e_rep))
+    qc_levels <- unique(tmpseq$QC$conc)
+    n_qc_levels <- length(qc_levels)
+    total_qcs <- nrow(tmpseq$QC)/ n_qc_levels
+    stopifnot(length(qc_list) == total_qcs)
+  }
+  if(!is.null(tmpseq$Analyte)){
+    total_samples <- nrow(tmpseq$Analyte)
+  }
+  if(!is.null(tmpseq$QC) & !is.null(tmpseq$Analyte)){
+    break_every <- floor(total_samples / n_qc_levels)
+
+    # Break analyte_df into chunks of size break_every
+    analyte_df <- tmpseq$Analyte
+    merged_df <- analyte_df[0, ] # empty dataframe with same columns
+    analyte_splits <- split(analyte_df, 
+      rep(1:ceiling(nrow(analyte_df) / break_every), each = break_every, length.out = nrow(analyte_df)))
+
+    # Interleave qc_list and analyte_splits
+    max_len <- max(length(qc_list), length(analyte_splits))
+    merged_list <- vector("list", length(analyte_splits) + length(qc_list))
+
+    idx <- 1
+    for (i in seq_len(max_len)) {
+      if (i <= length(qc_list)) {
+        merged_list[[idx]] <- qc_list[[i]]
+        idx <- idx + 1
+      }
+      if (i <= length(analyte_splits)) {
+        merged_list[[idx]] <- analyte_splits[[i]]
+        idx <- idx + 1
+      }
+    }
+    merged_df <- do.call(rbind, merged_list)
+
+    stopifnot(nrow(merged_df) == nrow(tmpseq$Analyte) + nrow(tmpseq$QC))
+  } else{
+    merged_df <- rbind(tmpseq$Analyte, tmpseq$QC)
+  }
+
+  tmpseq$Analyte <- NULL
+  tmpseq$QC <- NULL
+  tmpseq$Analyte_QC <- merged_df
+  tmpseq
+}
+
+
 #' injection List Object
 #' @param df dataframe
 #' @param plates vector of plate IDs
@@ -176,6 +313,8 @@ download_sample_list <- function(sample_list, vendor){
         matches("FILE_TEXT"),
         matches("TYPE"), matches("INJ_VOL"),
         starts_with("CONC"), starts_with("COMPOUND")) |>
+      dplyr::mutate(FILE_NAME = make.unique(.data$FILE_NAME)) |> 
+      dplyr::mutate(FILE_NAME = gsub("\\.", "_", .data$FILE_NAME)) |> # replace dots with underscores
       dplyr::mutate(Index = dplyr::row_number()) |> 
       dplyr::mutate(TYPE = dplyr::case_when(
         .data$TYPE == "DQC" ~ "QC",

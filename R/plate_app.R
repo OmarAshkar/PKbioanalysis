@@ -192,8 +192,21 @@ plate_app <- function() {
         style = "flex: 1 1 auto;",
         bslib::navset_pill(
           id = "plate_design_nav",
-          bslib::nav_panel("Plate", plotOutput("plate_design_plotOutput", height = "400px")),
-          bslib::nav_panel("Tree", DiagrammeR::grVizOutput("plate_design_treeOutput", height = "400px")),
+          bslib::nav_panel("Plate", 
+              bslib::card(
+                full_screen = TRUE,
+                min_height = 600, 
+                card_header("Plate Map", popover(
+                  bs_icon("gear"),
+                  selectInput("plate_design_color_toggle", "Color By", choices = c("conc", "factor", "dose", "time", "samples", "group", "dose", "route")),
+                  selectInput("plate_design_transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
+                  numericInput("plate_design_font_size", "Font Size", value = 1, step = 0.2),
+                  title = "Color By")),
+                plotOutput("plate_design_plotOutput", width = "100%", height = "100%" )
+              )),
+          bslib::nav_panel("Tree", 
+            bslib::card(
+            DiagrammeR::grVizOutput("plate_design_treeOutput", height = "400px"), full_screen = TRUE)),
           bslib::nav_panel("Code", verbatimTextOutput("plate_design_codeOutput"))
         )
         ),
@@ -455,16 +468,28 @@ plate_app <- function() {
     observeEvent(input$save_plate_design_btn, {
       req(curr_gen_plate_starter())
       register_plate(curr_gen_plate_starter())
+      plate_db(.get_plates_db())
+      curr_gen_plate_starter(NULL)
+      curr_gen_plate_expr(NULL)
+      showNotification("Plate design saved successfully!", type = "message")
     })
 
     output$plate_design_plotOutput <- renderPlot({
       req(curr_gen_plate_starter())
-      plot(curr_gen_plate_starter())
+      plot(curr_gen_plate_starter(), 
+        color = input$plate_design_color_toggle,
+        transform_dil = input$plate_design_transform_dilution,
+        label_size = input$plate_design_font_size)
     })
 
     output$plate_design_treeOutput <- DiagrammeR::renderGrViz({
       req(curr_gen_plate_starter())
       plate_tree(curr_gen_plate_starter())
+    })
+
+    output$plate_design_codeOutput <- renderPrint({
+      req(curr_gen_plate_expr())
+      print_expr(curr_gen_plate_expr())
     })
 
     observeEvent(input$undo_plate_design_btn, {
@@ -476,26 +501,27 @@ plate_app <- function() {
     observeEvent(c(input$layout_horizontal, input$top_left_layout_input, input$bottom_right_layout_input), {
       req(curr_gen_plate_starter())
 
-      lbound <- gsub(input$start_row_plate_input, "\\d+", "")
-      rbound <- gsub("\\D+", "", input$start_col_plate_input)
-      tbound <- gsub("\\D+", "", input$top_left_layout_input)
-      bbound <- gsub("\\D+", "", input$bottom_right_layout_input)
+      tbound <- gsub("(\\D+)(\\d+)", "\\1", input$top_left_layout_input)
+      lbound <- gsub("(\\D+)(\\d+)", "\\2", input$top_left_layout_input) |> as.numeric()
 
-      if(!is.null(check_last_fill(curr_gen_plate_expr()))){
-        curr_gen_plate_expr(
-          bquote(.(curr_gen_plate_expr()) |>
+      bbound <- gsub("(\\D+)(\\d+)", "\\1", input$bottom_right_layout_input)
+      rbound <- gsub("(\\D+)(\\d+)", "\\2", input$bottom_right_layout_input) |> as.numeric()
+
+
+      # undo first 
+      while(!is.null(check_last_fill(curr_gen_plate_expr()))){
+        curr_gen_plate_expr(undo_last_call(curr_gen_plate_expr()))
+      }
+
+      curr_gen_plate_expr(
+        bquote(.(curr_gen_plate_expr()) |>
           fill_scheme(fill = .(ifelse(input$layout_horizontal, "h", "v")),
             lbound = .(lbound),
             rbound = .(rbound),
             tbound = .(tbound),
-            bbound = .(input$bottom_right_layout_input)))
-        )
-        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
-      } else {
-
-
-      }
-
+            bbound = .(bbound))))
+            
+      curr_gen_plate_starter(eval(curr_gen_plate_expr()))
 
     })
 
@@ -547,31 +573,6 @@ plate_app <- function() {
           inputs
       }
 
-
-    # create new plate button
-    observeEvent(input$create_new_plate_btn, {
-      showModal(modalDialog(
-        title = "Create New Plate",
-        textInput("plate_descr", "Description", value = ""),
-        selectInput("start_row_plate_input", "Start Row", choices = LETTERS[1:8]),
-        selectInput("start_col_plate_input", "Start Column", choices = 1:12),
-        actionButton("create_plate_btn_final", "Create")
-      ))
-    })
-
-
-
-    # create metabolic study button
-    observeEvent(input$make_metabolic_study_btn, {
-      showModal(modalDialog(
-        title = "Create Metabolic Study",
-        textInput("metabolic_study_cmpds", "Compounds", value = "", placeholder = "comma separated"),
-        textInput("time_points_metabolic_study_input", "Time Points", value = "", placeholder = "comma separated"),
-        numericInput("n_NAD_metabolic_study_input", "NADPH replicates", value = 3),
-        numericInput("n_noNAD_metabolic_study_input", "No NADPH replicates", value = 3),
-        actionButton("create_metabolic_study_btn_final", "Create")
-      ))
-    })
 
     ############################# Gen
 

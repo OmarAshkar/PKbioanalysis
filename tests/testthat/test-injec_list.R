@@ -27,7 +27,8 @@ test_that("build_injec_seq", {
     # register_plate()
 
   build_injec_seq(x, 
-    inject_vol = 2, tray = "1", method = "method.q")
+    inject_vol = 2, tray = "1", method = "method.q", n_explore = 4) 
+
 })
 
 
@@ -41,11 +42,14 @@ test_that("save_injecseq_csv", {
     plate_metadata("new") |>
     register_plate()
 
-  mylist <- x |> build_injec_seq(inject_vol = 2, tray = "1", method = "method.ql")
+  mylist <- x |> 
+    build_injec_seq(inject_vol = 2, tray = "1", 
+    method = "method.ql", 
+    rep_suitability = 0)
 
   write_injec_seq(mylist) |> expect_no_error()
 
-  x |> build_injec_seq(inject_vol = 2, suffix = "4", tray = "1", method = "method.q") |> # suffix changed
+  x |> build_injec_seq(inject_vol = 2, suffix = "4", tray = "1", method = "method.q", rep_suitability = 0) |> # suffix changed
     write_injec_seq()  |> expect_no_error() # changed the suffix
 
   write_injec_seq(mylist)  |> expect_error("Error writing")  # already written
@@ -87,7 +91,7 @@ test_that("exploratory_samples_added", {
     add_blank() |>  # 3
     plate_metadata("new") |>
     register_plate()
-  build_injec_seq(x, tray = "1", inject_vol = 2, explore_mode = TRUE, method = "method.q1")  |> 
+  build_injec_seq(x, tray = "1", inject_vol = 2, n_explore = 2, method = "method.q1")  |> 
     expect_no_error()
 }
 )
@@ -105,12 +109,12 @@ test_that("writing_increment_id", {
     add_blank() |>  # 3
     plate_metadata("new") |>
     register_plate()
-  build_injec_seq(x, method = "method.ql", tray = "1", inject_vol = 2, explore_mode = TRUE)  |>
+  build_injec_seq(x, method = "method.ql", tray = "1", inject_vol = 2, n_explore = 2, rep_suitability = 0) |>
     write_injec_seq()
 
   .last_list_id() |> expect_equal(1)
 
-  build_injec_seq(x, method = "method.ql", tray = "1", inject_vol = 2, explore_mode = TRUE, suffix = "2")  |>
+  build_injec_seq(x, method = "method.ql", tray = "1", inject_vol = 2, n_explore = 4, suffix = "2", rep_suitability = 0) |>
     write_injec_seq()
 
 

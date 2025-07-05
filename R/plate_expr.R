@@ -15,7 +15,7 @@ check_last_fill <- function(prev) {
     if (as.character(prev[[1]]) == "fill_scheme") {
         rlang::call_args(prev)[["fill"]]
     } else { 
-        FALSE
+        NULL
     }
 }
 

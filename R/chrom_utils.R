@@ -329,7 +329,7 @@ has_linearity <- function(chrom_res, compound_id){
 #' This function is meant to run after the ChromRes object has been created. 
 #' The match occurs on the "filename" column.
 #' Columns allowed to update are:
-#' "subject_id", "sampling_time", "invitro_conc", "dosage", "factor", "type"
+#' "subject_id", "sampling_time", "invitro_conc", "dose", "factor", "type"
 #' @return ChromRes object
 #' @noRd
 update_metadata <- function(chrom_res, metadata, ignore_unmatched = TRUE){
@@ -342,17 +342,17 @@ update_metadata <- function(chrom_res, metadata, ignore_unmatched = TRUE){
     chrom_res@metadata <- dplyr::rows_update(chrom_res@metadata, 
         dplyr::select(metadata, 
                 dplyr::any_of(c("filename", "subject_id", "sampling_time", "invitro_conc", 
-                    "dosage", "factor", "type", "dilution_factor")),
+                    "dose", "factor", "type", "dilution_factor")),
                 dplyr::starts_with("spiked_")
                 ),
         by = "filename", unmatched = ifelse(ignore_unmatched, "ignore", "error")) |>
         dplyr::mutate(dplyr::across(everything(), \(x) ifelse(x == "", NA, x))) 
 
 
-    # assert all spiked / dosage/ sampling_time are numeric
+    # assert all spiked / dose/ sampling_time are numeric
     chrom_res@metadata <-  chrom_res@metadata |>
         dplyr::mutate(across(starts_with("spiked_"), as.numeric)) |>
-        dplyr::mutate(dosage = as.numeric(.data$dosage)) |>
+        dplyr::mutate(dose = as.numeric(.data$dose)) |>
         dplyr::mutate(sampling_time = as.numeric(.data$sampling_time)) |> 
         dplyr::mutate(subject_id = as.character(.data$subject_id)) |>
         dplyr::mutate(type = as.character(.data$type)) |>

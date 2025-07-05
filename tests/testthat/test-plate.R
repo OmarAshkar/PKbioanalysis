@@ -190,28 +190,28 @@ test_that("spot_maskTest", {
 test_that("samples_vectorization", {
   # multiple samples, multiple time, one dose
   x <- generate_96() |> 
-    add_samples(samples = 1, time = 1:10*30, dosage = "A")
+    add_samples(samples = 1, time = 1:10*30, dose = "A")
   
   expect_equal(length(unique(x@df$time)), 10+1)
-  expect_equal(length(unique(x@df$dosage)), 1+1)
+  expect_equal(length(unique(x@df$dose)), 1+1)
   expect_equal(length(unique(x@df$samples)), 1+1)
 
   # multiple samples, one time, multiple doses 
   x <- generate_96() |> 
-    add_samples(samples = 1:10, time = 1, dosage = "A")
-  x <- select(x@df, "samples", "time", "dosage") |> dplyr::distinct()
+    add_samples(samples = 1:10, time = 1, dose = "A")
+  x <- select(x@df, "samples", "time", "dose") |> dplyr::distinct()
   expect_equal(nrow(x), 10+1)
   expect_equal(length(unique(x$time)), 1+1)
-  expect_equal(length(unique(x$dosage)), 1+1)
+  expect_equal(length(unique(x$dose)), 1+1)
   expect_equal(length(unique(x$samples)), 10+1)
 
   # multiple samples, multiple time, multiple doses 
   x <- generate_96() |> 
-    add_samples(samples = 1:5, time = 1:10*30, dosage = c("A"))
-  x <- select(x@df, "samples", "time", "dosage") |> dplyr::distinct() 
+    add_samples(samples = 1:5, time = 1:10*30, dose = c("A"))
+  x <- select(x@df, "samples", "time", "dose") |> dplyr::distinct() 
   expect_equal(nrow(x), 5*10+1) 
   expect_equal(length(unique(x$time)), 10+1)
-  expect_equal(length(unique(x$dosage)), 1+1)
+  expect_equal(length(unique(x$dose)), 1+1)
   expect_equal(length(unique(x$samples)), 5+1)
 })
 
@@ -220,33 +220,49 @@ test_that("samples_combination", {
   
   x <- generate_96() |> 
     add_samples_c(n_rep= 3, time = 0:5*30, conc = c(1,2), factor = c("M", "F")) 
-  plot(x)
 
   sum(!is.na(x@df$samples)) |> expect_equal(72) # cartesian product 
 
   # 2 x 2 x 2 
   x <- generate_96() |> 
-    add_samples_c(n_rep = 2, time = 1:10*30, dosage = c("A", "B"), 
+    add_samples_c(n_rep = 2, time = 1:10*30, 
+      dose = c(100, 200), 
       factor = c("M", "F"))
 
   x <- x@df |> 
-    dplyr::select("samples", "time", "dosage", "factor") |> 
+    dplyr::select("samples", "time", "dose", "factor") |> 
     dplyr::distinct()
   expect_equal(nrow(x), 2*2*2*10+1)
   expect_equal(length(unique(x$time)), 10+1)
-  expect_equal(length(unique(x$dosage)), 2+1) 
+  expect_equal(length(unique(x$dose)), 2+1) 
   expect_equal(length(unique(x$samples)), 2*2*2+1) 
   expect_equal(length(unique(x$factor)), 2+1) 
 })
 
 
-test_that("plotDesignTest", {
+test_that("plotstudyDesignTest", {
   generate_96() |> 
-    add_samples(1:5, dosage = "A", factor = "M", time = 1:5*30) |>
-    add_samples(6:10, dosage = "A", factor = "F", time = 1:5*30) |>
-    add_samples(11:15, dosage = "B", factor = "M", time = 1:5*30) |>
-    add_samples(16:18, dosage = "B", factor = "F", time = 1:3*30) |>
-    plot_design() |> expect_no_error()
+    add_samples(1:5, dose = 100, sex = "M", time = 1:5*30) |>
+    add_samples(6:10, dose = 200, sex = "F", time = 1:5*30) |>
+    add_samples(11:15, dose = 200, sex = "M", time = 1:5*30) |>
+    add_samples(16:18, dose = 200, sex = "F", time = 1:3*30) |>
+    study_chart_2() 
+})
+
+test_that("plotPlateDesignTest", {
+  generate_96() |> 
+    add_blank() |>
+    add_cs_curve(c(50, 20, 10, 5, 2, 1), group = "A", rep = 2) |>
+    add_QC(3, 20, 180, reg = T, n_qc = 2, qc_serial = F, group = "A") |>
+    add_blank() |>
+    add_cs_curve(c(50, 20, 10, 5, 2, 1), group = "B", rep = 2) |>
+    add_QC(3, 20, 180, reg = T, n_qc = 2, qc_serial = F, group = "B") |>
+    add_samples(1:5, dose = 100, factor = "M", time = 1:5*30) |>
+    # add_samples(6:10, dose = "A", factor = "F", time = 1:5*30) |>
+    add_samples(11:15, dose = 200, factor = "M", time = 1:5*30) |>
+    # add_samples(16:18, dose = "B", factor = "F", time = 1:3*30) |>
+    plate_tree(plot = T) |> expect_no_error()
+
 })
 
 test_that("DQC", {
