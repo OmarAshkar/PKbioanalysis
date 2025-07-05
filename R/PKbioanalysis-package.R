@@ -8,6 +8,7 @@
 #' @importFrom cli cli_h3
 #' @importFrom cli cli_status
 #' @importFrom cli cli_status_update
+#' @importFrom data.tree as.Node
 #' @importFrom DBI dbIsValid
 #' @importFrom DBI dbWriteTable
 #' @importFrom DiagrammeR get_edge_df

@@ -49,7 +49,8 @@ Imports:
     cli,
     tibble,
     xml2,
-    RaMS
+    RaMS,
+    data.tree
 Suggests: 
     knitr,
     rmarkdown,

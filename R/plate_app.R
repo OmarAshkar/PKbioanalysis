@@ -102,7 +102,7 @@ plate_app <- function() {
         ),
         column(
           width = 3,
-          numericInput(paste0("system_suitability_number_prot", number), "Suitability", value = "3") |>
+          numericInput(paste0("rep_suitability_number_prot", number), "Suitability", value = "3") |>
             bslib::tooltip("Number of suitability injections. Must set to 0 or remove it if not in the plate")
           ),
         column(
@@ -145,7 +145,8 @@ plate_app <- function() {
     bslib::nav_panel(title = "Dashboard",
             uiOutput("plate_creation_ui")
       ),
-    bslib::nav_panel(title = "methods",
+    bslib::nav_panel(title = "PK Study Design"),
+    bslib::nav_panel(title = "Methods",
        # create 70 30 layout
       bslib::layout_sidebar(
         sidebar = bslib::sidebar(
@@ -155,7 +156,7 @@ plate_app <- function() {
       ),
         DT::DTOutput("cmpd_methods_dt"),
     )),
-    bslib::nav_panel(title = "Sample Lists",
+    bslib::nav_panel(title = "Runs Database",
       bslib::layout_sidebar(
         sidebar = sidebar(
           width = 500,
@@ -167,35 +168,78 @@ plate_app <- function() {
         DT::DTOutput("sample_list_filtered_DT")
 
     )), ## sample lists panel
-    bslib::nav_panel(title = "Plates",           ## plates panel
+    bslib::nav_panel(
+      title = "Plate Design",
+      bslib::layout_sidebar(
+      sidebar = bslib::sidebar(
+        width = 350,
+        h4("Layout Options"),
+        shinyWidgets::switchInput("layout_horizontal", "Layout", value = TRUE, onLabel = "H", offLabel = "V"),
+        selectInput("top_left_layout_input", "Top Left", choices = sort(levels(interaction(LETTERS[1:8], 1:12, sep = ""))), selected = "A1"),
+        selectInput("bottom_right_layout_input", "Bottom Right", choices = sort(levels(interaction(LETTERS[1:8], 1:12, sep = ""))), selected = "H12"),
+        tags$hr(),
+        h4("Add Elements"),
+        actionButton("add_blank_btn", "Add Blank"),
+        actionButton("add_double_blank_btn", "Add Double Blank"),
+        actionButton("add_standards_btn", "Add Standards"),
+        actionButton("add_qc_btn", "Add QC"),
+        actionButton("add_samples_btn", "Add Samples"),
+        actionButton("add_suitability_btn", "Add Suitability")
+      ),
+      div(
+        style = "display: flex; flex-direction: column; height: 100%;",
+        div(
+        style = "flex: 1 1 auto;",
+        bslib::navset_pill(
+          id = "plate_design_nav",
+          bslib::nav_panel("Plate", plotOutput("plate_design_plotOutput", height = "400px")),
+          bslib::nav_panel("Tree", DiagrammeR::grVizOutput("plate_design_treeOutput", height = "400px")),
+          bslib::nav_panel("Code", verbatimTextOutput("plate_design_codeOutput"))
+        )
+        ),
+        div(
+        style = "margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;",
+        actionButton("undo_plate_design_btn", "Undo"),
+        actionButton("save_plate_design_btn", "Save"),
+        actionButton("new_plate_design_btn", "New"),
+        actionButton("open_plate_design_btn", "Open")
+        )
+      )
+      )
+    ),
+    bslib::nav_panel(title = "Plates Database",           ## plates panel
       bslib::layout_columns(
         # style = htmltools::css(grid_template_columns = "2fr 1fr"),
         col_widths = c(8, 4),
         bslib::layout_columns(
           col_widths = c(12),
           row_heights = c(4,1),
-          bslib::card(
-            full_screen = TRUE,
-            card_header("Plate Map", popover(
-              bs_icon("gear"),
-              selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dosage", "time", "samples")),
-              selectInput("transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
-              numericInput("plate_map_font_size", "Font Size", value = 1, step = 0.2),
-              title = "Color By")),
-            plotOutput("plate_map_plot1", width = "100%", height = "100%" )
-          ),
-          bslib::card(
-            max_height = 150,
-              layout_columns(
-                # actionBttn("create_new_plate_btn", "Add New Plate", icon = icon("plus"), color = "default"),
-                # actionBttn("make_metabolic_study_btn", "Make Metabolic Study", icon = icon("flask"), color = "default"),
-                actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary")
-              )
-            )),
+          bslib::navset_card_pill(
+            id = "plate_nav",
+            bslib::nav_panel("Plate View",
+              bslib::card(
+                full_screen = TRUE,
+                card_header("Plate Map", popover(
+                  bs_icon("gear"),
+                  selectInput("plate_map_color_toggle", "Color By", choices = c("conc", "factor", "dose", "time", "samples")),
+                  selectInput("transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
+                  numericInput("plate_map_font_size", "Font Size", value = 1, step = 0.2),
+                  title = "Color By")),
+                plotOutput("plate_map_plot1", width = "100%", height = "100%" )
+              )),
+            bslib::nav_panel("Plate Tree",
+              bslib::card(
+                full_screen = TRUE,
+                card_header("Plate Tree"), 
+                DiagrammeR::grVizOutput("plate_tree_grviz_out", width = "100%", height = "100%")
+              ))
+          )
+            ),
         bslib::card(
           textOutput("plate_id_plateview_output"),
           actionButton("change_plate_meta_btn", "Change Plate Description", icon = icon("edit")),
           downloadButton( "export_plate_image", "Export Plate Image", icon = icon("download")),
+          actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary"),
           # tabset with plate, sample list, dilution
           actionButton("clear_selected_plates_btn", "Clear All"),
           DT::DTOutput("plate_db_table")
@@ -237,7 +281,7 @@ plate_app <- function() {
                         ),
                         column(
                           width = 3,
-                          numericInput("system_suitability_number_prot1", "Suitability", value = "3") |>
+                          numericInput("rep_suitability_number_prot1", "Suitability", value = "3") |>
                             bslib::tooltip("Number of suitability injections. Must set to 0 or remove it if not in the plate")
                           ),
                         column(
@@ -330,11 +374,6 @@ plate_app <- function() {
                           DiagrammeR::grVizOutput("dil_graph_grviz_out", width = "100%")),
                       downloadButton("export_dil_graph", "Export", icon = icon("download"))
             ), 
-            # design 
-          bslib::nav_panel("Design",
-            h2("Design"),
-            DiagrammeR::grVizOutput("design_graph_grviz_out", width = "100%"),
-          )
           ))),
     nav_spacer(),
     bslib::nav_menu(
@@ -395,9 +434,109 @@ plate_app <- function() {
       }
     )
 
-
     #################################################################################################################
-    ############################### plate
+    ###### plate Generator ######
+    curr_gen_plate_starter <- reactiveVal(NULL)
+    curr_gen_plate_expr <- reactiveVal(NULL)
+    observeEvent(input$new_plate_design_btn, {
+      showModal(modalDialog(
+      title = "Create New Plate Design",
+      textInput("new_plate_design_descr", "Description", value = ""),
+      actionButton("create_plate_design_btn", "Create")
+      ))
+    })
+
+    observeEvent(input$create_plate_design_btn, {
+      removeModal()
+      curr_gen_plate_expr(bquote(generate_96(descr = .(input$new_plate_design_descr))))
+      curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+    })
+
+    observeEvent(input$save_plate_design_btn, {
+      req(curr_gen_plate_starter())
+      register_plate(curr_gen_plate_starter())
+    })
+
+    output$plate_design_plotOutput <- renderPlot({
+      req(curr_gen_plate_starter())
+      plot(curr_gen_plate_starter())
+    })
+
+    output$plate_design_treeOutput <- DiagrammeR::renderGrViz({
+      req(curr_gen_plate_starter())
+      plate_tree(curr_gen_plate_starter())
+    })
+
+    observeEvent(input$undo_plate_design_btn, {
+      req(curr_gen_plate_starter())
+      undo_last_call(curr_gen_plate_expr())  |> curr_gen_plate_expr()
+      curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+    })
+
+    observeEvent(c(input$layout_horizontal, input$top_left_layout_input, input$bottom_right_layout_input), {
+      req(curr_gen_plate_starter())
+
+      lbound <- gsub(input$start_row_plate_input, "\\d+", "")
+      rbound <- gsub("\\D+", "", input$start_col_plate_input)
+      tbound <- gsub("\\D+", "", input$top_left_layout_input)
+      bbound <- gsub("\\D+", "", input$bottom_right_layout_input)
+
+      if(!is.null(check_last_fill(curr_gen_plate_expr()))){
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+          fill_scheme(fill = .(ifelse(input$layout_horizontal, "h", "v")),
+            lbound = .(lbound),
+            rbound = .(rbound),
+            tbound = .(tbound),
+            bbound = .(input$bottom_right_layout_input)))
+        )
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      } else {
+
+
+      }
+
+
+    })
+
+    observeEvent(input$add_blank_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Blank",
+        selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        selectInput("is_IS_blank", "IS Blank", choices = c(FALSE, TRUE), selected = FALSE), 
+        actionButton("add_blank_btn_final", "Add")
+      ))
+    })
+    
+    observeEvent(input$add_blank_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+          add_blank(group = .(input$blank_group), IS = .(as.logical(input$is_IS_blank))))
+          )
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+        updateSelectizeInput(session, "blank_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$blank_group)
+        removeModal()
+      }, error = function(e){
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+
+    observeEvent(input$add_double_blank_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Double Blank",
+        selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter()))
+      ))
+    })
+
+    
+
+    # TODO add samples
+    #################################################################################################################
+    ###### plate Database ######
 
     # used to create checkboxes
     shinyInput <- function(FUN, len, id, ...) {
@@ -586,6 +725,12 @@ plate_app <- function() {
       plot(current_plate(), color = input$plate_map_color_toggle, label_size = input$plate_map_font_size, transform_dil = input$transform_dilution) 
     })
 
+    output$plate_tree_grviz_out <- DiagrammeR::renderGrViz({
+      # FIXME not very reactive
+      req(current_plate())
+      plate_tree(current_plate())
+    })
+
 
 ########################
     observeEvent(selected_ids(), {
@@ -628,7 +773,7 @@ plate_app <- function() {
       if(current_injec_protcols()  <= 10){
         observeEvent(
           c(input[[paste0("repeat_std_prot", current_injec_protcols())]], input[[paste0("repeat_qc_prot", current_injec_protcols())]],
-            input[[paste0("repeat_sample_prot", current_injec_protcols())]], input[[paste0("system_suitability_number_prot", current_injec_protcols())]],
+            input[[paste0("repeat_sample_prot", current_injec_protcols())]], input[[paste0("rep_suitability_number_prot", current_injec_protcols())]],
             input[[paste0("blank_after_top_conc_prot", current_injec_protcols())]], input[[paste0("blank_at_end_prot", current_injec_protcols())]],
             input[[paste0("blank_every_n_prot", current_injec_protcols())]], input[[paste0("injec_vol_prot", current_injec_protcols())]],
             input[[paste0("descr_prot", current_injec_protcols())]], input[[paste0("suffix_prot", current_injec_protcols())]],
@@ -690,7 +835,7 @@ plate_app <- function() {
                 blank_after_top_conc = input[[paste0("blank_after_top_conc_prot", i)]],
                 blank_at_end = input[[paste0("blank_at_end_prot", i)]],
                 blank_every_n = input[[paste0("blank_every_n_prot", i)]],
-                system_suitability = input[[paste0("system_suitability_number_prot", i)]],
+                rep_suitability = input[[paste0("rep_suitability_number_prot", i)]],
                 repeat_std = input[[paste0("repeat_std_prot", i)]],
                 repeat_analyte = input[[paste0("repeat_sample_prot", i)]],
                 repeat_qc = input[[paste0("repeat_qc_prot", i)]],
@@ -973,19 +1118,6 @@ plate_app <- function() {
         DiagrammeR::export_graph(dil_graphs_observer(), file_name = file)
       }
     )
-
-###############################################################################################
-    ### design 
-  
-output$design_graph_grviz_out <- DiagrammeR::renderGrViz({
-    req(class(current_plate()) ==  "RegisteredPlate")
-    tryCatch(
-      current_plate() |>
-      plot_design() |>
-      render_graph(),
-      error = function(e) {showNotification(e$message, type = "error")}
-    )
-  })
 
     
 ###############################################################################################

@@ -181,7 +181,7 @@
     dplyr::mutate(sampling_time = as.numeric(NA)) |>
     dplyr::mutate(invitro_conc = as.numeric(NA)) |>
     dplyr::mutate(factor = as.character(NA)) |>
-    dplyr::mutate(dosage = as.numeric(NA)) 
+    dplyr::mutate(dose = as.numeric(NA)) 
 
   new_chrom
 }
@@ -446,7 +446,7 @@
   #   as.data.frame() |> 
   #   dplyr::mutate(
   #     time = as.numeric(NA),
-  #     dosage = as.numeric(NA),
+  #     dose = as.numeric(NA),
   #     sample = as.character(NA),
   #     factor = as.character(NA))
   # pkmetadf[, cmpd_vec] <- NA

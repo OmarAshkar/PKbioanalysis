@@ -12,3 +12,8 @@
 - Plates now can have different filling methods; either vertical or horizontal with bounds on both directions.
 - Add well coloring by type.
 - add_samples() can either propagate time or act as vectorized function. 
+
+## Version 0.4.0
+- Import Waters raw data files and plot chromatograms.
+- Allow replications for samples.
+- 

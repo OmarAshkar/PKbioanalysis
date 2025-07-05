@@ -4,6 +4,32 @@ test_that("plate_registered_before_seq", {
     expect_error()
 })
 
+test_that("build_injec_seq", {
+  skip_on_cran()
+
+  .reset_samples_db()
+  x <- generate_96() |>
+    add_suitability("Suitability", conc = 2) |>
+    add_blank(group = "GP1") |>
+    add_DB(group = "GP1") |>
+    add_samples(1:10, group = "GP1") |>
+    add_cs_curve(c(1, 10, 30, 40, 100, 200), group = "GP1") |>
+    add_QC(3, 65, 180, group = "GP1")  |> 
+    add_blank(group = "GP2") |>
+    add_DB(group = "GP2") |>
+    add_samples(50:70, group = "GP2") |>
+    add_cs_curve(c(1, 10, 30, 40, 100, 200), group = "GP2") |>
+    add_QC(3, 65, 180, group = "GP2")   |> 
+    add_DQC(1000, fac = 10, rep  = 3, group = "GP2") |>
+    register_plate() 
+
+
+    # register_plate()
+
+  build_injec_seq(x, 
+    inject_vol = 2, tray = "1", method = "method.q")
+})
+
 
 test_that("save_injecseq_csv", {
   skip_on_cran()

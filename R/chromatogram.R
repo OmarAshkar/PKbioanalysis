@@ -55,7 +55,7 @@ check_all <- function(object){
     checkmate::assertNames(names(object@metadata),
         must.include =  c("sample_id", "filename", "date", "type", "sample_id",
             "std_rep", "sample_location", "inj_vol", "dilution_factor",
-            "sample_id",  "subject_id", "invitro_conc", "sampling_time", "factor", "dosage", spiked_vec) 
+            "sample_id",  "subject_id", "invitro_conc", "sampling_time", "factor", "dose", spiked_vec) 
     )
 
     
@@ -125,7 +125,7 @@ check_all <- function(object){
 
     # checkmate::assertNames(names(object@pk_metadata),
     #     must.include =  c("sample_id", "filename", 
-    #     "sample", "time", "dosage", "factor") # "response_vec"
+    #     "sample", "time", "dose", "factor") # "response_vec"
     # )
 
    stopifnot(nrow(object@compounds) == length(object@pk_metadata))

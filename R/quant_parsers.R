@@ -64,7 +64,7 @@ peakres_to_chromres <- function(peakres, method = NA){
         mutate(sampling_time = as.numeric(NA)) |>
         mutate(invitro_conc = as.numeric(NA)) |>
         mutate(factor = as.character(NA)) |>
-        mutate(dosage = as.numeric(NA)) |>
+        mutate(dose = as.numeric(NA)) |>
         mutate(date = paste0(sample_createdate, " ", sample_createtime)) |>
         distinct()
       
