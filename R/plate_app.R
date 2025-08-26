@@ -1462,6 +1462,6 @@ plate_app <- function() {
     })
 
   }
-  runApp(list(ui = ui, server = server, port = 12344, host = '127.0.0.1'))
+  runApp(list(ui = ui, server = server, port = 12344, host = '127.0.0.1', launch.browser = TRUE))
 }
 
