@@ -145,7 +145,8 @@ plate_app <- function() {
     bslib::nav_panel(title = "Dashboard",
             uiOutput("plate_creation_ui")
       ),
-    bslib::nav_panel(title = "PK Study Design"),
+    bslib::nav_panel(title = "Study Design"),
+    bslib::nav_panel(title = "Samples Log"),  # collected, analyzed
     bslib::nav_panel(title = "Methods",
        # create 70 30 layout
       bslib::layout_sidebar(
@@ -183,6 +184,7 @@ plate_app <- function() {
         actionButton("add_double_blank_btn", "Add Double Blank"),
         actionButton("add_standards_btn", "Add Standards"),
         actionButton("add_qc_btn", "Add QC"),
+        actionButton("add_dqc_btn", "Add DQC"),
         actionButton("add_samples_btn", "Add Samples"),
         actionButton("add_suitability_btn", "Add Suitability")
       ),
@@ -479,7 +481,8 @@ plate_app <- function() {
       plot(curr_gen_plate_starter(), 
         color = input$plate_design_color_toggle,
         transform_dil = input$plate_design_transform_dilution,
-        label_size = input$plate_design_font_size)
+        label_size = input$plate_design_font_size), 
+        layoutOverlay = TRUE
     })
 
     output$plate_design_treeOutput <- DiagrammeR::renderGrViz({
@@ -530,7 +533,7 @@ plate_app <- function() {
       showModal(modalDialog(
         title = "Add Blank",
         selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        selectInput("is_IS_blank", "IS Blank", choices = c(FALSE, TRUE), selected = FALSE), 
+        selectInput("is_IS_blank", "IS Blank", choices = c(FALSE, TRUE), selected = TRUE), 
         actionButton("add_blank_btn_final", "Add")
       ))
     })
@@ -546,6 +549,7 @@ plate_app <- function() {
         updateSelectizeInput(session, "blank_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$blank_group)
         removeModal()
       }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
         showNotification(paste("Error:", e$message), type = "error")
       })
     })
@@ -554,11 +558,152 @@ plate_app <- function() {
       req(curr_gen_plate_starter())
       showModal(modalDialog(
         title = "Add Double Blank",
-        selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter()))
+        selectizeInput("db_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        actionButton("add_double_blank_btn_final", "Add")
       ))
     })
 
-    
+    observeEvent(input$add_double_blank_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+          add_DB(group = .(input$db_group)))
+          )
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+        updateSelectizeInput(session, "db_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$db_group)
+        removeModal()
+      }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+
+    # CS 
+
+    observeEvent(input$add_standards_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Calibration Standard Curve",
+        textInput("plate_std", "Standard Sepearated by commas",  "1, 3, 10, 50, 80, 100, 200"),
+        numericInput("std_rep", "Replicate", value = 1, min = 1, max = 10),
+        selectizeInput("standard_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        actionButton("add_standards_btn_final", "Add")
+      ))
+    })
+
+    observeEvent(input$add_standards_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            add_cs_curve(plate_std = .(as.numeric(trimws(unlist(strsplit(input$plate_std, ","))))), 
+              rep = .(input$std_rep), group = .(input$standard_group)))
+        )
+        updateSelectizeInput(session, "standard_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$standard_group)
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+
+    })
+
+
+    observeEvent(input$add_qc_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Quality Control",
+        numericInput("qc_lqc_conc_input", "LQC Concentration", value = 1, min = 0.001),
+        numericInput("qc_mqc_conc_input", "MQC Concentration", value = 1, min = 0.001),
+        numericInput("qc_hqc_conc_input", "HQC Concentration", value = 1, min = 0.001),
+        numericInput("qc_rep", "Replicate", value = 1, min = 1, max = 10),
+        bslib::input_switch("qc_serial_input", "Serial Adding", value = TRUE),
+        bslib::input_switch("qc_reg_input", "Enforce Regulatory Limits", value = TRUE),
+        selectizeInput("qc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        actionButton("add_qc_btn_final", "Add")
+      ))
+    })
+
+    observeEvent(input$add_qc_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            add_QC(lqc = .(input$qc_lqc_conc_input), 
+              mqc_conc = .(input$qc_mqc_conc_input), 
+              hqc_conc = .(input$qc_hqc_conc_input), 
+              n_qc = .(input$qc_rep), 
+              qc_serial = .(input$qc_serial_input), 
+              reg = .(input$qc_reg_input), 
+              group = .(input$qc_group)))
+        )
+        updateSelectizeInput(session, "qc_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$qc_group)
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+
+    observeEvent(input$add_dqc_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Dilution Quality Control",
+        numericInput("dqc_conc_input", "Undiluted Concentration", value = 1, min = 0.001),
+        shinyWidgets::autonumericInput("dqc_dilfac_input", "Dilution Factor", value = 10, minimumvalue = 1.2, currencySymbol = "X", currencySymbolPlacement = "p"),
+        numericInput("dqc_rep", "Replicate", value = 1, min = 1, max = 10),
+        selectizeInput("dqc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        actionButton("add_dqc_btn_final", "Add")
+      ))
+    })
+
+    observeEvent(input$add_dqc_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            add_DQC(conc = .(input$dqc_conc_input), 
+              fac = .(input$dqc_dilfac_input), 
+              rep = .(input$dqc_rep), 
+              group = .(input$dqc_group)))
+        )
+        updateSelectizeInput(session, "dqc_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$dqc_group)
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+
+    observeEvent(input$add_suitability_btn, {
+      req(curr_gen_plate_starter())
+      showModal(modalDialog(
+        title = "Add Suitability",
+        numericInput("suitability_conc_input", "Concentration", value = 1, min = 0.001),
+        textInput("suitability_descr_input", "Label", value = "Suit"),
+        selectizeInput("suitability_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+        actionButton("add_suitability_btn_final", "Add")
+      ))
+    })
+
+    observeEvent(input$add_suitability_btn_final, {
+      tryCatch({
+        req(curr_gen_plate_expr())
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            add_suitability(conc = .(input$suitability_conc_input), 
+              group = .(input$suitability_group),
+              label = .(input$suitability_descr_input)))
+        )
+        updateSelectizeInput(session, "suitability_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$suitability_group)
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      }, error = function(e){
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+
 
     # TODO add samples
     #################################################################################################################

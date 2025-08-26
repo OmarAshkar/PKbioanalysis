@@ -615,6 +615,7 @@ add_DQC <- function(plate, conc, fac, rep = 5, group = NA) {
         TYPE = "DQC",
         dil = fac,
         std_rep = i,
+        a_group = group,
         e_rep = .last_entity(plate_obj, "DQC") + 1
       )
     )
@@ -654,10 +655,11 @@ add_DQC <- function(plate, conc, fac, rep = 5, group = NA) {
 #' @param plate PlateObj object.
 #' @param conc numeric. Concentration of the suitability well.
 #' @param label character. Label for the suitability well. Default is "suitability".
+#' @param group A string for bioanalytical group.
 #' @importFrom dplyr bind_rows mutate slice_tail
 #' @returns PlateObj
 #' @export
-add_suitability <- function(plate, conc, label = "suitability") {
+add_suitability <- function(plate, conc, label = "suitability", group=NA) {
   checkmate::assertCharacter(label)
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertNumeric(conc, finite = TRUE, lower = 0)
@@ -679,6 +681,8 @@ add_suitability <- function(plate, conc, label = "suitability") {
       value = paste0(label, "_", conc),
       SAMPLE_LOCATION = paste0(LETTERS[empty_spots[1, 1]], ",", empty_spots[1, 2]),
       conc = as.numeric(conc),
+      factor = as.character(1),
+      a_group = group,
       TYPE = "Suitability"
     )
   )
@@ -916,9 +920,10 @@ make_calibration_study <-
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
-#' @param path If not null, must be a path to save plate image
 #' @param transform_dil logical. If TRUE, transform the dilution factor to the label
 #' @param watermark character. If "auto", a watermark is added to the plot. If "none", no watermark is added. Default is "auto"
+#' @param layoutOverlay logical. If TRUE, overlay the plot layout. Default is FALSE
+#' @param path If not null, must be a path to save plate image
 #' @param ... additional arguments passed to ggplot2::ggsave
 #'
 #' @importFrom ggplot2 coord_equal scale_fill_discrete scale_x_continuous scale_y_continuous geom_text labs theme_minimal theme expand_limits
@@ -943,6 +948,7 @@ plot.PlateObj <- function(x,
                           label_size = 1,
                           transform_dil = FALSE,
                           watermark = "auto",
+                          layoutOverlay = FALSE,
                           path = NULL, ...
                           ) {
 
@@ -986,8 +992,27 @@ plot.PlateObj <- function(x,
   plate_df$new_value <- str_replace_all(plate_df$new_value, "_", "\n")
 
 
-
+  currentLayout <- x@filling_scheme
+  rbound <- currentLayout$rbound
+  lbound <- currentLayout$lbound
+  tbound <- currentLayout$tbound # char
+  bbound <- currentLayout$bbound # char
+  scheme <- currentLayout$scheme
   fig <- ggplot2::ggplot(data = plate_df) +
+    list(if(layoutOverlay){
+          ggplot2::annotate("rect", xmin = rbound, xmax = lbound, 
+            ymin = which(LETTERS == tbound), ymax = which(LETTERS == bbound), alpha = 0.2, color = 'yellow')}, 
+        if(layoutOverlay & scheme == 'h'){ 
+          ggplot2::annotate('segment', x = lbound, y = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5, 
+            xend = rbound, yend = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5,
+            linetype = "dashed",
+            arrow = ggplot2::arrow(type = "open", length = unit(0.2, "inches")))} , 
+        if(layoutOverlay & scheme == 'v'){
+          ggplot2::annotate('segment', x = (lbound:rbound)-0.5, y= (which(LETTERS == tbound)) - 0.5,
+            xend = (lbound:rbound)-0.5, yend = (which(LETTERS == bbound)) - 0.5,
+            linetype = "dashed",
+            arrow = ggplot2::arrow(type = "open", length = unit(0.2, "inches")))} 
+    ) + 
     ggforce::geom_circle(aes(
       x0 = .data[["col"]],
       y0 = .data[["row"]],
@@ -1609,4 +1634,15 @@ plate_groups <- function(plate){
     dplyr::mutate(a_group = ifelse(is.na(a_group), "No Group", .data$a_group)) |>
     dplyr::pull("a_group") |>
     unique() 
+}
+
+#' Get empty vials given the active layout
+#' @param plate PlateObj object
+#' @returns number of empty vials in the plate
+#' @noRd
+length_empty_layout <- function(plate){
+  checkmate::assertClass(plate, "PlateObj")
+  
+  empty_spots <- .spot_mask(plate)
+  nrow(empty_spots)
 }

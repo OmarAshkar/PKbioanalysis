@@ -13,6 +13,7 @@
 #' @importFrom data.tree SetEdgeStyle
 #' @importFrom data.tree SetGraphStyle
 #' @importFrom data.tree SetNodeStyle
+#' @importFrom DBI dbExecute
 #' @importFrom DBI dbIsValid
 #' @importFrom DBI dbWriteTable
 #' @importFrom DiagrammeR get_edge_df

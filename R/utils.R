@@ -117,7 +117,6 @@
 
     file_text TEXT,
     a_group TEXT,
-    conc REAL,
     time TEXT,
     factor TEXT,
     dil REAL,
@@ -225,62 +224,8 @@ DBI::dbExecute(db, "
 
 ")
 
+studydesign_db(db)
 
-# studiesdb 
-DBI::dbExecute(db, "
-CREATE TABLE IF NOT EXISTS studiesdb (
-  STUDYID TEXT PRIMARY KEY,
-  STUDYNAME TEXT,
-  SPONSOR TEXT,
-  PROTOCOL TEXT,
-  UNIQUE(STUDYID)
-);
-")
-
-
-# study design
-DBI::dbExecute(db, "
-CREATE TABLE IF NOT EXISTS armsdb (
-  STUDYID TEXT REFERENCES studiesdb(STUDYID),
-  ARMID TEXT PRIMARY KEY,
-  DOSE REAL,
-  DOSEUNIT TEXT,
-  DOSFRM TEXT,
-  ROUTE TEXT,
-  ADDL INTEGER,
-  II REAL,
-  FREQUNIT TEXT, 
-  unique(ARMID, STUDYID)
-);
-")
-
-# subject is unique and not repeated within a study
-DBI::dbExecute(db, "
-CREATE TABLE IF NOT EXISTS adsl (
-  USUBJID TEXT PRIMARY KEY,
-  STUDYID TEXT REFERENCES studiesdb(STUDYID),
-  TRT1 TEXT REFERENCES armsdb(ARMID),
-  TRT2 TEXT REFERENCES armsdb(ARMID),
-  SEX TEXT,
-  AGE REAL,
-  AGEU TEXT, 
-  UNIQUE(USUBJID, STUDYID) 
-);
-")
-
-# obsdb
-DBI::dbExecute(db, "
-CREATE TABLE IF NOT EXISTS obsdb (
-  STUDYID TEXT REFERENCES studiesdb(STUDYID),
-  USUBJID TEXT REFERENCES adsl(USUBJID),
-  TRT TEXT REFERENCES armsdb(ARMID),
-  NOMINALTIME REAL,
-  ANALYZED_IN TEXT,
-  DV REAL,
-  CMT TEXT,
-  UNIQUE(USUBJID, STUDYID, NOMINALTIME, CMT)
-);
-")
 
 duckdb::dbDisconnect(db, shutdown = TRUE)
 }
@@ -293,4 +238,124 @@ rename_db_col <- function(old, new, tablename){
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
   DBI::dbExecute(db, paste0("ALTER TABLE ", tablename, " RENAME COLUMN ", old, " TO ", new))
   duckdb::dbDisconnect(db, shutdown = TRUE)
+}
+
+
+studydesign_db <- function(con){
+# 1. Study
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS study (
+    study_id      TEXT PRIMARY KEY,
+    study_type    TEXT CHECK (study_type IN ('SAD', 'MAD', 'FE', 'BE', 'NA')),
+    title         TEXT,
+    design        TEXT,
+    phase         TEXT,
+    start_date    DATE,
+    end_date      DATE
+  );
+  ")
+
+# 2. Subject
+# screen_number: unique number for each subject in the study
+# randomization_number: unique number for each subject in the study, used for randomization
+# arm: the arm the subject is assigned to, e.g., "A - 100 mg crossover"
+
+DBI::dbExecute(con, "
+  CREATE TABLE  IF NOT EXISTS subject (
+    subject_id          TEXT PRIMARY KEY,
+    study_id            TEXT REFERENCES study(study_id),
+    screen_number       TEXT,
+    randomization_number TEXT, 
+    sex                 TEXT,
+    age                 INTEGER,
+    weight              REAL,
+    arm                 TEXT, 
+    UNIQUE(subject_id, study_id, screen_number, randomization_number)
+  );
+  ")
+
+# 3. Cohort
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS cohort (
+    cohort_id      TEXT PRIMARY KEY,
+    study_id       TEXT REFERENCES study(study_id),
+    cohort_label   TEXT,
+    dose_mg        REAL,
+    periods        INTEGER,
+    food_condition TEXT CHECK (food_condition IN ('Fasted', 'Fed', 'NA')),
+    n_subjects     INTEGER,
+    is_sentinel    BOOLEAN, 
+    UNIQUE(cohort_id, study_id, cohort_label)
+  );
+  ")
+
+# 4. Subject-Cohort Map
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS subject_cohort (
+    subject_id     TEXT REFERENCES subject(subject_id),
+    cohort_id      TEXT REFERENCES cohort(cohort_id),
+    period_number  INTEGER,
+    treatment      TEXT,
+    PRIMARY KEY (subject_id, cohort_id, period_number), 
+    UNIQUE(subject_id, cohort_id, period_number)
+  );
+  ")
+
+# 5. Dosing
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS dosing (
+    subject_id     TEXT REFERENCES subject(subject_id),
+    cohort_id      TEXT REFERENCES cohort(cohort_id),
+    period_number  INTEGER,
+    dose_time      TIMESTAMP,
+    dose_amount    REAL,
+    dose_unit      TEXT CHECK (dose_unit IN ('mg', 'mL', 'NA')),
+    II             REAL,
+    addl           INTEGER,
+    route          TEXT CHECK (route IN ('PO', 'IV', 'SC', 'IM', 'IP', 'NA')),
+    formulation    TEXT
+  );
+  ")
+
+# 6. PK Sample
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS pk_sample (
+    subject_id     TEXT REFERENCES subject(subject_id),
+    cohort_id      TEXT REFERENCES cohort(cohort_id),
+    period_number  INTEGER,
+    analyte        TEXT,
+    CMT            TEXT,
+    EVENT_ID       TEXT,
+    DV             REAL,
+    nominal_time   REAL,
+    actual_time    TIMESTAMP,
+    conc_ng_mL     REAL,
+    analyzed_in    TEXT REFERENCES samples(file_name)
+  );
+  ")
+
+# 7. Adverse Events
+  DBI::dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS ae (
+    ae_id              TEXT PRIMARY KEY,
+    subject_id         TEXT REFERENCES subject(subject_id),
+    start_time         TIMESTAMP,
+    end_time           TIMESTAMP,
+    severity           TEXT,
+    relationship_to_study_drug TEXT,
+    preferred_term     TEXT
+  );
+  ")
+
+# 8. Vital Signs
+  dbExecute(con, "
+  CREATE TABLE IF NOT EXISTS vital_sign (
+    subject_id      TEXT REFERENCES subject(subject_id),
+    visit           TEXT,
+    vital_type      TEXT,  -- e.g., HR, BP
+    value           REAL,
+    collection_time TIMESTAMP
+  );
+  ")
+
 }

@@ -77,7 +77,7 @@ test_that("rep_stdTest", {
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
-    plot() |> expect_warning()
+    plot(layoutOverlay = TRUE) |> expect_warning()
 
     
   # generate 96 well plate
@@ -282,4 +282,14 @@ test_that("DQC", {
     add_DQC(conc = 500, fac = 100, rep= 10) |>
     add_samples(1:10, dil = 10) |> 
     expect_no_error()
+})
+
+test_that("get empty layout", {
+  a <- generate_96() |> 
+    fill_scheme("h", lbound = 1, rbound = 10, bbound = "B") 
+
+  length_empty_layout(a) |> expect_equal(20)
+
+  b <- a |> add_blank() 
+  length_empty_layout(b) |> expect_equal(19)
 })
