@@ -37,7 +37,11 @@ plate_app <- function() {
   grep_input <- function(pattern, x){
     x |> names() |> grep(pattern = pattern, value = TRUE) |>
       sapply(\(y) x[[y]])
+
+      plate_positions <- gen_plate_positions()
   }
+
+  plate_positions <- gen_plate_positions()
 
   # module_compounds <- function(id, number){
   #   ns <- NS(id)
@@ -176,8 +180,8 @@ plate_app <- function() {
         width = 350,
         h4("Layout Options"),
         shinyWidgets::switchInput("layout_horizontal", "Layout", value = TRUE, onLabel = "H", offLabel = "V"),
-        selectInput("top_left_layout_input", "Top Left", choices = sort(levels(interaction(LETTERS[1:8], 1:12, sep = ""))), selected = "A1"),
-        selectInput("bottom_right_layout_input", "Bottom Right", choices = sort(levels(interaction(LETTERS[1:8], 1:12, sep = ""))), selected = "H12"),
+        selectInput("top_left_layout_input", "Top Left", choices = plate_positions, selected = "A1"),
+        selectInput("bottom_right_layout_input", "Bottom Right", choices = plate_positions, selected = "H12"),
         tags$hr(),
         h4("Add Elements"),
         actionButton("add_blank_btn", "Add Blank"),
@@ -276,7 +280,7 @@ plate_app <- function() {
                       title = "Protocol 1",
                       value = "protocol_1",
                       selectInput("inlet_method_select_prot1", "Inlet Method", choices = ""),
-                      bslib::input_switch("exploratory_samples_alg_prot1", "Exploratory Samples", value = FALSE) |>
+                      numericInput("exploratory_samples_alg_prot1", "Exploratory Samples", value = 0) |>
                           bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
                       p("Repeats"),
                       fluidRow(
@@ -481,8 +485,8 @@ plate_app <- function() {
       plot(curr_gen_plate_starter(), 
         color = input$plate_design_color_toggle,
         transform_dil = input$plate_design_transform_dilution,
-        label_size = input$plate_design_font_size), 
-        layoutOverlay = TRUE
+        label_size = input$plate_design_font_size, 
+        layoutOverlay = TRUE)
     })
 
     output$plate_design_treeOutput <- DiagrammeR::renderGrViz({
@@ -618,7 +622,7 @@ plate_app <- function() {
         numericInput("qc_mqc_conc_input", "MQC Concentration", value = 1, min = 0.001),
         numericInput("qc_hqc_conc_input", "HQC Concentration", value = 1, min = 0.001),
         numericInput("qc_rep", "Replicate", value = 1, min = 1, max = 10),
-        bslib::input_switch("qc_serial_input", "Serial Adding", value = TRUE),
+        bslib::input_switch("qc_serial_input", "Serial Adding (Turn off for multichannel pipetting)", value = TRUE),
         bslib::input_switch("qc_reg_input", "Enforce Regulatory Limits", value = TRUE),
         selectizeInput("qc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
         actionButton("add_qc_btn_final", "Add")
@@ -985,7 +989,7 @@ plate_app <- function() {
                 repeat_std = input[[paste0("repeat_std_prot", i)]],
                 repeat_analyte = input[[paste0("repeat_sample_prot", i)]],
                 repeat_qc = input[[paste0("repeat_qc_prot", i)]],
-                explore_mode = input[[paste0("exploratory_samples_alg_prot", i)]],
+                n_explore = input[[paste0("exploratory_samples_alg_prot", i)]],
                 conc_df = cmpd_df,
                 inject_vol = input[[paste0("injec_vol_prot", i)]])
           } # filter only correct method

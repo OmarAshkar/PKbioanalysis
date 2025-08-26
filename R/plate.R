@@ -754,7 +754,6 @@ add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL,
   checkmate::assertNumeric(extra, null.ok = TRUE, lower = 0)
   checkmate::assertString(group, na.ok = TRUE)
 
-
   # assert there was a standard call, and get the last call
   grp_std <- .last_entity(plate, "Standard")
 
@@ -766,6 +765,12 @@ add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL,
   grp_qc <- .last_entity(plate, "QC")
   if(grp_qc == grp_std){
     warning("There is already a QC associated with the last standard")
+  }
+
+  # stop if QC for that group exist
+  grps_with_qcs <- plate@df |> dplyr::filter(.data$TYPE == "QC") |> dplyr::pull(.data$a_group) |> unique() 
+  if(group %in% grps_with_qcs){
+    stop("QC for this group already exists. Add new group")
   }
 
   # get the lloq from the last call
@@ -1645,4 +1650,8 @@ length_empty_layout <- function(plate){
   
   empty_spots <- .spot_mask(plate)
   nrow(empty_spots)
+}
+
+gen_plate_positions <- function(){
+  gtools::mixedsort(levels(interaction(LETTERS[1:8], 1:12, sep = "")))
 }

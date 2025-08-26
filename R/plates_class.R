@@ -96,24 +96,7 @@ setGeneric("build_injec_seq", function(plate, method,
 
 
 #' Create Injection Sequence from PlateObj (Single Plate)
-#' @importFrom dplyr bind_rows bind_cols mutate add_row filter arrange count group_by group_modify ungroup select
-#' @param plate PlateObj object
-#' @param method choose method from database
-#' @param repeat_std number of re-injections for calibration standards. Default is 1.
-#' @param repeat_analyte number of re-injections for unknown samples. Default is 1
-#' @param repeat_qc number of re-injections for QC wells. Default is 1
-#' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
-#' @param blank_at_end If True, adding blank at the end of queue.
-#' @param rep_suitability Number of re-injections for suitability vial.
-#' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
-#' @param inject_vol volume of injection in micro liters.
-#' @param descr Run description.
-#' @param suffix string to be added to the end of the filename. Default is "1".
-#' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param n_explore A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
-#' @param tray Location in sample manager.
-#' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
-#' @param grouped If TRUE, the injections will be grouped by specified groups in the plate.
+#' @rdname build_injec_seq  
 #' @export
 #' @keywords internal
 #' @returns InjecListObj object
@@ -320,23 +303,7 @@ setMethod("build_injec_seq" , "PlateObj" , function(plate,
 
 
 #' Create Injection Sequence from MultiPlate (Multiple Plates)
-#' 
-#' @param plate MultiPlate object
-#' @param method choose method from database
-#' @param repeat_std number of re-injections for calibration standards. Default is 1.
-#' @param repeat_analyte number of re-injections for unknown samples. Default is 1
-#' @param repeat_qc number of re-injections for QC wells. Default is 1
-#' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
-#' @param blank_at_end If True, adding blank at the end of queue.
-#' @param rep_suitability Number of re-injections for suitability vial.
-#' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
-#' @param inject_vol volume of injection in micro liters.
-#' @param descr Run description.
-#' @param suffix string to be added to the end of the filename. Default is "1".
-#' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param n_explore A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
-#' @param tray Location in sample manager.
-#' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
+#' @rdname build_injec_seq
 #' @keywords internal
 #' @export
 #' @returns InjecListObj object

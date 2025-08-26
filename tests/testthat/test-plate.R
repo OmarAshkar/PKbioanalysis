@@ -42,6 +42,13 @@ test_that("plate_filled", {
 })
 
 
+test_that("single QC per group", {
+  a <- generate_96() |>  add_cs_curve(1:10) |>
+    add_QC(3, 4.5, 9) 
+
+  suppressWarnings(add_QC(a, 3, 4.5, 9)) |> 
+    expect_error("QC for this group already exists. Add new group")
+})
 
 test_that("multiple_stds_n_qcs" ,{
   # return 0 if no std or qcs

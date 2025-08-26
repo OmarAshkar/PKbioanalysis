@@ -53,6 +53,7 @@ Imports:
     data.tree
 Suggests: 
     knitr,
+    gtools,
     rmarkdown,
     testthat (>= 3.0.0)
 SystemRequirements: 

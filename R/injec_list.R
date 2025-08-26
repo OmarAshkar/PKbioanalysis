@@ -92,7 +92,7 @@
     qc_levels <- unique(tmpseq$QC$conc)
     n_qc_levels <- length(qc_levels)
     total_qcs <- nrow(tmpseq$QC)/ n_qc_levels
-    stopifnot(length(qc_list) == total_qcs)
+    stopifnot(length(qc_list) == total_qcs) # Cannot have different QCs in same group
   }
   if(!is.null(tmpseq$Analyte)){
     total_samples <- nrow(tmpseq$Analyte)
