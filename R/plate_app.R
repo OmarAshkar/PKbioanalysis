@@ -43,6 +43,11 @@ plate_app <- function() {
 
   plate_positions <- gen_plate_positions()
 
+  
+  remove_old_ui <- function() {
+    removeUI(selector = "#dynamic_ui", immediate = TRUE)
+  }
+
   # module_compounds <- function(id, number){
   #   ns <- NS(id)
 
@@ -149,8 +154,23 @@ plate_app <- function() {
     bslib::nav_panel(title = "Dashboard",
             uiOutput("plate_creation_ui")
       ),
-    bslib::nav_panel(title = "Study Design"),
-    bslib::nav_panel(title = "Samples Log"),  # collected, analyzed
+    bslib::nav_panel(title = "Study Design", 
+      bslib::layout_sidebar(
+        sidebar = bslib::sidebar(
+          width = 600,
+          actionButton("create_new_study_btn", "Create New Study"), 
+          DT::DTOutput("studies_db_DT")
+        ), 
+      bslib::navset_card_pill(
+        nav_panel("Study Overview", DT::DTOutput("study_overview_DT")),
+        nav_panel("Arms", DT::DTOutput("studyarms_DT")), 
+        nav_panel("Subjects", DT::DTOutput("subjects_DT")), 
+        nav_panel("Sample Log", 
+          actionButton("download_sample_log_btn", "Download Current"),
+          actionButton("upload_sample_log_btn", "Re-Upload"),
+          DT::DTOutput("sample_log_DT"))
+      )
+    )),
     bslib::nav_panel(title = "Methods",
        # create 70 30 layout
       bslib::layout_sidebar(
@@ -177,20 +197,27 @@ plate_app <- function() {
       title = "Plate Design",
       bslib::layout_sidebar(
       sidebar = bslib::sidebar(
-        width = 350,
-        h4("Layout Options"),
+        width = 450,
+        h6("Layout Options"),
         shinyWidgets::switchInput("layout_horizontal", "Layout", value = TRUE, onLabel = "H", offLabel = "V"),
-        selectInput("top_left_layout_input", "Top Left", choices = plate_positions, selected = "A1"),
-        selectInput("bottom_right_layout_input", "Bottom Right", choices = plate_positions, selected = "H12"),
+        bslib::layout_column_wrap(
+          width = 1/2, 
+          selectInput("top_left_layout_input", "Top Left", choices = plate_positions, selected = "A1"),
+          selectInput("bottom_right_layout_input", "Bottom Right", choices = plate_positions, selected = "H12"),
+        ),
         tags$hr(),
-        h4("Add Elements"),
-        actionButton("add_blank_btn", "Add Blank"),
-        actionButton("add_double_blank_btn", "Add Double Blank"),
-        actionButton("add_standards_btn", "Add Standards"),
-        actionButton("add_qc_btn", "Add QC"),
-        actionButton("add_dqc_btn", "Add DQC"),
-        actionButton("add_samples_btn", "Add Samples"),
-        actionButton("add_suitability_btn", "Add Suitability")
+        h6("Add Elements"),
+        bslib::layout_column_wrap(
+          width = 1/3,
+          actionButton("add_blank_btn", "Blank"),
+          actionButton("add_double_blank_btn", "Double Blank"),
+          actionButton("add_standards_btn", "Standards"),
+          actionButton("add_qc_btn", "QC"),
+          actionButton("add_dqc_btn", "DQC"),
+          actionButton("add_samples_btn", "Samples"),
+          actionButton("add_suitability_btn", "Suitability")
+        ), 
+        tags$div(id = "gen_plate_ui")
       ),
       div(
         style = "display: flex; flex-direction: column; height: 100%;",
@@ -534,11 +561,17 @@ plate_app <- function() {
 
     observeEvent(input$add_blank_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Blank",
-        selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        selectInput("is_IS_blank", "IS Blank", choices = c(FALSE, TRUE), selected = TRUE), 
-        actionButton("add_blank_btn_final", "Add")
+      remove_old_ui()
+      insertUI(
+        selector = "#gen_plate_ui",
+        ui = div(id = "dynamic_ui",
+          wellPanel(
+            selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+            bslib::input_switch("has_analyte_blank", "Analyte+", value = FALSE),
+            bslib::input_switch("is_IS_blank", "IS+", value = TRUE),
+            bslib::input_switch("blank_matrix", "Analytical Blank (Matrix-)", value = FALSE), 
+            actionButton("add_blank_btn_final", "Add Blank")
+        )
       ))
     })
     
@@ -547,7 +580,8 @@ plate_app <- function() {
         req(curr_gen_plate_expr())
         curr_gen_plate_expr(
           bquote(.(curr_gen_plate_expr()) |>
-          add_blank(group = .(input$blank_group), IS = .(as.logical(input$is_IS_blank))))
+          add_blank(group = .(input$blank_group), IS = .(input$is_IS_blank), 
+            analyte = .(input$has_analyte_blank), analytical = .(input$blank_matrix)))
           )
         curr_gen_plate_starter(eval(curr_gen_plate_expr()))
         updateSelectizeInput(session, "blank_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$blank_group)
@@ -560,10 +594,15 @@ plate_app <- function() {
 
     observeEvent(input$add_double_blank_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Double Blank",
-        selectizeInput("db_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        actionButton("add_double_blank_btn_final", "Add")
+      remove_old_ui()
+          insertUI(
+            selector = "#gen_plate_ui",
+            ui = div(id = "dynamic_ui",
+              wellPanel(
+                selectizeInput("db_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+                bslib::input_switch("db_matrix", "Analytical", value = FALSE),
+                actionButton("add_double_blank_btn_final", "Add")
+        )
       ))
     })
 
@@ -572,7 +611,7 @@ plate_app <- function() {
         req(curr_gen_plate_expr())
         curr_gen_plate_expr(
           bquote(.(curr_gen_plate_expr()) |>
-          add_DB(group = .(input$db_group)))
+          add_DB(group = .(input$db_group), analytical = .(input$db_matrix)))
           )
         curr_gen_plate_starter(eval(curr_gen_plate_expr()))
         updateSelectizeInput(session, "db_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$db_group)
@@ -587,12 +626,15 @@ plate_app <- function() {
 
     observeEvent(input$add_standards_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Calibration Standard Curve",
-        textInput("plate_std", "Standard Sepearated by commas",  "1, 3, 10, 50, 80, 100, 200"),
-        numericInput("std_rep", "Replicate", value = 1, min = 1, max = 10),
-        selectizeInput("standard_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        actionButton("add_standards_btn_final", "Add")
+      remove_old_ui()
+          insertUI(
+            selector = "#gen_plate_ui",
+            ui = div(id = "dynamic_ui",
+              wellPanel(
+                textInput("plate_std", "Standard Sepearated by commas",  "1, 3, 10, 50, 80, 100, 200"),
+                numericInput("std_rep", "Replicate", value = 1, min = 1, max = 10),
+                selectizeInput("standard_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+                actionButton("add_standards_btn_final", "Add"))
       ))
     })
 
@@ -613,20 +655,23 @@ plate_app <- function() {
 
     })
 
-
     observeEvent(input$add_qc_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Quality Control",
-        numericInput("qc_lqc_conc_input", "LQC Concentration", value = 1, min = 0.001),
-        numericInput("qc_mqc_conc_input", "MQC Concentration", value = 1, min = 0.001),
-        numericInput("qc_hqc_conc_input", "HQC Concentration", value = 1, min = 0.001),
-        numericInput("qc_rep", "Replicate", value = 1, min = 1, max = 10),
-        bslib::input_switch("qc_serial_input", "Serial Adding (Turn off for multichannel pipetting)", value = TRUE),
-        bslib::input_switch("qc_reg_input", "Enforce Regulatory Limits", value = TRUE),
-        selectizeInput("qc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        actionButton("add_qc_btn_final", "Add")
-      ))
+      remove_old_ui()
+      insertUI(
+        selector = "#gen_plate_ui",
+        ui = div(id = "dynamic_ui",
+          wellPanel(
+            numericInput("qc_lqc_conc_input", "LQC Concentration", value = 1, min = 0.001),
+            numericInput("qc_mqc_conc_input", "MQC Concentration", value = 1, min = 0.001),
+            numericInput("qc_hqc_conc_input", "HQC Concentration", value = 1, min = 0.001),
+            numericInput("qc_rep", "Replicate", value = 1, min = 1, max = 10),
+            bslib::input_switch("qc_serial_input", "Serial Adding (Turn off for multichannel pipetting)", value = TRUE),
+            bslib::input_switch("qc_reg_input", "Enforce Regulatory Limits", value = TRUE),
+            selectizeInput("qc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+            actionButton("add_qc_btn_final", "Add QC")
+          )
+      )) 
     })
 
     observeEvent(input$add_qc_btn_final, {
@@ -652,14 +697,17 @@ plate_app <- function() {
 
     observeEvent(input$add_dqc_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Dilution Quality Control",
-        numericInput("dqc_conc_input", "Undiluted Concentration", value = 1, min = 0.001),
-        shinyWidgets::autonumericInput("dqc_dilfac_input", "Dilution Factor", value = 10, minimumvalue = 1.2, currencySymbol = "X", currencySymbolPlacement = "p"),
-        numericInput("dqc_rep", "Replicate", value = 1, min = 1, max = 10),
-        selectizeInput("dqc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        actionButton("add_dqc_btn_final", "Add")
-      ))
+      remove_old_ui()
+      insertUI(
+        selector = "#gen_plate_ui",
+        ui = div(id = "dynamic_ui",
+          wellPanel(
+              numericInput("dqc_conc_input", "Undiluted Concentration", value = 1, min = 0.001),
+              shinyWidgets::autonumericInput("dqc_dilfac_input", "Dilution Factor", value = 10, minimumvalue = 1.2, currencySymbol = "X", currencySymbolPlacement = "p"),
+              numericInput("dqc_rep", "Replicate", value = 1, min = 1, max = 10),
+              selectizeInput("dqc_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+              actionButton("add_dqc_btn_final", "Add DQC")))
+      )
     })
 
     observeEvent(input$add_dqc_btn_final, {
@@ -682,13 +730,18 @@ plate_app <- function() {
 
     observeEvent(input$add_suitability_btn, {
       req(curr_gen_plate_starter())
-      showModal(modalDialog(
-        title = "Add Suitability",
-        numericInput("suitability_conc_input", "Concentration", value = 1, min = 0.001),
-        textInput("suitability_descr_input", "Label", value = "Suit"),
-        selectizeInput("suitability_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
-        actionButton("add_suitability_btn_final", "Add")
-      ))
+      remove_old_ui()
+      insertUI(
+        selector = "#gen_plate_ui",
+        ui = div(id = "dynamic_ui",
+          wellPanel(
+            numericInput("suitability_conc_input", "Concentration", value = 1, min = 0.001),
+            textInput("suitability_descr_input", "Label", value = "Suit"),
+            selectizeInput("suitability_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
+            actionButton("add_suitability_btn_final", "Add Suitability")
+          )
+        )
+      )
     })
 
     observeEvent(input$add_suitability_btn_final, {
@@ -1088,17 +1141,14 @@ plate_app <- function() {
       req(current_injec_seq())
 
       if(!lock_export()){
-        d <- current_injec_seq()$injec_list  |>
-          dplyr::select("INJ_VOL", "SAMPLE_LOCATION", "value") |>
-          dplyr::summarise(total_vol = sum(.data$INJ_VOL), .by = c("SAMPLE_LOCATION", "value")) |> 
-          dplyr::arrange(.data$total_vol) 
-
-        current_injec_seq_summary(d)
-
-        DT::datatable(d, options = list(scrollX=TRUE,
-          scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))  |>
-          DT::formatStyle(columns = "total_vol", valueColumns = "total_vol",
-            backgroundColor = DT::styleEqual(unique(d$total_vol), colorRampPalette(c("red", "white"))(length(unique(d$total_vol)))))
+        current_injec_seq()  |> summary() |> current_injec_seq_summary()
+        
+        DT::datatable(current_injec_seq_summary(), options = list(scrollX=TRUE,
+                        scrollCollapse=TRUE , dom = "ft", scrollY = "550px"))  |>
+          DT::formatStyle(columns = "total_volume", 
+                          valueColumns = "total_volume",
+                          backgroundColor = DT::styleEqual(unique(current_injec_seq_summary()$total_volume), 
+                                                          colorRampPalette(c("red", "white"))(length(unique(current_injec_seq_summary()$total_volume)))))
       } else{
         NULL
       }
@@ -1122,7 +1172,7 @@ plate_app <- function() {
       req(current_injec_seq())
 
       if(!lock_export()){
-        max_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_vol) |> max()
+        max_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_volume) |> max()
         paste0("Max Volume: ", max_vol)
       } else{
         NULL
@@ -1134,7 +1184,7 @@ plate_app <- function() {
       req(current_injec_seq())
 
       if(!lock_export()){
-        min_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_vol) |> min()
+        min_vol <- current_injec_seq_summary() |> dplyr::pull(.data$total_volume) |> min()
         paste0("Min Volume: ", min_vol)
       } else{
         NULL
@@ -1328,12 +1378,18 @@ plate_app <- function() {
         id <- as.numeric(strsplit(current_plate()@plate_id, "_")[[1]][1])
 
         x <- reuse_plate(id, input$refill_gaps)
+
+        x |> curr_gen_plate_starter()
+        curr_gen_plate_expr(NULL) # reset
+        updateTabsetPanel(session, "main_tabs", "gen_tab") # switch
+
         show_alert(
-          title = "Plate Successfully Exported",
+          title = "Plate Ready To Reuse",
           text = tags$div(
             h3("A new variable captured in R. Please close this window now")
           ))
-          shiny::stopApp(x) # return the new plate
+
+          # shiny::stopApp(x) # return the new plate
 
         } ,
         error = function(e) {showNotification(e$message, type = "error")}
@@ -1459,6 +1515,9 @@ plate_app <- function() {
         showConfirmButton = TRUE,
         showCancelButton = TRUE
       )
+      if (input$exit) {
+        stopApp()
+      }
     })
 
   }

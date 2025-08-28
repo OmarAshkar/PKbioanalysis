@@ -14,7 +14,7 @@ test_that("extract_last_layout", {
         generate_96(descr = "My Plate") 
        )
        
-    check_last_fill(x) |> expect_equal(FALSE)
+    check_last_fill(x) |> expect_equal(NULL) # no expr
 
     x <- quote(
         generate_96(descr = "My Plate") |> 

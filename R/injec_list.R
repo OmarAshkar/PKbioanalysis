@@ -103,8 +103,9 @@
     # Break analyte_df into chunks of size break_every
     analyte_df <- tmpseq$Analyte
     merged_df <- analyte_df[0, ] # empty dataframe with same columns
-    analyte_splits <- split(analyte_df, 
-      rep(1:ceiling(nrow(analyte_df) / break_every), each = break_every, length.out = nrow(analyte_df)))
+    # Split analyte_df into n_qc_levels approximately equal chunks
+    split_indices <- cut(seq_len(nrow(analyte_df)), breaks = n_qc_levels, labels = FALSE)
+    analyte_splits <- split(analyte_df, split_indices)
 
     # Interleave qc_list and analyte_splits
     max_len <- max(length(qc_list), length(analyte_splits))
@@ -371,13 +372,18 @@ download_sample_list <- function(sample_list, vendor){
 }
 
 #'@export
+summary.InjecListObj <- function(x, ...){
+  x$injec_list |>
+      summarise(total_volume = sum(.data$INJ_VOL), .by = c("SAMPLE_LOCATION", "value")) |>
+      arrange(desc(.data$total_volume))
+}
+
+#'@export
 print.InjecListObj <- function(x, ...) {
 
   cat("Check if total volume is OK. Volume will depend on injection and filtration modes")
   sprintf("Total number of injections %s", nrow(x$injec_list))
-  x$injec_list |>
-    summarise(total_volume = sum(.data$INJ_VOL), .by = "SAMPLE_LOCATION") |>
-    arrange(desc(.data$total_volume)) |> print()
+  summary(x) |> print()
 
   return(invisible(x))
 

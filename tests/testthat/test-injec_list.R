@@ -1,7 +1,7 @@
 test_that("plate_registered_before_seq", {
   generate_96() |>
-    build_injec_seq( inject_vol = 2) |>
-    expect_error()
+    build_injec_seq( inject_vol = 2, tray = "2") |>
+    expect_error("Plate is not registered")
 })
 
 test_that("build_injec_seq", {
@@ -26,9 +26,10 @@ test_that("build_injec_seq", {
 
     # register_plate()
 
-  build_injec_seq(x, 
+  injseq <- build_injec_seq(x, 
     inject_vol = 2, tray = "1", method = "method.q", n_explore = 4) 
-
+  print(injseq)
+  expect_true("total_volume" %in% colnames(summary(injseq))) # generic summary test 
 })
 
 
@@ -78,7 +79,7 @@ test_that("multiple_plates", { # expect 1 list
 
   length(x) |> expect_equal(2)
 
-  build_injec_seq(x, tray = c("1", "2"), inject_vol = 2, method = "method.q") |> expect_no_error()
+  build_injec_seq(x, tray = c("1", "2"), inject_vol = 2, method = "method.q", rep_suitability  = 0) |> expect_no_error()
 })
 
 test_that("exploratory_samples_added", {
@@ -91,7 +92,7 @@ test_that("exploratory_samples_added", {
     add_blank() |>  # 3
     plate_metadata("new") |>
     register_plate()
-  build_injec_seq(x, tray = "1", inject_vol = 2, n_explore = 2, method = "method.q1")  |> 
+  build_injec_seq(x, tray = "1", inject_vol = 2, n_explore = 2, method = "method.q1", rep_suitability = 0)  |> 
     expect_no_error()
 }
 )
@@ -121,3 +122,22 @@ test_that("writing_increment_id", {
   .last_list_id() |> expect_equal(2)
 })
 
+test_that("export masslynx", {
+  skip_on_cran()
+  skip_on_ci()
+
+  .reset_samples_db()
+  x <- generate_96() |>
+    add_cs_curve(c(1,10, 30, 40 , 100, 200)) |> # 1
+    add_samples(1:20) |> # 2
+    add_blank() |>  # 3
+    plate_metadata("new") |>
+    register_plate()
+
+  injlist <- build_injec_seq(x, method = "method.ql", tray = "1", inject_vol = 2, n_explore = 4, suffix = "2", rep_suitability = 0) |>
+    write_injec_seq()
+
+  masslynxlist <- download_sample_list(injlist, "masslynx")
+
+  all(c("Index", "FILE_NAME", "SAMPLE_LOCATION", "CONC_A") %in% colnames(masslynxlist)) |> expect_true()
+})

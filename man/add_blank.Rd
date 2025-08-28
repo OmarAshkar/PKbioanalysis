@@ -5,7 +5,7 @@
 \title{Add blank to the plate
 Can be either double blank (DB), CS0IS+ or CS+IS0}
 \usage{
-add_blank(plate, IS = TRUE, analyte = FALSE)
+add_blank(plate, IS = TRUE, analyte = FALSE, analytical = TRUE, group = NA)
 }
 \arguments{
 \item{plate}{PlateObj object}
@@ -13,6 +13,10 @@ add_blank(plate, IS = TRUE, analyte = FALSE)
 \item{IS}{logical. If TRUE, add IS to the well.}
 
 \item{analyte}{logical. If TRUE, add analyte to the well.}
+
+\item{analytical}{logical. If FALSE, the blank is analytical, if TRUE it is bioanalytical.}
+
+\item{group}{A string for bioanalytical group.}
 }
 \value{
 PlateObj

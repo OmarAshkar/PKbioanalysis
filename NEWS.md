@@ -22,3 +22,7 @@
 - Support for plate generation from `plate_app` GUI 
 - plate generation undo support 
 - tree visualization for plate
+- Support for analytical blanks
+- Support for study registration
+
+ 

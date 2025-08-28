@@ -22,10 +22,13 @@ test_that("plate_registration", {
 test_that("reuse_plate", {
   skip_on_cran()
   skip_on_ci()
+
   x <- generate_96() |> add_blank(TRUE, FALSE) |> register_plate()
   .is_registered(x) |> expect_equal(TRUE)
-
-  x <- reuse_plate(1, 4)
+  platesdb <- .get_plates_db()
+  currid <- platesdb[1, "id"]
+  currid <- unlist(strsplit(currid, "_"))[[1]]
+  x <- reuse_plate(as.numeric(currid), 4)
   .is_registered(x) |> expect_equal(FALSE)
 
   validObject(x) |> expect_equal(TRUE)
@@ -81,39 +84,11 @@ test_that("rep_stdTest", {
     fill_scheme("v", tbound = "D", bbound = "G") |>
     # fill_scheme("h", lbound = 1, rbound = 12) |>
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
-    plot(layoutOverlay = TRUE) |> expect_warning()
+    plot(layoutOverlay = TRUE) |> expect_no_error()
 
     
-  # generate 96 well plate
-  # fill vertically from A to C. Add sample of LLOQ/4 with conc 0.25. 
-  # Fill horizontally from 2 to 9. Add 8 standards from 1 to 200 with 3 replicates.
-  # Fill horizontally from 9 to 12. Add 2 DB and 2 blanks. 
-  # Fill horizontally from D to H. 
-  # Add 6 samples of LLOQ/4 with conc 0.25 with prefix Q.
-  # Add 9 samples of LLOQ/4 with conc 0.25 with prefix DQ.
-  # fill vertically from D to G. 
-  # Add 3 QCs with 80, 180 and reg = T. Add 3 QCs with 80, 180 and reg = T with dil = 50.
-
-  # Ans:
-  x <- generate_96() |> 
-    fill_scheme("v", tbound = "A", bbound = "C") |>
-    add_samples(rep("LOQ/4", 3), conc = 0.25, prefix = "S") |>
-    fill_scheme("h", lbound = 2, rbound = 9) |>
-    add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> # 8 points, 3 replicates
-
-    fill_scheme("h", lbound = 9, rbound = 12) |>
-    add_DB() |>
-    add_blank() |> 
-    add_blank() |> 
-    fill_scheme("h", tbound = "D", bbound = "H") |>
-    add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q")  |>
-    add_samples(rep("DQLOQ/4", 6), conc = 0.25, prefix = "DQ")  |>
-    fill_scheme("v", tbound = "D", bbound = "H") |>
-    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |> 
-    add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) 
 
   # register_plate(x)
     
@@ -127,7 +102,7 @@ test_that("Last position", {
   x <- generate_96(start_row  = "H", start_col  = 5) |>
     add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
     add_blank(IS = TRUE, analyte = FALSE)  |>
-    add_blank(IS = FALSE, analyte = FALSE)
+    add_blank(IS = FALSE, analyte = FALSE, analytical = FALSE)
   x@plate[8, 12] |> unname()|> expect_equal("DB")
 })
 

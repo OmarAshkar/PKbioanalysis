@@ -188,7 +188,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   empty_spots <- .spot_mask(plate_obj)
   
   new_df <- df[FALSE, ]
-  for (i in 1:nrow(samples_df)) {
+  for (i in seq_along(nrow(samples_df))) {
     plate[empty_spots[i, 1], empty_spots[i, 2]] <- samples_df$samples[i]
     new_df <- dplyr::bind_rows(
       new_df,
@@ -211,7 +211,6 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
         factor = samples_df$factor[i],
         route = samples_df$route[i],
         cmt = samples_df$cmt[i],
-        a_group = samples_df$group[i],
         std_rep =  NA, 
         e_rep = .last_entity(plate_obj, "Analyte") + 1
       )
@@ -430,12 +429,13 @@ add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dose
 #' @param plate PlateObj object
 #' @param IS logical. If TRUE, add IS to the well.
 #' @param analyte logical. If TRUE, add analyte to the well.
-#' @param group A string for bioanalytical group. 
+#' @param analytical logical. If FALSE, the blank is analytical, if TRUE it is bioanalytical.
+#' @param group A string for bioanalytical group.
 #'
 #' @import stringr
 #' @returns PlateObj
 #' @export
-add_blank <- function(plate, IS = TRUE, analyte = FALSE, group = NA) {
+add_blank <- function(plate, IS = TRUE, analyte = FALSE, analytical = FALSE, group = NA) {
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertLogical(IS)
   checkmate::assertLogical(analyte)
@@ -452,6 +452,9 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE, group = NA) {
   }
   if (IS == TRUE & analyte == TRUE) {
     stop("You cannot have both IS and analyte as TRUE")
+  }
+  if(analytical){
+    blank_vec <- paste0(blank_vec, "M-")
   }
 
   plate_obj <- plate
@@ -495,6 +498,7 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE, group = NA) {
 
 #' Add double blank (DB) to a plate
 #' @param plate PlateObj object
+#' @param analytical logical. If TRUE, the blank is bioanalytical, if FALSE it is analytical.
 #' @param group A string for bioanalytical group.
 #'
 #' @export
@@ -502,10 +506,10 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE, group = NA) {
 #' @examples
 #' plate <- generate_96() |>
 #' add_DB()
-add_DB <- function(plate, group = NA) {
+add_DB <- function(plate, analytical = FALSE, group = NA) {
   checkmate::assertClass(plate, "PlateObj")
 
-  add_blank(plate, IS = FALSE, analyte = FALSE, group = group)
+  add_blank(plate, IS = FALSE, analyte = FALSE, analytical = analytical, group = group)
 
 }
 
@@ -1006,7 +1010,7 @@ plot.PlateObj <- function(x,
   fig <- ggplot2::ggplot(data = plate_df) +
     list(if(layoutOverlay){
           ggplot2::annotate("rect", xmin = rbound, xmax = lbound, 
-            ymin = which(LETTERS == tbound), ymax = which(LETTERS == bbound), alpha = 0.2, color = 'yellow')}, 
+            ymin = which(LETTERS == tbound), ymax = which(LETTERS == bbound), alpha = 0.2, color = 'yellow', fill = 'yellow')}, 
         if(layoutOverlay & scheme == 'h'){ 
           ggplot2::annotate('segment', x = lbound, y = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5, 
             xend = rbound, yend = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5,

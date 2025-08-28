@@ -17,8 +17,8 @@
   if(file.exists(db_path)) {
     file.rename(db_path, paste0(db_path, "_old"))
   }
-
 }
+
 
 #' Return metadata table for sample list
 #' @noRd
@@ -80,7 +80,7 @@
     e_rep INTEGER,
     tray TEXT,
     inj_vol REAL,
-
+    conc TEXT, -- don't remove
     conc_a TEXT,
     conc_b TEXT,
     conc_c TEXT,
@@ -121,7 +121,8 @@
     factor TEXT,
     dil REAL,
     dose TEXT,
-    II REAL,
+    dose_unit TEXT,
+    ii REAL,
     addl INTEGER,
     route TEXT,
     cmt TEXT,
