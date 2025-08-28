@@ -5,7 +5,7 @@
 \title{Add blank to the plate
 Can be either double blank (DB), CS0IS+ or CS+IS0}
 \usage{
-add_blank(plate, IS = TRUE, analyte = FALSE, analytical = TRUE, group = NA)
+add_blank(plate, IS = TRUE, analyte = FALSE, analytical = FALSE, group = NA)
 }
 \arguments{
 \item{plate}{PlateObj object}

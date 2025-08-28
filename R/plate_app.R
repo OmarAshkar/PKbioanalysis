@@ -235,7 +235,11 @@ plate_app <- function() {
                   selectInput("plate_design_transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
                   numericInput("plate_design_font_size", "Font Size", value = 1, step = 0.2),
                   title = "Color By")),
-                plotOutput("plate_design_plotOutput", width = "100%", height = "100%" )
+                plotOutput("plate_design_plotOutput", 
+                            brush = "plate_design_brush", 
+                            # click = "plate_design_click",
+                            width = "100%", height = "100%" )#,
+                # verbatimTextOutput("clicked_plate_design")
               )),
           bslib::nav_panel("Tree", 
             bslib::card(
@@ -247,8 +251,7 @@ plate_app <- function() {
         style = "margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;",
         actionButton("undo_plate_design_btn", "Undo"),
         actionButton("save_plate_design_btn", "Save"),
-        actionButton("new_plate_design_btn", "New"),
-        actionButton("open_plate_design_btn", "Open")
+        actionButton("new_plate_design_btn", "New")
         )
       )
       )
@@ -484,6 +487,7 @@ plate_app <- function() {
     ###### plate Generator ######
     curr_gen_plate_starter <- reactiveVal(NULL)
     curr_gen_plate_expr <- reactiveVal(NULL)
+    layoutfrombrush <- reactiveVal(FALSE)
     observeEvent(input$new_plate_design_btn, {
       showModal(modalDialog(
       title = "Create New Plate Design",
@@ -516,6 +520,46 @@ plate_app <- function() {
         layoutOverlay = TRUE)
     })
 
+    observeEvent(input$plate_design_brush, {
+      req(curr_gen_plate_starter())
+      brush_data <- input$plate_design_brush
+
+      lbound <- round(brush_data$xmin)
+      lbound <- max(lbound, 1)
+      rbound <- round(brush_data$xmax)
+      rbound <- min(rbound, 12)
+      tbound <- LETTERS[round(brush_data$ymin)]
+      bbound <- LETTERS[round(brush_data$ymax)]
+
+      curr_gen_plate_expr(
+        bquote(.(curr_gen_plate_expr()) |>
+          fill_scheme(fill = .(ifelse(input$layout_horizontal, "h", "v")),
+            lbound = .(lbound),
+            rbound = .(rbound),
+            tbound = .(tbound),
+            bbound = .(bbound))))
+            
+      curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+      layoutfrombrush(TRUE)
+      updateSelectInput(session, "top_left_layout_input", selected = paste0(tbound, lbound))
+      updateSelectInput(session, "bottom_right_layout_input", selected = paste0(bbound, rbound))
+
+      session$resetBrush("plate_design_brush")
+    })
+
+    output$clicked_plate_design <- renderPrint({
+      req(curr_gen_plate_starter())
+      clicked_data <- input$plate_design_click
+      req(clicked_data)
+      x <- round(as.numeric(clicked_data$x))
+      y <- round(as.numeric(clicked_data$y))
+      print(paste("Clicked on plate design at:", "Row:", y, "Column:", x))
+      clicked_data <- curr_gen_plate_starter()@df |> dplyr::filter(row == y, col == x)
+      clicked_data
+
+    })
+
+
     output$plate_design_treeOutput <- DiagrammeR::renderGrViz({
       req(curr_gen_plate_starter())
       plate_tree(curr_gen_plate_starter())
@@ -534,28 +578,31 @@ plate_app <- function() {
 
     observeEvent(c(input$layout_horizontal, input$top_left_layout_input, input$bottom_right_layout_input), {
       req(curr_gen_plate_starter())
+      if(layoutfrombrush()){
+        layoutfrombrush(FALSE)
+      } else {
+        tbound <- gsub("(\\D+)(\\d+)", "\\1", input$top_left_layout_input)
+        lbound <- gsub("(\\D+)(\\d+)", "\\2", input$top_left_layout_input) |> as.numeric()
 
-      tbound <- gsub("(\\D+)(\\d+)", "\\1", input$top_left_layout_input)
-      lbound <- gsub("(\\D+)(\\d+)", "\\2", input$top_left_layout_input) |> as.numeric()
-
-      bbound <- gsub("(\\D+)(\\d+)", "\\1", input$bottom_right_layout_input)
-      rbound <- gsub("(\\D+)(\\d+)", "\\2", input$bottom_right_layout_input) |> as.numeric()
+        bbound <- gsub("(\\D+)(\\d+)", "\\1", input$bottom_right_layout_input)
+        rbound <- gsub("(\\D+)(\\d+)", "\\2", input$bottom_right_layout_input) |> as.numeric()
 
 
-      # undo first 
-      while(!is.null(check_last_fill(curr_gen_plate_expr()))){
-        curr_gen_plate_expr(undo_last_call(curr_gen_plate_expr()))
+        # undo first 
+        while(!is.null(check_last_fill(curr_gen_plate_expr()))){
+          curr_gen_plate_expr(undo_last_call(curr_gen_plate_expr()))
+        }
+
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            fill_scheme(fill = .(ifelse(input$layout_horizontal, "h", "v")),
+              lbound = .(lbound),
+              rbound = .(rbound),
+              tbound = .(tbound),
+              bbound = .(bbound))))
+              
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
       }
-
-      curr_gen_plate_expr(
-        bquote(.(curr_gen_plate_expr()) |>
-          fill_scheme(fill = .(ifelse(input$layout_horizontal, "h", "v")),
-            lbound = .(lbound),
-            rbound = .(rbound),
-            tbound = .(tbound),
-            bbound = .(bbound))))
-            
-      curr_gen_plate_starter(eval(curr_gen_plate_expr()))
 
     })
 

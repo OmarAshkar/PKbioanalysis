@@ -4,7 +4,7 @@
 \alias{add_DB}
 \title{Add double blank (DB) to a plate}
 \usage{
-add_DB(plate, analytical = TRUE, group = NA)
+add_DB(plate, analytical = FALSE, group = NA)
 }
 \arguments{
 \item{plate}{PlateObj object}
