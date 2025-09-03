@@ -145,9 +145,9 @@ peakres_to_chromres <- function(peakres, method = NA){
 .child_to_df <- function(xmltree, tag){
 
   if(tag == "ISPEAK"){
-    df <- xml_child(xmltree, tag) |> (\(x)pivot_wider(enframe(xml_attrs(x)[[1]])))()
+    df <- xml2::xml_child(xmltree, tag) |> (\(x)tidyr::pivot_wider(enframe(xml2::xml_attrs(x)[[1]])))()
   } else {
-    df <- xml_child(xmltree, tag) |> (\(x)pivot_wider(enframe(xml_attrs(x))))()
+    df <- xml2::xml_child(xmltree, tag) |> (\(x)tidyr::pivot_wider(enframe(xml2::xml_attrs(x))))()
   }
 colnames(df) <- paste0(tag, "_", colnames(df))
 df
@@ -167,7 +167,7 @@ df
       # assert ending xml 
       if(!grepl(".xml$", xmlpath)) stop("Targetlynx file must be xml")
 
-      xmlSPL <- read_xml(xmlpath) |> xml_find_all("//SAMPLELISTDATA")
+      xmlSPL <- xml2::read_xml(xmlpath) |> xml2::xml_find_all("//SAMPLELISTDATA")
 
       x <- list()
 
@@ -175,13 +175,13 @@ df
         maintmp <- tidyr::pivot_wider(tibble::enframe(xml2::xml_attrs(spl)))
         colnames(maintmp) <- paste0("main_", colnames(maintmp))
 
-        for(i in xml_children(spl)){  #samples
-          if(length(xml_attrs(i)) == 2) next
+        for(i in xml2::xml_children(spl)){  #samples
+          if(length(xml2::xml_attrs(i)) == 2) next
             spltmp <- tidyr::pivot_wider(tibble::enframe(xml2::xml_attrs(i)))
             colnames(spltmp) <- paste0("sample_", colnames(spltmp))
 
             for(ii in xml2::xml_children(i)){ # compounds
-              if(xml_name(ii) == "COMPOUND"){
+              if(xml2::xml_name(ii) == "COMPOUND"){
                 cmptmp <- tidyr::pivot_wider(tibble::enframe(xml2::xml_attrs(ii)))
                 colnames(cmptmp) <- paste0("cmpd_", colnames(cmptmp))
 
@@ -209,9 +209,7 @@ df
             mutate(sample_type = case_when(
               sample_type == "Analyte" ~ "Sample", 
               .default = sample_type)),
-             "targetlynx", 
-             has_IS = "ISPEAK_area" %in% colnames(x), 
-             smoothed = TRUE)
+             "targetlynx")
 
       }
 
@@ -220,16 +218,23 @@ df
   checkmate::assertClass(peak_res, "PeakRes")
   
   # sample name, peak_start, peak_end, compound, transition
-  if(peak_res$vendor == "targetlynx"){
+  if(peak_res$vendor == "targetlynxXML"){
     # peak_res$res$cmpd_name
     # peak_res$res$PEAK_chromtrace
     data.frame(filename = peak_res$res$sample_name, 
               peak_start = peak_res$res$PEAK_startrt, 
               peak_end = peak_res$res$PEAK_endrt, 
               compound = peak_res$res$cmpd_name,
+              peak_area = peak_res$res$PEAK_area,
+              is_area = peak_res$res$ISPEAK_area,
+              stdconc = peak_res$res$sample_stdconc,
+              sample_vial = peak_res$res$sample_vial,
+              peak_area_ratio = peak_res$res$area_ratio,
               transition = peak_res$res$PEAK_chromtrace
       ) |> tidyr::separate(transition, into = c("q1", "q3") , sep = ">" )
-  } else{
+  } else if(peak_res$vendor == "targetlynxCSV"){
+    stop("Not implemented yet")
+  }else{
     stop("No know vendor")
   }
 }

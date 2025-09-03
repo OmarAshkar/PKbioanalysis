@@ -74,17 +74,19 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
     dplyr::mutate(col = as.integer(str_remove(.data$col, "V"))) |>
     dplyr::mutate(SAMPLE_LOCATION = paste0(LETTERS[.data$row], ",", .data$col)) |>
     dplyr::mutate(samples = as.character(NA)) |>
+    dplyr::mutate(log_id = as.character(NA)) |>
+    dplyr::mutate(study_id = as.character(NA)) |>
     dplyr::mutate(conc = as.numeric(NA)) |>
     dplyr::mutate(dil = as.numeric(NA)) |>
-    dplyr::mutate(time = as.character(NA)) |>
-    dplyr::mutate(sex = as.character(NA)) |>
-    dplyr::mutate(factor = as.character(NA)) |>
-    dplyr::mutate(dose = as.character(NA)) |>
-    dplyr::mutate(dose_unit = as.character(NA)) |>
-    dplyr::mutate(II = as.numeric(NA)) |>
-    dplyr::mutate(addl = as.numeric(NA)) |>
-    dplyr::mutate(route = as.character(NA)) |>
-    dplyr::mutate(cmt = as.character(NA)) |>
+    # dplyr::mutate(time = as.character(NA)) |>
+    # dplyr::mutate(sex = as.character(NA)) |>
+    # dplyr::mutate(factor = as.character(NA)) |>
+    # dplyr::mutate(dose = as.character(NA)) |>
+    # dplyr::mutate(dose_unit = as.character(NA)) |>
+    # dplyr::mutate(II = as.numeric(NA)) |>
+    # dplyr::mutate(addl = as.numeric(NA)) |>
+    # dplyr::mutate(route = as.character(NA)) |>
+    # dplyr::mutate(cmt = as.character(NA)) |>
     dplyr::mutate(TYPE = as.character(NA))  |>
     dplyr::mutate(a_group = as.character(NA)) |>
     dplyr::mutate(std_rep = as.numeric(NA)) |> 
@@ -423,6 +425,58 @@ add_samples_c <- function(plate, n_rep, time  = NA, conc = NA, factor = NA, dose
     prefix = prefix)
 }
 
+add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA){
+  checkmate::assertVector(logIds, min.len = 1, any.missing = FALSE)
+  checkmate::assertNumeric(dil, lower = 1, finite = TRUE)
+  if(length(dil) == 1){
+    dil <- rep(dil, length(logIds))
+  }
+  stopifnot(length(dil) == length(logIds))
+
+  samplesdf <- retrieve_full_log_by_id(logIds) |> 
+    dplyr::mutate(nominal_time = paste0("T", .data$nominal_time)) |> 
+    dplyr::mutate(dose_amount = ifelse(!is.na(.data$dose_amount), paste0(.data$dose_amount, .data$dose_unit), .data$dose_amount))
+
+  plateobj <- plate
+  df <- plate@df
+  plate <- plate@plate
+  empty_rows <- plateobj@empty_rows
+
+  if(namestyle == 1){
+    order <- c("subject_id", "nominal_time", "sex", "sample_type", 
+      "arm_id", "dose_amount", "dose_freq", "route", "formulation")
+    
+    values <- apply(samplesdf[, order], 1, function(row) paste(na.omit(row), collapse = "_"))
+  }
+  stopifnot(length(values) == nrow(samplesdf))
+
+  empty_spots <- .spot_mask(plateobj)
+  plate[empty_spots[1:nrow(samplesdf), 1], empty_spots[1:nrow(samplesdf), 2]] <- values
+
+  new_df <- df[FALSE, ]
+  for(i in seq_len(nrow(samplesdf))){
+    sample_row <- samplesdf[i, ]
+    new_row <- data.frame(
+      row = empty_spots[i, 1],
+      col = empty_spots[i, 2],
+      value = values[i],
+      study_id = samplesdf[i, "study_id"],
+      log_id = samplesdf[i, "log_id"],
+      a_group = group,
+      dil = dil[i],
+      TYPE = "Analyte",
+      e_rep = .last_entity(plateobj, "Analyte") + 1
+    )
+    new_df <- rbind(new_df, new_row)
+  }
+  df <- .bind_new_samples(df, new_df)
+
+  plateobj@df <- df
+  plateobj@plate <- plate
+
+  validObject(plateobj)
+  plateobj
+}
 
 #' Add blank to the plate
 #' Can be either double blank (DB), CS0IS+ or CS+IS0
@@ -544,6 +598,7 @@ add_cs_curve <- function(plate, plate_std, rep = 1, group = NA) {
   plate_std <- rep(plate_std, rep)
 
   empty_spots <- .spot_mask(plate_obj)
+  .check_feasible_adding(plate_obj, empty_spots, length(plate_std))
 
   new_df <- df[FALSE, ]
 
@@ -600,6 +655,7 @@ add_DQC <- function(plate, conc, fac, rep = 5, group = NA) {
   plate <- plate@plate
 
   empty_spots <- .spot_mask(plate_obj)
+  .check_feasible_adding(plate_obj, empty_spots, 5)
 
   new_df <- df[FALSE, ]
 
@@ -795,10 +851,7 @@ add_QC <- function(plate, lqc_conc, mqc_conc, hqc_conc, extra = NULL,
   empty_rows <- plate_obj@empty_rows
 
   empty_spots <- .spot_mask(plate_obj)
-
-  if (nrow(empty_spots) < 4 * n_qc) {
-    stop("Not enough empty spots for QC")
-  }
+  .check_feasible_adding(plate_obj, empty_spots, 4 * n_qc)
 
   new_df <- df[FALSE,]
 
@@ -971,20 +1024,23 @@ plot.PlateObj <- function(x,
 
   descr <- plate@descr
   plate_df <- plate@df |> # zero if blanks, NA if empty cell. Conc otherwise
-    # mutate(conc = ifelse(is.na(.data$conc), ifelse(.data$value == "X", NA, 0), .data$conc)) |>
     mutate(conc = as.character(conc)) |>
-    mutate(time = as.character(.data$time))  |>
-    mutate(dose = as.character(.data$dose)) |>
-    mutate(factor = as.character(.data$factor))
+    left_join(
+      retrieve_full_log_by_id(na.omit(unique(plate@df$log_id))), 
+      by = c("log_id", "study_id"))
+    # mutate(time = as.character(.data$time))  |>
+    # mutate(dose = as.character(.data$dose)) |>
+    # mutate(factor = as.character(.data$factor))
+    browser()
 
   color_actual <- switch(color, 
     "conc" = "conc",
-    "time" = "time",
+    "time" = "nominal_time",
     "factor" = "factor",
-    "samples" = "samples",
-    "dose" = "dose",
+    "samples" = "subject_id",
+    "dose" = "dose_amount",
     "route" = "route",
-    "cmt" = "cmt", 
+    "cmt" = "sample_type", 
     "group" = "a_group")
 
   # remove bottle if there
@@ -1453,10 +1509,18 @@ fill_scheme <- function(plate, fill = "h", tbound = "A", bbound = "H", lbound = 
   plate
 }
 
+.check_feasible_adding <- function(plate, empty_spots, n){
+  total_empty_spots <- nrow(which(is.na(plate@plate), arr.ind = TRUE))
+  if(n > nrow(empty_spots)) stop("Not enough empty spots within boundary.  
+                                  Region has ", nrow(empty_spots), " empty spots while ", n, " are needed.  
+                                  Plate has ", total_empty_spots, " empty spots in total.")
+}
+
 .spot_mask <- function(plate){
   # get empty spots
   empty_rows <- plate@empty_rows
   empty_spots <- which(is.na(plate@plate), arr.ind = TRUE) # empty spots 
+  total_empty_spots <- nrow(empty_spots)
 
   empty_spots <- empty_spots[empty_spots[, 1] >= match(plate@filling_scheme$tbound, LETTERS) &
     empty_spots[, 1] <= match(plate@filling_scheme$bbound, LETTERS) & 
@@ -1471,8 +1535,8 @@ fill_scheme <- function(plate, fill = "h", tbound = "A", bbound = "H", lbound = 
     } else if(plate@filling_scheme$scheme == "hv"){
       empty_spots <- empty_spots
       empty_spots <- empty_spots[order(empty_spots[, 1], empty_spots[, 2]), ]
-    } 
-    if(nrow(empty_spots) == 0) stop("No empty spots available")
+    }
+    if(nrow(empty_spots) == 0) stop("No empty spots in the specified boundary. Plate has ", total_empty_spots, " empty spots.")
   } else{
     empty_spots <- matrix(empty_spots, nrow = 1)
   }

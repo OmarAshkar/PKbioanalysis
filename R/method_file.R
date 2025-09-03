@@ -27,6 +27,7 @@
     # assert combination of q1 and q3 is unique to be saved in transition table
 
     db <- .connect_to_db()
+    on.exit(.close_db(db), add = TRUE)
     # create new method ID
     max_method_id <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
     method_id <- ifelse(is.na(max_method_id), 1, max_method_id+1)
@@ -74,7 +75,6 @@
     DBI::dbBegin(db)
 
     tryCatch({
-        
         # Add to methodstab
         DBI::dbAppendTable(db, "methodstab", unique_methods_df)
         
@@ -102,43 +102,41 @@
         stop("Transaction failed: ", e$message)
     })
 
-
-    duckdb::dbDisconnect(db, shutdown = TRUE)
-
 }
 
 #' Load methods database
 #' @noRd
 .get_methodsdb <- function(){
     .check_sample_db()
+
     db <- .connect_to_db()
+    on.exit(.close_db(db), add = TRUE)
+
     methods <- DBI::dbReadTable(db, "methodstab")
-    duckdb::dbDisconnect(db, shutdown = TRUE)
     methods
 }
 
 .get_method_transitions <- function(method_id){
     .check_sample_db()
     db <- .connect_to_db()
+    on.exit(.close_db(db), add = TRUE)
     transitions <- DBI::dbGetQuery(db, paste0("SELECT * FROM transtab WHERE method_id = ", method_id)) |> 
         as.data.frame()
-    duckdb::dbDisconnect(db, shutdown = TRUE)
     transitions
 }
 
 .get_method_cmpds <- function(method_id){
     .check_sample_db()
     db <- .connect_to_db()
+    on.exit(.close_db(db), add = TRUE)
 
     if(!(method_id %in% .get_methodsdb()$method_id)){
-        duckdb::dbDisconnect(db, shutdown = TRUE)
         stop("Method ID ", method_id, " not found in database.")
     }
 
     transitions <- .get_method_transitions(method_id)
 
     if(nrow(transitions) == 0){
-        duckdb::dbDisconnect(db, shutdown = TRUE)
         stop("No transitions found for method_id ", method_id)
     }
 
@@ -146,7 +144,6 @@
         as.data.frame()
     
     if(is.null(cmpds) | nrow(cmpds) == 0){
-        duckdb::dbDisconnect(db, shutdown = TRUE)
         stop("No compounds found for method_id ", method_id)
     }
 
@@ -158,8 +155,8 @@
 .get_method_id <- function(method){
     .check_sample_db()
     db <- .connect_to_db()
+    on.exit(.close_db(db), add = TRUE)
     method_id <- DBI::dbGetQuery(db, paste0("SELECT method_id FROM methodstab WHERE method = '", method, "'")) |> as.numeric()
-    duckdb::dbDisconnect(db, shutdown = TRUE)
     method_id
 }
 

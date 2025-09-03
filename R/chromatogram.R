@@ -2,12 +2,13 @@ setClass("ChromResBase",
     slots = c(
         metadata = "data.frame",
         peaks = "data.frame",
-        transitions = "data.frame",
-        compounds = "data.frame",
+        transitions = "data.frame", 
+        compounds = "data.frame", 
         vendor = "character", 
         pk_metadata = "list",
         linearity = "list",
-        suitability = "list"
+        suitability = "list", 
+        resEstim = "list"
     )
 )
 

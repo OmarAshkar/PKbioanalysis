@@ -30,11 +30,12 @@ Imports:
     duckdb (>= 1.0.0),
     bslib,
     bsicons,
+    cli,
+    DiagrammeR,
+    DT,
     shinyWidgets,
     shinyjs,
-    DiagrammeR,
     units,
-    DT,
     stats,
     shinyalert,
     htmltools,
@@ -45,15 +46,17 @@ Imports:
     rhandsontable,
     methods,
     reticulate,
+    RTMB,
     janitor,
-    cli,
     tibble,
     xml2,
     RaMS,
-    data.tree
+    data.tree,
+    nloptr
 Suggests: 
     knitr,
     gtools,
+    gt,
     rmarkdown,
     testthat (>= 3.0.0)
 SystemRequirements: 

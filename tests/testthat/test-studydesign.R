@@ -98,13 +98,28 @@ test_that("nonpkstudy test", {
         nominal_time = seq(0, 4),
         status = "Collected"
     ))
+    df <- retrieve_sample_log(study_id = new_study$id)
 
+
+    # no log id
     update_sample_log(study_id = new_study$id, df = data.frame(
         subject_id = seq(1, 5),
         nominal_time = seq(0, 4),
         status = "Processed"
     ))
 
+    df2 <- update_sample_log(study_id = new_study$id, df = data.frame(
+        log_id = df$log_id,
+        subject_id = seq(1, 5),
+        nominal_time = seq(0, 4),
+        status = "Processed"
+    ))
+    all(df2$log_id == df$log_id) |> expect_true()
+
+    c("subject_id", "nominal_time", "status") %in% colnames(retrieve_full_study_log(new_study$id)) |> 
+        all() |> expect_true()
+
+    retrieve_full_log_by_id(df$log_id)
 
 })
 

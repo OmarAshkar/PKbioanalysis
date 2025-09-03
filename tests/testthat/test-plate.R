@@ -275,3 +275,24 @@ test_that("get empty layout", {
   b <- a |> add_blank() 
   length_empty_layout(b) |> expect_equal(19)
 })
+
+test_that("add samples from db", {
+    new_study <- create_new_study(data.frame(
+        type = "SD",
+        pkstudy = FALSE,
+        title = "New Study",
+        description = "Description of the new study"
+    ))
+    add_sample_log(study_id = new_study$id, df = data.frame(
+        subject_id = seq(1, 5),
+        nominal_time = seq(0, 4),
+        status = "Collected"
+    ))
+    df <- retrieve_sample_log(study_id = new_study$id)
+
+    x <- generate_96() |> 
+        add_samples_db(df$log_id, namestyle = 1, group = "A")
+
+    plot(x)
+
+})

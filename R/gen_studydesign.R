@@ -186,7 +186,7 @@ add_sample_log <- function(study_id, df){
 
   df$study_id <- study_id
   df <- fill_uuid(df, "log_id")
-  stopifnot(!anyDuplicated(df$log_id) | any(is.na(df$log_id)))
+  stopifnot(!any(duplicated(df$log_id)) | !any(is.na(df$log_id)))
 
   # if is pk_study, subject_id must be in subject table
   if(is_pk_study(study_id)) {
@@ -196,7 +196,6 @@ add_sample_log <- function(study_id, df){
     }
   }
 
-
   .check_sample_db()
 
   db <- .connect_to_db()
@@ -204,6 +203,7 @@ add_sample_log <- function(study_id, df){
   tryCatch({
     DBI::dbBegin(db)
     DBI::dbAppendTable(db, "sample_log", df)
+    DBI::dbCommit(db)
   }, error = function(e) {
     DBI::dbRollback(db)
     stop(e)
@@ -306,12 +306,69 @@ last_row_empty <- function(df) {
 #' @param col The column name to fill with UUIDs
 #' @noRd
 fill_uuid <- function(df, col){
+  if (!col %in% names(df)) {
+    df[[col]] <- NA
+  }
   is_na <- is.na(df[[col]]) | df[[col]] == ""
   n_na <- sum(is_na)
-  df[is_na, col] <- uuid::UUIDgenerate(n = n_na)
+  if (n_na > 0) {
+    df[is_na, col] <- uuid::UUIDgenerate(n = n_na)
+  }
   df
 }
 
 is_pk_study <- function(study_id){
   retrieve_study(study_id)$pkstudy
+}
+
+
+retrieve_full_study_log <- function(study_id){
+  studydb <- retrieve_study(study_id)
+  subjectsdb <- retrieve_subjects_db(study_id)
+  sample_log <- retrieve_sample_log(study_id)
+  dosingdb <- retrieve_dosing_db(study_id)
+
+  sample_log <- sample_log |>
+    dplyr::left_join(subjectsdb, by = c("subject_id", "study_id"), suffix = c("", ".subj")) |>
+    dplyr::left_join(dosingdb, by = c("group_label", "study_id"), suffix = c("", ".dose")) 
+  sample_log
+}
+
+retrieve_full_log_by_id <- function(log_ids){
+  db <- .connect_to_db()
+  on.exit(.close_db(db), add = TRUE)
+
+
+  DBI::dbWriteTable(db, "temp_log_ids", data.frame(log_id = log_ids), temporary = TRUE) # tmp table
+  query <- "
+  SELECT sl.*
+  FROM sample_log sl
+  INNER JOIN temp_log_ids tli ON LOWER(sl.log_id) = LOWER(tli.log_id)
+  "
+
+  full_log <- DBI::dbGetQuery(db, query)
+
+  if(nrow(full_log) == 0) {
+    stop("No matching log entries found.")
+  }
+  if(nrow(full_log) != length(log_ids)) {
+    stop("Some log IDs were not found in the database.")
+  }
+
+  # for each unique study id, join all tables
+  full_log <- lapply(unique(full_log$study_id), function(study_id) {
+    studydb <- retrieve_study(study_id)
+    subjectsdb <- retrieve_subjects_db(study_id)
+    dosingdb <- retrieve_dosing_db(study_id)
+
+    # Only join if the data frames are not empty
+    log_subset <- full_log[full_log$study_id == study_id, , drop = FALSE]
+    log_subset <- log_subset |>
+      dplyr::left_join(subjectsdb, by = c("subject_id", "study_id"), suffix = c("", ".subj")) |>
+      dplyr::left_join(dosingdb, by = c("group_label", "study_id"), suffix = c("", ".dose")) |>
+      dplyr::left_join(studydb, by = c("study_id" = "id"), suffix = c("", ".study"))
+    log_subset
+  })
+  full_log <- do.call(rbind, full_log)
+  full_log
 }

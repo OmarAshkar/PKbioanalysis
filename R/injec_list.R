@@ -310,9 +310,8 @@ download_sample_list <- function(sample_list, vendor){
   if (vendor == "masslynx") {
     sample_list <- sample_list |>
       dplyr::rename_all(toupper) |>
-      dplyr::select(matches("FILE_NAME"), matches("SAMPLE_LOCATION"),
-        matches("FILE_TEXT"),
-        matches("TYPE"), matches("INJ_VOL"),
+      dplyr::select(-"CONC") |>
+      dplyr::select("FILE_NAME", "SAMPLE_LOCATION", "FILE_TEXT", "TYPE", "INJ_VOL",
         starts_with("CONC"), starts_with("COMPOUND")) |>
       dplyr::mutate(FILE_NAME = make.unique(.data$FILE_NAME)) |> 
       dplyr::mutate(FILE_NAME = gsub("\\.", "_", .data$FILE_NAME)) |> # replace dots with underscores

@@ -48,6 +48,9 @@ plate_app <- function() {
     removeUI(selector = "#dynamic_ui", immediate = TRUE)
   }
 
+
+
+
   # module_compounds <- function(id, number){
   #   ns <- NS(id)
 
@@ -159,16 +162,21 @@ plate_app <- function() {
         sidebar = bslib::sidebar(
           width = 600,
           actionButton("create_new_study_btn", "Create New Study"), 
-          DT::DTOutput("studies_db_DT")
+          reactable::reactableOutput("studies_db_RT")
         ), 
       bslib::navset_card_pill(
-        nav_panel("Study Overview", DT::DTOutput("study_overview_DT")),
-        nav_panel("Arms", DT::DTOutput("studyarms_DT")), 
-        nav_panel("Subjects", DT::DTOutput("subjects_DT")), 
+        nav_panel("Study Overview", reactable::reactableOutput("study_overview_RT")),
+        nav_panel("Arms", 
+          actionButton("download_arms_btn", "Download"),
+          uiOutput("update_arms_db_btn_ui"),
+          rhandsontable::rHandsontableOutput("studyarms_RT")), 
+        nav_panel("Subjects", rhandsontable::rHandsontableOutput("subjects_RT")), 
         nav_panel("Sample Log", 
           actionButton("download_sample_log_btn", "Download Current"),
-          actionButton("upload_sample_log_btn", "Re-Upload"),
-          DT::DTOutput("sample_log_DT"))
+          actionButton("update_sample_log_btn", "Update"),
+          rhandsontable::rHandsontableOutput("sample_log_RT")), 
+        nav_panel("Study Chart", plotOutput("study_chart_plot")), 
+        nav_panel("Analysed samples", reactable::reactableOutput("analysed_samples_RT"))
       )
     )),
     bslib::nav_panel(title = "Methods",
@@ -228,13 +236,14 @@ plate_app <- function() {
           bslib::nav_panel("Plate", 
               bslib::card(
                 full_screen = TRUE,
-                min_height = 600, 
-                card_header("Plate Map", popover(
-                  bs_icon("gear"),
-                  selectInput("plate_design_color_toggle", "Color By", choices = c("conc", "factor", "dose", "time", "samples", "group", "dose", "route")),
-                  selectInput("plate_design_transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
-                  numericInput("plate_design_font_size", "Font Size", value = 1, step = 0.2),
-                  title = "Color By")),
+                min_height = 800, 
+                card_header("Plate Map", 
+                  popover(
+                    bs_icon("gear"),
+                    selectInput("plate_design_color_toggle", "Color By", choices = c("conc", "factor", "dose", "time", "samples", "group", "dose", "route")),
+                    selectInput("plate_design_transform_dilution", "Transform Dilution", choices = c(TRUE, FALSE), selected = FALSE),
+                    numericInput("plate_design_font_size", "Font Size", value = 1, step = 0.2),
+                    title = "Color By")),
                 plotOutput("plate_design_plotOutput", 
                             brush = "plate_design_brush", 
                             # click = "plate_design_click",
@@ -415,13 +424,26 @@ plate_app <- function() {
                       # ),
                       rhandsontable::rHandsontableOutput("dilution_dt"),
                       actionButton("gen_dil_graph", "Generate Dilution Graph", icon = icon("chart-line")),
-                      bslib::card(
-                          id = "dil_graph_grviz_card",
-                          full_screen = TRUE,
-                          height = 700,
-                          card_header("Schema"),
-                          DiagrammeR::grVizOutput("dil_graph_grviz_out", width = "100%")),
-                      downloadButton("export_dil_graph", "Export", icon = icon("download"))
+                      layout_columns(
+                        col_widths = c(10, 2),
+                        bslib::card(
+                            id = "dil_graph_grviz_card",
+                            full_screen = TRUE,
+                            height = 700,
+                            card_header("Schema"),
+                            DiagrammeR::grVizOutput("dil_graph_grviz_out", width = "100%")),
+                        fluidRow(
+                          bslib::card(
+                            id = "dil_dilution_calculator",
+                            card_header("Dilution Calculator"),
+                            textOutput("selected_dilution_node_text"),
+                            textOutput("dilution_factor_text"), 
+                            numericInput("final_vol_input", "Final Volume", value = 1, min = 1), 
+                            textOutput("final_vol_output"),
+                            height = 500
+                          ),
+                          downloadButton("export_dil_graph", "Export", icon = icon("download"))
+                        ))
             ), 
           ))),
     nav_spacer(),
@@ -484,6 +506,133 @@ plate_app <- function() {
     )
 
     #################################################################################################################
+    ###### make study ######
+    all_studies_db <- reactiveVal(list_all_studies())
+    observeEvent(input$create_new_study_btn, {
+      showModal(modalDialog(
+        title = "Create New Study",
+        textInput("new_study_title", "Study Title", value = ""),
+        textInput("new_study_descr", "Description", value = ""),
+        selectInput("new_study_type", "Type", choices = c("SD", "MD", "FA")),
+        bslib::input_switch("new_study_pkstudy", "PK Study", value = TRUE),
+        actionButton("create_study_btn", "Create")
+      ))
+    })
+
+    observeEvent(input$create_study_btn, {
+      tryCatch({
+        df <- data.frame(
+          title = input$new_study_title,
+          type = input$new_study_type,
+          pkstudy = input$new_study_pkstudy,
+          description = input$new_study_descr
+        )
+        create_new_study(df)
+        showNotification("Study created successfully!", type = "message")
+        all_studies_db(list_all_studies())
+        removeModal()
+      }, error = function(e){
+        showNotification(paste("Error creating study:", e$message), type = "error")
+      })
+    })
+
+    output$studies_db_RT <- reactable::renderReactable({
+      reactable::reactable(
+        all_studies_db(),
+        resizable = TRUE,
+        selection = "single", 
+        onClick = "select", 
+        highlight = TRUE,
+        columns = list(
+                              id = reactable::colDef(name = "Study ID"),
+                              type = reactable::colDef(name = "Type"),
+                              description = reactable::colDef(name = "Description"),
+                              pkstudy = reactable::colDef(name = "PK Study")
+                            ))
+    })
+
+    currStudyid <- reactiveVal(NULL)
+    observeEvent(reactable::getReactableState("studies_db_RT", "selected"), {
+      i <- reactable::getReactableState("studies_db_RT", "selected")
+      currStudyid(all_studies_db()[[i]])
+    })
+
+    ### Dosing Arms Table ###    
+    curr_dosing_db <- reactiveVal(NULL)
+    observeEvent(currStudyid(), {
+      df <- retrieve_dosing_db(currStudyid()) |> auto_add_row()
+      curr_dosing_db(df)
+    })
+
+    output$studyarms_RT <- rhandsontable::renderRHandsontable({
+      req(currStudyid())
+      req(curr_dosing_db())
+      curr_dosing_db() |> 
+          rhandsontable::rhandsontable(useTypes = TRUE, 
+                                        overflow = "visible",
+                                        stretchH = "all",
+                                        colHeaders = c("Arm ID", "Study ID", "Group Label", 
+                                                        "Period Number", "Dose Freq", "Dose Addl", 
+                                                        "Dose", "Unit", "Route", 
+                                                        "Formulation"),
+                                        fillHandle = list(direction = "vertical", autoInsertRow = TRUE)) |> 
+                            rhandsontable::hot_col(col = c(1,2), readOnly = TRUE) |> 
+                            rhandsontable::hot_col(col = 3, type = "text") |>
+                            rhandsontable::hot_col(col = 4, type = "numeric") |>
+                            rhandsontable::hot_col(col = 5, type = "numeric") |> 
+                            rhandsontable::hot_col(col = 6, type = "numeric") |> 
+                            rhandsontable::hot_col(col = 7, type = "numeric") |> 
+                            rhandsontable::hot_col(col = 8, type = "dropdown", source = c("mg", "g", "ug")) |>
+                            rhandsontable::hot_col(col = 9, type = "dropdown", source = c("IV", "PO", "SC", "IP", "IM")) |> 
+                            rhandsontable::hot_col(col = 10, type = "text")
+    })
+
+
+    output$update_arms_db_btn_ui <- renderUI({
+      req(currStudyid())
+      input$studyarms_RT # detect change in table
+      actionButton("update_arms_db_btn", "Update Arms")
+    })
+
+    observeEvent(input$update_arms_db_btn, {
+      clean_rht_to_df <- function(mylist){
+        cleaned <- lapply(mylist, function(row) {
+          lapply(row, function(x) if (is.null(x)) NA else x)
+        })
+        cleaned <- lapply(cleaned, \(x) {
+          x <- as.data.frame(x)
+          colnames(x) <- paste("col", seq_along(x), sep = "_")
+          x
+        })
+        cleaned <- do.call(rbind, cleaned)
+        cleaned
+      }
+      df <- clean_rht_to_df(input$studyarms_RT$data)
+      df <- remove_all_empty_row(df)
+
+      colnames(df) <- c("arm_id", "study_id", "group_label", 
+                        "period_number", "dose_freq", "dose_addl", 
+                        "dose_amount", "dose_unit", "route", "formulation")
+
+      tryCatch({
+        update_dosing_db(currStudyid(), df)
+        curr_dosing_db(retrieve_dosing_db(currStudyid()))
+        showNotification("Dosing database updated successfully!", type = "message")
+      }, error = function(e) {
+        showNotification(paste("Error updating dosing database:", e$message), type = "error")
+      })
+    })
+
+    ### Subjects Table ### 
+
+    ### Sample Log Table ### 
+    
+
+
+
+
+
+    #################################################################################################################
     ###### plate Generator ######
     curr_gen_plate_starter <- reactiveVal(NULL)
     curr_gen_plate_expr <- reactiveVal(NULL)
@@ -528,8 +677,8 @@ plate_app <- function() {
       lbound <- max(lbound, 1)
       rbound <- round(brush_data$xmax)
       rbound <- min(rbound, 12)
-      tbound <- LETTERS[round(brush_data$ymin)]
-      bbound <- LETTERS[round(brush_data$ymax)]
+      tbound <- LETTERS[max(round(brush_data$ymin), 1)]
+      bbound <- LETTERS[min(round(brush_data$ymax), 8)]
 
       curr_gen_plate_expr(
         bquote(.(curr_gen_plate_expr()) |>
@@ -616,7 +765,7 @@ plate_app <- function() {
             selectizeInput("blank_group", "Group", options = list(create = TRUE), choices = plate_groups(curr_gen_plate_starter())),
             bslib::input_switch("has_analyte_blank", "Analyte+", value = FALSE),
             bslib::input_switch("is_IS_blank", "IS+", value = TRUE),
-            bslib::input_switch("blank_matrix", "Analytical Blank (Matrix-)", value = FALSE), 
+            bslib::input_switch("blank_matrix", "Matrix+ (Off for analytical blank)", value = TRUE), 
             actionButton("add_blank_btn_final", "Add Blank")
         )
       ))
@@ -628,7 +777,7 @@ plate_app <- function() {
         curr_gen_plate_expr(
           bquote(.(curr_gen_plate_expr()) |>
           add_blank(group = .(input$blank_group), IS = .(input$is_IS_blank), 
-            analyte = .(input$has_analyte_blank), analytical = .(input$blank_matrix)))
+            analyte = .(input$has_analyte_blank), analytical = .(!input$blank_matrix)))
           )
         curr_gen_plate_starter(eval(curr_gen_plate_expr()))
         updateSelectizeInput(session, "blank_group", choices = plate_groups(curr_gen_plate_starter()), selected = input$blank_group)
@@ -1278,16 +1427,16 @@ plate_app <- function() {
       req(class(current_plate()) ==  "RegisteredPlate")
       req(current_dil_df())
 
-     columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
-                    type=c('text', 'text', 'text', 'text', 'text', 'text'))
-      current_dil_df() |>
-        dplyr::mutate(across(everything(), as.character)) |>
-        rhandsontable::rhandsontable(useTypes = TRUE) |>
-        rhandsontable::hot_col(c("v1"), readOnly = TRUE)  |>
-        rhandsontable::hot_col(c("v0"), readOnly = TRUE) |>
-        rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |>
-        rhandsontable::hot_col(c("dil"), readOnly = TRUE) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    #  columns = data.frame(#title=c('From/To', 'From/to', 'From/to', 'From/to', 'Plate', "TYPE"),
+    #                 type=c('text', 'text', 'text', 'text', 'text', 'text'))
+    current_dil_df() |>
+      dplyr::mutate(across(everything(), as.character)) |>
+      rhandsontable::rhandsontable(useTypes = TRUE) |>
+      rhandsontable::hot_col(c("v1"), readOnly = TRUE)  |>
+      rhandsontable::hot_col(c("v0"), readOnly = TRUE) |>
+      rhandsontable::hot_col(c("TYPE"), readOnly = TRUE) |>
+      rhandsontable::hot_col(c("dil"), readOnly = TRUE) |>
+      rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     })
 
     observeEvent(input$dilution_dt, {
@@ -1344,17 +1493,21 @@ plate_app <- function() {
       if(length(dilution_factor_label()) == 0){
         showNotification("Vial has no precedents", type = "warning")
       } else{
-        showModal(modalDialog(
-          node_id$nodeValues[[1]],
-          paste0("Dilution factor: ", dilution_factor_label()),
-          numericInput("final_dil_vol", "Final Volume", value = 1, min = 0.1, max = 10000),
-          textOutput("final_vol_output")
-        ))
+        output$selected_dilution_node_text <- renderText({
+          paste0("Selected Node: ", node_id$nodeValues[[1]], " (", node_id$nodeValues[[2]], ")")
+        })
       }
+    })
+    
+    output$dilution_factor_text <- renderText({
+      req(dilution_factor_label())
+      paste0("Dilution Factor: ", dilution_factor_label())
     })
 
     output$final_vol_output <- renderText({
-      paste0("Final Volume: ", .final_vol(dilution_factor_label(), input$final_dil_vol))
+      req(input$final_vol_input)
+      req(dilution_factor_label())
+      paste0("C1:(C2-C1):  ", .final_vol(dilution_factor_label(), input$final_vol_input))
     })
 
     output$export_dil_graph <- downloadHandler(
@@ -1477,7 +1630,9 @@ plate_app <- function() {
     output$cmpd_methods_entry_dt <- rhandsontable::renderRHandsontable({
       req(current_method_capture_df())
             current_method_capture_df() |>
-              rhandsontable::rhandsontable(useTypes = TRUE)
+              rhandsontable::rhandsontable(useTypes = TRUE, 
+                                            fillHandle = list(direction = "vertical", autoInsertRow = TRUE)
+              )
           })
     observeEvent(input$cmpd_methods_entry_dt, {
       rhandsontable::hot_to_r(input$cmpd_methods_entry_dt) |> current_method_capture_df()
@@ -1485,7 +1640,6 @@ plate_app <- function() {
 
     observeEvent(input$add_method_final_btn, {
       req(input$method_name)
-
       # remove complete NA rows
       # switch any "" to NA
       capture_method_cmpd_df <- current_method_capture_df() |>

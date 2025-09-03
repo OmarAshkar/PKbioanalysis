@@ -56,7 +56,7 @@ test_that("targetlynxXML_to_chrom_res", {
   # pass both chrom and targetlynx files.
   x <- system.file("sampleTargetLynx.xml", package = "PKbioanalysis") 
   x <- read_experiment_results(x,
-                             vendor = "targetlynx",
+                             vendor = "targetlynxXML",
                              drop_prefix = T) 
    x <- .peakresToDF(x)
    stop("Must be a list of cmpds with conc, is_conc, area, IS_area, rel_area and std_conc")
@@ -71,7 +71,7 @@ test_that("targetlynxCSV_to_chrom_res", {
   # pass both chrom and targetlynx files.
   x <- system.file("sampleTargetLynx.xml", package = "PKbioanalysis") 
   x <- read_experiment_results(x,
-                             vendor = "targetlynx",
+                             vendor = "targetlynxCSV",
                              drop_prefix = T) 
    x <- .peakresToDF(x)
    stop("Must be a list of cmpds with conc, is_conc, area, IS_area, rel_area and std_conc")

@@ -386,8 +386,7 @@ setValidity("PlateObj", function(object) {
   
   col_type <- c("integer", "integer", "character", "character", "character", "character", 
         "numeric", "character", "character", "integer", "integer")
-  cols <- c("row", "col", "value", "SAMPLE_LOCATION", "samples", "conc", 
-   "time", "factor", "dose", "TYPE", "std_rep", "e_rep", 'dil')
+  cols <- c("row", "col", "value", "SAMPLE_LOCATION", "samples", "conc", "TYPE", "std_rep", "e_rep", 'dil')
   checkmate::assertNames(names(object@df), must.include = cols)
 
 
