@@ -13,7 +13,6 @@
 }
 
 .save_cmpd_db <- function(cmpds_list){
-    .check_sample_db()
 
     # check there is one method, description and compounds
     checkmate::assertNames(names(cmpds_list),
@@ -26,8 +25,9 @@
 
     # assert combination of q1 and q3 is unique to be saved in transition table
 
+    .check_sample_db()
     db <- .connect_to_db()
-    on.exit(.close_db(db), add = TRUE)
+    on.exit(.close_db(db, gc = TRUE), add = TRUE)
     # create new method ID
     max_method_id <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
     method_id <- ifelse(is.na(max_method_id), 1, max_method_id+1)

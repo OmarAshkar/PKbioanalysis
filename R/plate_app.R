@@ -49,6 +49,18 @@ plate_app <- function() {
   }
 
 
+  clean_rht_to_df <- function(mylist){
+    cleaned <- lapply(mylist, function(row) {
+      lapply(row, function(x) if (is.null(x)) NA else x)
+    })
+    cleaned <- lapply(cleaned, \(x) {
+      x <- as.data.frame(x)
+      colnames(x) <- paste("col", seq_along(x), sep = "_")
+      x
+    })
+    cleaned <- do.call(rbind, cleaned)
+    cleaned
+  }
 
 
   # module_compounds <- function(id, number){
@@ -170,7 +182,11 @@ plate_app <- function() {
           actionButton("download_arms_btn", "Download"),
           uiOutput("update_arms_db_btn_ui"),
           rhandsontable::rHandsontableOutput("studyarms_RT")), 
-        nav_panel("Subjects", rhandsontable::rHandsontableOutput("subjects_RT")), 
+        nav_panel("Subjects", 
+          actionButton("download_subjects_btn", "Download Current"),
+          actionButton("update_subjects_btn", "Update"),
+          rhandsontable::rHandsontableOutput("subjects_RT")
+        ), 
         nav_panel("Sample Log", 
           actionButton("download_sample_log_btn", "Download Current"),
           actionButton("update_sample_log_btn", "Update"),
@@ -253,7 +269,13 @@ plate_app <- function() {
           bslib::nav_panel("Tree", 
             bslib::card(
             DiagrammeR::grVizOutput("plate_design_treeOutput", height = "400px"), full_screen = TRUE)),
-          bslib::nav_panel("Code", verbatimTextOutput("plate_design_codeOutput"))
+          bslib::nav_panel("Add Samples", 
+            reactable.extras::reactable_extras_dependency(),
+            reactable::reactableOutput("plate_design_samples_selector_RT"), 
+            selectInput("dropdown_naming_samples_input", "Naming Style", choices = 1),
+            selectizeInput("samplesdb_group_input", "Group", options = list(create = TRUE), choices = "No Group"),
+            actionButton("add_samples_db_btn", "Add Samples")
+          )
         )
         ),
         div(
@@ -299,8 +321,7 @@ plate_app <- function() {
           downloadButton( "export_plate_image", "Export Plate Image", icon = icon("download")),
           actionBttn("reuse_plate_button", "Reuse Plate", icon = icon("redo"), color = "primary"),
           # tabset with plate, sample list, dilution
-          actionButton("clear_selected_plates_btn", "Clear All"),
-          DT::DTOutput("plate_db_table")
+          reactable::reactableOutput("plate_db_RT")
           ))),
     bslib::nav_panel(title = "Generators",       ## generators panel
       fluidPage(
@@ -554,12 +575,13 @@ plate_app <- function() {
     currStudyid <- reactiveVal(NULL)
     observeEvent(reactable::getReactableState("studies_db_RT", "selected"), {
       i <- reactable::getReactableState("studies_db_RT", "selected")
-      currStudyid(all_studies_db()[[i]])
+      currStudyid(all_studies_db()[i, "id"])
     })
 
     ### Dosing Arms Table ###    
     curr_dosing_db <- reactiveVal(NULL)
     observeEvent(currStudyid(), {
+      req(currStudyid())
       df <- retrieve_dosing_db(currStudyid()) |> auto_add_row()
       curr_dosing_db(df)
     })
@@ -572,7 +594,7 @@ plate_app <- function() {
                                         overflow = "visible",
                                         stretchH = "all",
                                         colHeaders = c("Arm ID", "Study ID", "Group Label", 
-                                                        "Period Number", "Dose Freq", "Dose Addl", 
+                                                        "Period Number", "Dose Freq (hr)", "Dose Addl", 
                                                         "Dose", "Unit", "Route", 
                                                         "Formulation"),
                                         fillHandle = list(direction = "vertical", autoInsertRow = TRUE)) |> 
@@ -595,18 +617,6 @@ plate_app <- function() {
     })
 
     observeEvent(input$update_arms_db_btn, {
-      clean_rht_to_df <- function(mylist){
-        cleaned <- lapply(mylist, function(row) {
-          lapply(row, function(x) if (is.null(x)) NA else x)
-        })
-        cleaned <- lapply(cleaned, \(x) {
-          x <- as.data.frame(x)
-          colnames(x) <- paste("col", seq_along(x), sep = "_")
-          x
-        })
-        cleaned <- do.call(rbind, cleaned)
-        cleaned
-      }
       df <- clean_rht_to_df(input$studyarms_RT$data)
       df <- remove_all_empty_row(df)
 
@@ -624,13 +634,86 @@ plate_app <- function() {
     })
 
     ### Subjects Table ### 
+    currSubjectTable <- reactiveVal(NULL)
+
+    observeEvent(currStudyid(), {
+      currSubjectTable(retrieve_subjects_db(currStudyid()) |> auto_add_row())
+    })
+
+    output$subjects_RT <- rhandsontable::renderRHandsontable({
+      req(currStudyid())
+      currSubjectTable() |> 
+        rhandsontable::rhandsontable(useTypes = TRUE, 
+                                      overflow = "visible",
+                                      stretchH = "all", 
+                                      width = "100%", 
+                                      fillHandle = list(direction = "vertical", autoInsertRow = TRUE)) |>
+                                      rhandsontable::hot_col(col = 1, type = "text") |>
+                                      rhandsontable::hot_col(col = 2, readOnly = TRUE) |>
+                                      rhandsontable::hot_col(col = 3, type = "text") |>
+                                      rhandsontable::hot_col(col = 4, type = "dropdown", source = c("M", "F")) |>
+                                      rhandsontable::hot_col(col = 5, type = "numeric")
+    })
+
+    observeEvent(input$update_subjects_btn, {
+      req(currStudyid())
+      
+      df <- clean_rht_to_df(input$subjects_RT$data)
+      df <- remove_all_empty_row(df)
+
+      colnames(df) <- c("subject_id", "study_id", "group_label", "sex", "age")
+
+      tryCatch({
+        update_subjects_db(currStudyid(), df)
+        currSubjectTable(retrieve_subjects_db(currStudyid()))
+        showNotification("Subjects database updated successfully!", type = "message")
+      }, error = function(e) {
+        showNotification(paste("Error updating subjects database:", e$message), type = "error")
+      })
+    })
 
     ### Sample Log Table ### 
-    
+    currSampleLogTable <- reactiveVal(NULL)
 
+    observeEvent(currStudyid(), {
+      currSampleLogTable(retrieve_sample_log(currStudyid()) |> auto_add_row())
+    })
 
+    output$sample_log_RT <- rhandsontable::renderRHandsontable({
+      req(currStudyid())
+      currSampleLogTable() |> 
+        rhandsontable::rhandsontable(useTypes = TRUE, 
+                                      overflow = "visible",
+                                      # stretchH = "all", 
+                                      width = "90%", 
+                                      fillHandle = list(direction = "vertical", autoInsertRow = TRUE)) |> 
+                                      rhandsontable::hot_col(col = 1, readOnly = TRUE) |> 
+                                      rhandsontable::hot_col(col = 2, type = "text") |> 
+                                      rhandsontable::hot_col(col = 3, readOnly = TRUE) |> 
+                                      rhandsontable::hot_col(col = 4, type = "date", dateFormat = "HH:mm") |> # nominal time
+                                      rhandsontable::hot_col(col = 5, type = "date", dateFormat = "HH:mm") |> # actual time
+                                      rhandsontable::hot_col(col = 6, type = "dropdown", source = c("Collected", "Processed")) |> 
+                                      rhandsontable::hot_col(col = 7, type = "dropdown", source = c("plasma", "tissue", "CSF")) |>
+                                      rhandsontable::hot_col(col = 8, type = "text") # notes
+    })
 
+    observeEvent(input$update_sample_log_btn, {
+      req(currStudyid())
+      
+      df <- clean_rht_to_df(input$sample_log_RT$data)
+      df <- remove_all_empty_row(df)
 
+      colnames(df) <- c("log_id", "subject_id", "study_id", 
+                        "nominal_time", "actual_time", "status", 
+                        "sample_type", "notes")
+      tryCatch({
+        update_sample_log(currStudyid(), df)
+        currSampleLogTable(retrieve_sample_log(currStudyid()))
+        showNotification("Sample log updated successfully!", type = "message")
+      }, error = function(e) {
+        showNotification(paste("Error updating sample log:", e$message), type = "error")
+      })
+    })
 
     #################################################################################################################
     ###### plate Generator ######
@@ -714,10 +797,6 @@ plate_app <- function() {
       plate_tree(curr_gen_plate_starter())
     })
 
-    output$plate_design_codeOutput <- renderPrint({
-      req(curr_gen_plate_expr())
-      print_expr(curr_gen_plate_expr())
-    })
 
     observeEvent(input$undo_plate_design_btn, {
       req(curr_gen_plate_starter())
@@ -957,8 +1036,79 @@ plate_app <- function() {
       })
     })
 
+    curr_plate_sample_log_dil <- reactiveVal(NULL)
+    observeEvent(currSampleLogTable(),{
+      req(currStudyid())
+      req(currSampleLogTable())
 
-    # TODO add samples
+      logIds <- currSampleLogTable()$log_id
+      req(!all(is.na(logIds)))
+
+      captured_dil(NULL)
+
+      retrieve_full_log_by_id(logIds) |>
+        dplyr::mutate(dil = 1) |>
+        dplyr::relocate("dil", after = "subject_id") |>
+        curr_plate_sample_log_dil() 
+    })
+
+    output$plate_design_samples_selector_RT <- reactable::renderReactable({
+      req(curr_gen_plate_starter())
+      req(currStudyid())
+      curr_plate_sample_log_dil() |>
+        reactable::reactable(
+          resizable = TRUE, selection = "multiple", 
+          onClick = "select", highlight = TRUE,
+          columns = list(
+            dil = reactable::colDef(name = "Dilution", 
+              cell = reactable.extras::text_extra("dil_input"))
+        )) 
+    })
+
+    captured_dil <- reactiveVal(NULL)
+
+    observeEvent(input$dil_input, {
+      req(curr_plate_sample_log_dil())
+      browser()
+      df <- ifelse(!is.null(captured_dil()), captured_dil(), curr_plate_sample_log_dil())
+      df[input$dil_input$row, input$dil_input$column] <- as.numeric(input$dil_input$value)
+      captured_dil(df)
+    })
+
+    observeEvent(input$add_samples_db_btn, {
+      req(curr_gen_plate_starter())
+      req(curr_gen_plate_expr())
+      req(currStudyid())
+      input$plate_design_samples_selector_RT
+      selected_rows <- reactable::getReactableState("plate_design_samples_selector_RT", "selected")
+      sorting_col <- reactable::getReactableState("plate_design_samples_selector_RT", "sorted")
+
+      tryCatch({
+        if(is.null(selected_rows)) {
+          stop("No Samples selected")
+        }
+        curr_gen_plate_expr(
+          bquote(.(curr_gen_plate_expr()) |>
+            add_samples_db(logIds = .(curr_plate_sample_log_dil()$log_id[selected_rows]),
+                          dil = .(captured_dil()$dil[selected_rows]),
+                          group = .(input$samplesdb_group_input),
+                          namestyle = .(input$dropdown_naming_samples_input)
+                          ))
+        )
+
+        updateSelectizeInput(session, "samplesdb_group_input", 
+          choices = plate_groups(curr_gen_plate_starter()), selected = input$samplesdb_group_input)
+
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+
+        showNotification("Samples added to plate", type = "message")
+      }, error = function(e) {
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+
+
+    })
+
     #################################################################################################################
     ###### plate Database ######
 
@@ -1094,23 +1244,13 @@ plate_app <- function() {
 
 
 
-   output$plate_db_table <- DT::renderDT({
-      # cbind(
-      #   check = shinyInput(checkboxInput,nrow(plate_db()), "checkdb"),
-      #   plate_db()) |>
+   output$plate_db_RT <- reactable::renderReactable({
         plate_db() |>
-        DT::datatable(
-          # rownames = TRUE,
-          escape = FALSE,
-          # editable = list(target = "cell", disable = list(columns = 1)),
-          selection = list(target = "row", mode = "multiple"),
-          # callback = JS(js_checkboxdt)#,
-          options = list( scrollX=TRUE, scrollY=TRUE, scrollCollapse=TRUE)
-          )
-    }, server = FALSE)
+          reactable::reactable(selection = "multiple", onClick = "select")
+    })
 
-    observeEvent(input$plate_db_table_rows_selected, {
-      current_plate_row(input$plate_db_table_rows_selected)
+    current_plate_row <- reactive({
+      reactable::getReactableState("plate_db_RT", "selected")
     })
 
 
@@ -1577,10 +1717,10 @@ plate_app <- function() {
         {
         id <- as.numeric(strsplit(current_plate()@plate_id, "_")[[1]][1])
 
-        x <- reuse_plate(id, input$refill_gaps)
 
-        x |> curr_gen_plate_starter()
-        curr_gen_plate_expr(NULL) # reset
+        curr_gen_plate_expr(bquote(reuse_plate(.(id), .(input$refill_gaps))))
+        curr_gen_plate_starter(eval(curr_gen_plate_expr()))
+
         updateTabsetPanel(session, "main_tabs", "gen_tab") # switch
 
         show_alert(

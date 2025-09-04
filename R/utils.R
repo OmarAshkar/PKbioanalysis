@@ -306,8 +306,8 @@ DBI::dbExecute(con, "
     log_id       TEXT PRIMARY KEY, --uuid
     subject_id   TEXT NOT NULL, -- soft reference to subject(id), enforced if study(pkstudy)
     study_id     TEXT NOT NULL REFERENCES study(id),
-    nominal_time  REAL, -- in hours
-    actual_time  REAL, -- in hours
+    nominal_time  TEXT, -- in hours
+    actual_time  TEXT, -- in hours
     status       TEXT CHECK (status IN ('Collected', 'Processed')),
     sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Other')),
     notes         TEXT

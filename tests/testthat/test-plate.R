@@ -29,6 +29,7 @@ test_that("reuse_plate", {
   currid <- platesdb[1, "id"]
   currid <- unlist(strsplit(currid, "_"))[[1]]
   x <- reuse_plate(as.numeric(currid), 4)
+  x |> add_blank() |> add_DB() |> expect_no_error()
   .is_registered(x) |> expect_equal(FALSE)
 
   validObject(x) |> expect_equal(TRUE)
@@ -293,6 +294,6 @@ test_that("add samples from db", {
     x <- generate_96() |> 
         add_samples_db(df$log_id, namestyle = 1, group = "A")
 
-    plot(x)
+    plot(x) |> expect_no_error()
 
 })

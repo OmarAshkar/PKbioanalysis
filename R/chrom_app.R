@@ -572,7 +572,6 @@ chromapp_server <- function(input, output, session, original_dat) {
 
   observeEvent(input$sample_table_overview, {
     req(input$sample_table_overview)
-    browser()
     update_metadata(peaksobj(), rhandsontable::hot_to_r(input$sample_table_overview)) |> 
       peaksobj()
   })

@@ -1,6 +1,5 @@
 test_that("pkstudy test", {
 
-    ## new study 
     newstudy <- data.frame(
         type = "SD", 
         pkstudy = TRUE,
@@ -59,12 +58,12 @@ test_that("pkstudy test", {
         group_label = "C1"
     ))
 
-    retrieve_subjects(study_id = new_study$id)
+    retrieve_subjects_db(study_id = new_study$id)
 
     update_subjects_db(study_id = new_study$id, 
         df = data.frame(subject_id = c("S1", "S2"), study_id = new_study$id, sex = c("M", "F"), age = c(30, 25), group_label = c("C1", "C2")))
 
-    retrieve_subjects(study_id = new_study$id) |> dplyr::pull("subject_id") |>
+    retrieve_subjects_db(study_id = new_study$id) |> dplyr::pull("subject_id") |>
         expect_equal(c("S1", "S2"))
     ## sample log
 
@@ -124,7 +123,8 @@ test_that("nonpkstudy test", {
 })
 
 test_that("plotStudyDesign", {
-
+    plot_study_design(new_study$id)
+    stop("not ready")
 })
 
 

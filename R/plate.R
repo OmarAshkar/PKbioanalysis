@@ -435,7 +435,8 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA){
 
   samplesdf <- retrieve_full_log_by_id(logIds) |> 
     dplyr::mutate(nominal_time = paste0("T", .data$nominal_time)) |> 
-    dplyr::mutate(dose_amount = ifelse(!is.na(.data$dose_amount), paste0(.data$dose_amount, .data$dose_unit), .data$dose_amount))
+    dplyr::mutate(dose_amount = ifelse(!is.na(.data$dose_amount), paste0(.data$dose_amount, .data$dose_unit), .data$dose_amount)) |> 
+    dplyr::mutate(dilStr = paste0(dil, "X"))
 
   plateobj <- plate
   df <- plate@df
@@ -444,7 +445,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA){
 
   if(namestyle == 1){
     order <- c("subject_id", "nominal_time", "sex", "sample_type", 
-      "arm_id", "dose_amount", "dose_freq", "route", "formulation")
+      "arm_id", "dose_amount", "dose_freq", "route", "formulation", "dilStr")
     
     values <- apply(samplesdf[, order], 1, function(row) paste(na.omit(row), collapse = "_"))
   }
@@ -518,7 +519,6 @@ add_blank <- function(plate, IS = TRUE, analyte = FALSE, analytical = FALSE, gro
   empty_spots <- .spot_mask(plate_obj)
 
   plate[empty_spots[1, 1], empty_spots[1, 2]] <- blank_vec
-
   new_df <- data.frame(
     row = empty_spots[1, 1],
     col = empty_spots[1, 2],
@@ -1024,14 +1024,18 @@ plot.PlateObj <- function(x,
 
   descr <- plate@descr
   plate_df <- plate@df |> # zero if blanks, NA if empty cell. Conc otherwise
-    mutate(conc = as.character(conc)) |>
-    left_join(
-      retrieve_full_log_by_id(na.omit(unique(plate@df$log_id))), 
-      by = c("log_id", "study_id"))
+    mutate(conc = as.character(conc)) 
+    
     # mutate(time = as.character(.data$time))  |>
     # mutate(dose = as.character(.data$dose)) |>
     # mutate(factor = as.character(.data$factor))
-    browser()
+
+  samples_on_plate <- na.omit(unique(plate@df$log_id))
+  if(length(samples_on_plate) > 0){
+    plate_df <- left_join(plate_df,
+      retrieve_full_log_by_id(samples_on_plate), 
+      by = c("log_id", "study_id"))
+  }
 
   color_actual <- switch(color, 
     "conc" = "conc",
@@ -1423,8 +1427,9 @@ reuse_plate <- function(id, extra_fill = 0){
 
   # clear all metadata
   plate@df$value <- as.character(NA)
-  plate@df$conc <- as.character(NA)
+  plate@df$conc <- as.numeric(NA)
   plate@df$TYPE <- as.character(NA)
+
 
   plate
 

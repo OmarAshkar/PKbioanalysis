@@ -255,8 +255,8 @@ write_injec_seq <- function(injec_seq){
     file.path("samples.db")
 
   .check_sample_db()
-
-  db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
+  db <- .connect_to_db()
+  on.exit(.close_db(db), add = TRUE)
 
   # find last unqiue ID and add 1
   max_id_query <- "SELECT MAX(list_id) AS max_id FROM platesdb"
@@ -285,9 +285,6 @@ write_injec_seq <- function(injec_seq){
   }, error = function(e) {
     DBI::dbRollback(db)
     stop("Error writing to database: Might be due to duplicates. Try changing the suffix or plate.")
-  }, finally = {
-    DBI::dbDisconnect(db, shutdown = TRUE)
-    gc()
   })
 
   sample_list

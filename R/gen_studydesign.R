@@ -84,8 +84,6 @@ add_dosing_db <- function(study_id, df){
     }, error = function(e) {
       DBI::dbRollback(db)
       stop(e)
-    }, finally = {
-      .close_db(db)
     })
     df
 }
@@ -115,11 +113,11 @@ update_dosing_db <- function(study_id, df){
   }
 
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  # on.exit(.close_db(db), add = TRUE)
   DBI::dbBegin(db)
   DBI::dbExecute(db, paste0("DELETE FROM dosing WHERE study_id = '", study_id, "'"))
   DBI::dbCommit(db)
-  .close_db(db)
+  .close_db(db) # close before connection
 
   df <- add_dosing_db(study_id, df)
   df
@@ -343,7 +341,7 @@ retrieve_full_log_by_id <- function(log_ids){
   query <- "
   SELECT sl.*
   FROM sample_log sl
-  INNER JOIN temp_log_ids tli ON LOWER(sl.log_id) = LOWER(tli.log_id)
+  INNER JOIN temp_log_ids tli ON sl.log_id = tli.log_id
   "
 
   full_log <- DBI::dbGetQuery(db, query)
@@ -371,4 +369,10 @@ retrieve_full_log_by_id <- function(log_ids){
   })
   full_log <- do.call(rbind, full_log)
   full_log
+}
+
+
+plot_study_design <- function(study_id){
+
+
 }

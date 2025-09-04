@@ -245,7 +245,6 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
         slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
         intercept <- ifelse(intercept, unname(coef(fit)[1]), 0)
 
-        browser()
         # calculate estimated response
         (newdata[[response]] - intercept) / slope
     }
