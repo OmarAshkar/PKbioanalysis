@@ -191,7 +191,7 @@ plate_app <- function() {
           actionButton("download_sample_log_btn", "Download Current"),
           actionButton("update_sample_log_btn", "Update"),
           rhandsontable::rHandsontableOutput("sample_log_RT")), 
-        nav_panel("Study Chart", plotOutput("study_chart_plot")), 
+        nav_panel("Study Chart", DiagrammeR::grVizOutput("study_chart_plot", width = "100%", height = "100%")), 
         nav_panel("Analysed samples", reactable::reactableOutput("analysed_samples_RT"))
       )
     )),
@@ -713,6 +713,15 @@ plate_app <- function() {
       }, error = function(e) {
         showNotification(paste("Error updating sample log:", e$message), type = "error")
       })
+    })
+
+    output$study_chart_plot <- DiagrammeR::renderGrViz({
+      req(currStudyid())
+      req(currSampleLogTable())
+      currSampleLogTable()
+      currSubjectTable()
+      curr_dosing_db()
+      plot_study_design(currStudyid())
     })
 
     #################################################################################################################

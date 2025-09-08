@@ -76,7 +76,7 @@ add_dosing_db <- function(study_id, df){
   df$study_id <- study_id
   .check_sample_db()
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   tryCatch({
       DBI::dbBegin(db)
       DBI::dbAppendTable(db, "dosing", df)
@@ -90,7 +90,7 @@ add_dosing_db <- function(study_id, df){
 
 retrieve_dosing_db <- function(study_id){
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   dosing <- DBI::dbGetQuery(db, paste0("SELECT * FROM dosing WHERE study_id = '", study_id, "'"))
   dosing
 }
@@ -117,7 +117,7 @@ update_dosing_db <- function(study_id, df){
   DBI::dbBegin(db)
   DBI::dbExecute(db, paste0("DELETE FROM dosing WHERE study_id = '", study_id, "'"))
   DBI::dbCommit(db)
-  .close_db(db) # close before connection
+  .close_db(db, TRUE) # close before connection
 
   df <- add_dosing_db(study_id, df)
   df
@@ -145,7 +145,7 @@ add_subjects_db <- function(study_id, df){
   }
 
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   tryCatch({
     DBI::dbBegin(db)
     DBI::dbAppendTable(db, "subject", df)
@@ -168,7 +168,7 @@ update_subjects_db <- function(study_id, df){
   checkmate::assertDataFrame(df, min.rows = 1, min.cols = 1)
 
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   DBI::dbBegin(db)
   DBI::dbExecute(db, paste0("DELETE FROM subject WHERE study_id = '", study_id, "'"))
   DBI::dbCommit(db)
@@ -197,7 +197,7 @@ add_sample_log <- function(study_id, df){
   .check_sample_db()
 
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   tryCatch({
     DBI::dbBegin(db)
     DBI::dbAppendTable(db, "sample_log", df)
@@ -223,7 +223,7 @@ update_sample_log <- function(study_id, df){
     must.include = c("subject_id"))
 
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
+  on.exit(.close_db(db, TRUE), add = TRUE)
   DBI::dbBegin(db)
   DBI::dbExecute(db, paste0("DELETE FROM sample_log WHERE study_id = '", study_id, "'"))
   DBI::dbCommit(db)
@@ -329,6 +329,9 @@ retrieve_full_study_log <- function(study_id){
   sample_log <- sample_log |>
     dplyr::left_join(subjectsdb, by = c("subject_id", "study_id"), suffix = c("", ".subj")) |>
     dplyr::left_join(dosingdb, by = c("group_label", "study_id"), suffix = c("", ".dose")) 
+  if(nrow(sample_log) == 0) {
+    stop("No sample log found for study ID ", study_id)
+  }
   sample_log
 }
 
@@ -372,7 +375,32 @@ retrieve_full_log_by_id <- function(log_ids){
 }
 
 
-plot_study_design <- function(study_id){
+plot_study_design <- function(study_id, plot = TRUE){
+  df <- retrieve_full_study_log(study_id)
+  df$pathString <- paste5(
+    df$study_id, 
+    df$group_label, 
+    paste("dose:", df$dose_amount), 
+    paste("route:", df$route), 
+    paste("formulation:", df$formulation), 
+    paste("subject_id:", df$subject_id), 
+    paste("sex:", df$sex), 
+    paste("sample_type:", df$sample_type), 
+    paste("T:", df$nominal_time), 
+    sep = "/", na.rm = TRUE)
 
+  tree <- data.tree::as.Node(df, na.rm = TRUE)
+
+  if(plot){
+    data.tree::SetGraphStyle(tree, rankdir = "LR")
+    data.tree::SetEdgeStyle(tree, arrowhead = "vee", color = "grey35", penwidth = 2)
+    data.tree::SetNodeStyle(tree, style = "filled,rounded", shape = "box", 
+                fillcolor = "black", fontname = "helvetica", tooltip = data.tree::GetDefaultTooltip)
+
+    plot(tree)
+
+  } else {
+    tree
+  }
 
 }

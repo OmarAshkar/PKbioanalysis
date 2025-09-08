@@ -1551,23 +1551,24 @@ fill_scheme <- function(plate, fill = "h", tbound = "A", bbound = "H", lbound = 
 }
 
 
+#' @deprecated
 study_chart_2 <- function(plate){
+  df <- plate@df
 
-df <- plate@df
+  df <- df |> 
+        summarize(time_n = n(), .by = c(sex, factor, dose, II, addl, route, cmt, samples))
 
-df <- df |> 
-      summarize(time_n = n(), .by = c(sex, factor, dose, II, addl, route, cmt, samples))
+  df$pathString <- paste5(df$sex, df$factor, paste(df$dose, df$dose_unit),  df$II, df$addl, df$route, df$cmt, df$time_n, sep = "/", na.rm = TRUE)
 
-df$pathString <- paste5(df$sex, df$factor, paste(df$dose, df$dose_unit),  df$II, df$addl, df$route, df$cmt, df$time_n, sep = "/", na.rm = TRUE)
-
-tree <- data.tree::as.Node(df, na.rm = TRUE)
-tree
+  tree <- data.tree::as.Node(df, na.rm = TRUE)
+  tree
 }
 
 #' Plot the design of the plate
 #' @param plate PlateObj object
 #' @returns DiagrammeR object
-#' @export
+#' @noRd
+#' @deprecated
 study_chart <- function(plate){
   checkmate::assertClass(plate, "PlateObj")
 

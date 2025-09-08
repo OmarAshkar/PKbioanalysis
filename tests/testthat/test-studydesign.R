@@ -92,12 +92,25 @@ test_that("nonpkstudy test", {
     ))
     expect_false(is_pk_study(new_study$id))
 
+    # add NA subjects
+    add_sample_log(study_id = new_study$id, df = data.frame(
+        subject_id = NA,
+        nominal_time = seq(0, 4),
+        status = "Collected"
+    )) |> expect_error()
+
     add_sample_log(study_id = new_study$id, df = data.frame(
         subject_id = seq(1, 5),
         nominal_time = seq(0, 4),
         status = "Collected"
-    ))
+    )) |> expect_no_error()
+
+
     df <- retrieve_sample_log(study_id = new_study$id)
+
+    retrieve_full_study_log(study_id = new_study$id)
+
+    plot_study_design(new_study$id)
 
 
     # no log id
