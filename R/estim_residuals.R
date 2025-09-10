@@ -5,15 +5,16 @@
 #' @param bootstrap Logical indicating whether to perform bootstrap (default is TRUE)
 #' @param n_boot Number of bootstrap samples (default is 1000)
 #' @author Omar I. Elashkar
+#' @import RTMB
 #' @export
-fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = TRUE, n_boot = 1000) {
+fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_boot = 1000) {
     method %in% c("Nelder-Mead", "BFGS", "L-BFGS-B", "nlminb", "nlme") |>
         stopifnot()
 
     X <- model.matrix( ~ stdconc - 1, data = data)
-    tmbdata <- list(X = X, y = data$conc, varpred = data$stdconc)
+    vecdata <- list(X = X, y = data$conc, varpred = data$stdconc)
     nll <- function(par) {
-        RTMB::getAll(par, tmbdata)
+        RTMB::getAll(par, vecdata)
         sigma <- exp(omega)
         sd <- sqrt(sigma[1]^2 + sigma[2]^2 * varpred^2)
         mu <- X %*% beta # add intercept
@@ -21,7 +22,6 @@ fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = TRUE, n_b
     }
     par1 <- list(beta = rep(0, ncol(X)), omega = c(0.1, 0.1))
     obj <- RTMB::MakeADFun(nll, par = par1 , silent = TRUE)
-
     if (method == "nlminb") {
         fit <- with(obj, nlminb(start = par, objective = fn, gradient = gr))
     } else if (method == "BFGS") {
@@ -135,7 +135,9 @@ formated_print <- function(x, digits = 3) {
 #' Estimate LLOQ From Existing Additive and Proportional errors
 #' @param add_err Additive error (constant)
 #' @param prop_err Proportional error (CV)
-#' @param cv Coefficient of variation
+#' @param cv Maximum coefficient of variation at LLOQ
+#' 
+#' A method to estimate LLOQ from existing additive and proportional errors. The function does inequality constrained optimization to find the LLOQ.
 #' @author Omar I. Elashkar
 #' @export
 estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv = 0.2) {
@@ -202,28 +204,21 @@ estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv = 0.2) {
 #' @export 
 plot_res_rel <- function(df, title){
     x <- ggplot(df) +
-        geom_point(aes(x = stdconc, y = cv, color = Type)) +
-        geom_line(aes(x = stdconc, y = cv, color = Type)) +
+        geom_point(aes(x = stdconc, y = cv)) +
+        geom_line(aes(x = stdconc, y = cv)) +
         labs(y = "Coefficient of Variation", x = "Standard Concentration") +
-        #scale_color_viridis_c() +
         scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-        # theme_classic(base_family = "RobotoCondensed-Regular", base_size = 12) + 
-        theme_classic() +
         theme(text = element_text(size = 21), 
           title = element_text(size = 21))
 
     y <- ggplot(df) +
-        geom_point(aes(x = stdconc, y = sdev, color = Type)) +
-        geom_line(aes(x = stdconc, y = sdev, color = Type)) +
+        geom_point(aes(x = stdconc, y = sd)) +
+        geom_line(aes(x = stdconc, y = sd)) +
         labs(y = "Standard Deviation", x = "Standard Concentration") +
-        #scale_color_viridis_c() +
-        theme_classic() +
         theme(text = element_text(size = 21), 
           title = element_text(size = 21))
-        # theme_classic(base_family = "RobotoCondensed-Regular", base_size = 12)
 
-    x + y + 
-    # collect x axis title 
-    plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
-    plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
+    list(x, y) 
+        # plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
+        # plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
 }

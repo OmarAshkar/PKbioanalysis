@@ -161,3 +161,5 @@ test_that("check if study is pk study", {
 
     expect_false(is_pk_study(new_study$id))
 })
+
+

@@ -1,0 +1,58 @@
+```{r}
+library(PKbioanalysis)
+library(dplyr)
+
+```
+
+```{r}
+d <- read.csv(system.file("extdata", "GU_1.csv", package = "PKbioanalysis"))
+```
+
+```{r}
+head(d)
+
+```
+
+```{r}
+only_qc <- d |> filter(TYPE %in% c("LLOQ", "LQC", "MQC", "HQC"))
+
+only_qc <- only_qc  |> 
+    group_by(TYPE, stdconc) |>
+    summarize(
+        mean = mean(conc),
+        sd = sd(conc),
+        cv = sd(conc)/mean(conc)*100,
+        n = n()
+    )
+only_qc
+```
+
+```{r}
+plot_res_rel(only_qc)
+```
+
+
+```{r}
+fit <- fit_var(d)
+
+
+formated_print(fit)
+
+```
+
+
+## Estimated dilution limit 
+Divide additive/proportional error
+
+```{r}
+0.016/0.032
+```
+
+## Estimate LLOQ
+```{r}
+0.016/0.2
+
+estim_lloq(add_err = 0.016, prop_err = 0.032, cv = 0.08 )
+```
+
+

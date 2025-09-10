@@ -238,7 +238,7 @@ plate_app <- function() {
           actionButton("add_standards_btn", "Standards"),
           actionButton("add_qc_btn", "QC"),
           actionButton("add_dqc_btn", "DQC"),
-          actionButton("add_samples_btn", "Samples"),
+          # actionButton("add_samples_btn", "Samples"),
           actionButton("add_suitability_btn", "Suitability")
         ), 
         tags$div(id = "gen_plate_ui")
@@ -1078,8 +1078,11 @@ plate_app <- function() {
 
     observeEvent(input$dil_input, {
       req(curr_plate_sample_log_dil())
-      browser()
-      df <- ifelse(!is.null(captured_dil()), captured_dil(), curr_plate_sample_log_dil())
+      if(!is.null(captured_dil())) {
+        df <- as.data.frame(captured_dil())
+      } else {
+        df <- as.data.frame(curr_plate_sample_log_dil())
+      }
       df[input$dil_input$row, input$dil_input$column] <- as.numeric(input$dil_input$value)
       captured_dil(df)
     })
@@ -1096,10 +1099,12 @@ plate_app <- function() {
         if(is.null(selected_rows)) {
           stop("No Samples selected")
         }
+        
+        browser()
         curr_gen_plate_expr(
           bquote(.(curr_gen_plate_expr()) |>
             add_samples_db(logIds = .(curr_plate_sample_log_dil()$log_id[selected_rows]),
-                          dil = .(captured_dil()$dil[selected_rows]),
+                          dil = .(ifelse(is.null(captured_dil()), 1, captured_dil()$dil[selected_rows])),
                           group = .(input$samplesdb_group_input),
                           namestyle = .(input$dropdown_naming_samples_input)
                           ))

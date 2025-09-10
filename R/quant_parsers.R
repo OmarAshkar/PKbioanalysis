@@ -21,7 +21,7 @@ read_experiment_results <- function(x, drop_prefix = FALSE, vendor = "targetlynx
     checkmate::assertFileExists(x)
     if(grepl(".xml$", x)){
       .parse_tlynx_xml(x, drop_prefix = drop_prefix)
-    } else if(grepl(".csv$", x)){
+    } else if(grepl("\\.(csv|txt)$", x, ignore.case = TRUE)){
         .parse_tlynx_csv(x) 
     } else {
       stop("Targetlynx file must be either XML or CSV")
