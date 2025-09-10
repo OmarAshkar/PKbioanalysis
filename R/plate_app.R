@@ -1100,7 +1100,6 @@ plate_app <- function() {
           stop("No Samples selected")
         }
         
-        browser()
         curr_gen_plate_expr(
           bquote(.(curr_gen_plate_expr()) |>
             add_samples_db(logIds = .(curr_plate_sample_log_dil()$log_id[selected_rows]),
