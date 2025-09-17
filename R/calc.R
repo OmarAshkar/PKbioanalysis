@@ -40,3 +40,7 @@ precision <- function(x, percent = TRUE){
   }
   p
 }
+
+accuracy <- function(x, y){
+    return(x/y * 100)
+}

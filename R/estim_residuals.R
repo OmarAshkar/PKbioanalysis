@@ -135,12 +135,13 @@ formated_print <- function(x, digits = 3) {
 #' Estimate LLOQ From Existing Additive and Proportional errors
 #' @param add_err Additive error (constant)
 #' @param prop_err Proportional error (CV)
-#' @param cv Maximum coefficient of variation at LLOQ
+#' @param cv_lloq Maximum coefficient of variation at LLOQ
+#' @param cv_lqc Maximum coefficient of variation at LQC
 #' 
 #' A method to estimate LLOQ from existing additive and proportional errors. The function does inequality constrained optimization to find the LLOQ.
 #' @author Omar I. Elashkar
 #' @export
-estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv = 0.2) {
+estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 0.15) {
     rsd_fn <- function(x, a, b) {
         sqrt(a^2 + b^2 * x^2) / x
     }

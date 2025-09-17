@@ -61,9 +61,11 @@ get_compound_ID <- function(chrom_res, compound_name) {
 #'@author Omar Elashkar 
 update_IS <- function(chrom_res, compound_id, standard_id){
     checkmate::assertClass(chrom_res, "ChromResBase")
+    checkmate::assertCount(compound_id, positive = TRUE)
+    checkmate::assertCount(standard_id, positive = TRUE)
 
-    compound_id <- .cmpds_string_handler(compound_id) 
-    standard_id <- .cmpds_string_handler(standard_id) 
+    # compound_id <- .cmpds_string_handler(compound_id) 
+    # standard_id <- .cmpds_string_handler(standard_id) 
 
     if(!(compound_id %in% chrom_res@compounds$compound_id)){
         stop("Compound ID not found in compounds")
@@ -235,7 +237,8 @@ setMethod("is_integrated", signature(chrom_res = "ChromResBase"),
 #' @noRd
 is_integrated_chrom_res <- function(chrom_res, compound_id,sample_id = NULL){
     checkmate::assertNumber(sample_id, lower = 1, null.ok = TRUE)
-    compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
 
     peaktab <- chrom_res@peaks
 
@@ -247,7 +250,7 @@ is_integrated_chrom_res <- function(chrom_res, compound_id,sample_id = NULL){
     sample_id_filter <- sample_id
 
     if(nrow(peaktab) == 0){
-        stop("No peaks integrated. Please run update_RT() first or update_compound() ")
+        stop("No compounds found")
     }
     # if(!(sample_id %in% unique(peaktab$sample_id))){
     #     stop("Sample ID not found in peaks. Please run update_RT() first or update_compound() ")
@@ -259,8 +262,16 @@ is_integrated_chrom_res <- function(chrom_res, compound_id,sample_id = NULL){
             observed_peak_height,
             observed_peak_start,
             observed_peak_end,
-            area) |> complete.cases()
-    # }
+            area) 
+
+
+     #}
+
+    if(nrow(res) == 0){
+        stop("No peaks found for the specified sample and compound. Please run update_RT() first")
+    }
+    
+    res <- complete.cases(res) 
     all(res)
 }
 
@@ -276,7 +287,8 @@ is_integrated_chrom_base <- function(chrom_res){
 #' @export
 has_default_RT <- function(chrom_res, compound_id){
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
 
     compounds <- chrom_res@compounds
     compound_id_filter <- compound_id
@@ -306,19 +318,6 @@ is_smoothed <- function(chrom_res){
     do.call(rbind, res)
 }
 
-#' Check if linearity for specific compound has been executed
-#' @noRd
-has_linearity <- function(chrom_res, compound_id){
-    checkmate::assertClass(chrom_res, "ChromResBase")
-    compound_id <- .cmpds_string_handler(compound_id)
-    
-    tryCatch({
-        linearity <- chrom_res@linearity[[compound_id]]$results$model
-        !is.null(linearity) 
-    }, error = function(e) {
-        FALSE
-    })
-}
 
 
 
@@ -375,10 +374,15 @@ update_metadata <- function(chrom_res, metadata, ignore_unmatched = TRUE){
 
 
 #' @title Get vial positions
-#' @param chrom_res ChromRes object
+#' @param x ChromRes or QuantRes object
 #' @noRd
 #' @author Omar Elashkar
-get_vials <- function(chrom_res){
-    chrom_res@metadata |> 
+setGeneric("get_vials", function(x) standardGeneric("get_vials"))
+
+get_vials.ChromRes <- function(x){
+    x@metadata |> 
         dplyr::pull("vialpos") 
 }
+setMethod("get_vials", signature(x = "ChromRes"), get_vials.ChromRes)
+
+

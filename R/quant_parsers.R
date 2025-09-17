@@ -209,7 +209,7 @@ df
             mutate(sample_type = case_when(
               sample_type == "Analyte" ~ "Sample", 
               .default = sample_type)),
-             "targetlynx")
+             vendor = "targetlynx")
 
       }
 
@@ -278,7 +278,7 @@ df
 
     # name the list
     names(mylist) <- compound_names
-    lapply(mylist, function(x) x |> 
+    reslist <- lapply(mylist, function(x) x |> 
         rename(conc = `Conc.`) |>
         rename(stdconc = `Std. Conc`) |>  
         rename(area = `Area`) |>
@@ -286,4 +286,6 @@ df
         mutate(across(c("conc", "area_ratio", "stdconc", "area", "%Dev"), as.numeric)) |>
         mutate(accuracy = accuracy(conc, stdconc)) 
         )
+    
+    .peak_res(reslist, vendor = "targetlynx")
 }

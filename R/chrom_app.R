@@ -622,7 +622,8 @@ chromapp_server <- function(input, output, session, original_dat) {
           height = "100px",
           # actionButton("save_cmpd", "Save Compound"),
           # actionButton("remove_cmpd", "Remove Compound"),
-          actionButton("update_cmpd", "Update Compound")
+          actionButton("update_cmpd", "Update Compound"),
+          actionButton("check_cmpd_db_btn", "Check Compound Consistency")
         )
     ) 
   })
@@ -709,8 +710,18 @@ chromapp_server <- function(input, output, session, original_dat) {
     #   compound_id <- get_compound_ID(peaksobj(), input$cmpd_id_overview),
     #   new_name = new_cmpd_name,
     #   IS = IS) 
-    update_IS(peaksobj(), cmpd_id, IS_id) |> peaksobj()
+    # update_IS(peaksobj(), cmpd_id, IS_id) |> peaksobj()
+    shinyalert('update the compound in method database', type = "info")
     
+  })
+  observeEvent(input$check_cmpd_db_btn, {
+    req(peaksobj()@compounds)
+    tryCatch({
+      check_chrom_cmpds(peaksobj()) 
+      shinyalert('Compound consistency check passed', type = "success")
+    }, error = function(e) {
+      showNotification(paste("Error: ", e$message), type = "error")
+    })
   })
 
   output$cmpd_table_overview <- renderDT({

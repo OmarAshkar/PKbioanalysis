@@ -7,12 +7,22 @@
     res$compounds <- do.call(rbind,
         lapply(res$compounds, function(x){
             data.frame(compound = x$cmpd, q1 = x$q1, q3 = x$q3, 
-            qualifier = x$qualifier)
+            qualifier = x$qualifier, 
+            expected_peak_start = ifelse(is.null(x$expected_peak_start), NA, x$expected_peak_start),
+            expected_peak_end = ifelse(is.null(x$expected_peak_end), NA, x$expected_peak_end),
+            expected_rt = ifelse(is.null(x$expected_rt), NA, x$expected_rt),
+            IS_id = ifelse(is.null(x$IS), NA, x$IS),
+            stringsAsFactors = FALSE)
         }))
+    if(any(!is.na(res$compounds$IS_id))){
+        checkmate::assert(all(res$compounds$IS_id[!is.na(res$compounds$IS_id)] %in% res$compounds$compound),
+            msg = "If a compound has an IS, the IS must be listed in another compound entry.")
+    }
+
     res
 }
 
-.save_cmpd_db <- function(cmpds_list){
+.save_cmpd_db <- function(cmpds_list, method_id = NULL){
 
     # check there is one method, description and compounds
     checkmate::assertNames(names(cmpds_list),
@@ -28,9 +38,12 @@
     .check_sample_db()
     db <- .connect_to_db()
     on.exit(.close_db(db, gc = TRUE), add = TRUE)
-    # create new method ID
-    max_method_id <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
-    method_id <- ifelse(is.na(max_method_id), 1, max_method_id+1)
+
+    if(is.null(method_id)){
+        # create new method ID
+        max_method_id <- DBI::dbGetQuery(db, "SELECT MAX(method_id) FROM methodstab") |> as.numeric() |> max()
+        method_id <- ifelse(is.na(max_method_id), 1, max_method_id+1)
+    }
 
     max_cmpd_id <- DBI::dbGetQuery(db, "SELECT MAX(compound_id) FROM compoundstab") |> as.numeric() |> max()
     cmpd_id <- ifelse(is.na(max_cmpd_id), 1, max_cmpd_id+1)
@@ -87,10 +100,15 @@
             transitions_df |>
                 dplyr::mutate(method_id = method_id) |>
                 dplyr::mutate(compound_id = cmpd_id) |>
+                dplyr::mutate(IS_id = ifelse(is.na(.data$IS_id), NA,
+                    cmpd_id[match(.data$IS_id, transitions_df$compound)])) |>
                 dplyr::select(
                     "compound_id",
                     "compound",
                     "qualifier",
+                    "IS_id",
+                    "expected_peak_start",
+                    "expected_peak_end",
                     "transition_id")
         )
 
@@ -162,14 +180,64 @@
 
 modify_method <- function(method_id, new_list){
     checkmate::assertNumeric(method_id, len = 1)
+    checkmate::assertList(new_list)
+    # check there is one method, description and compounds
+    checkmate::assertNames(names(new_list),
+        must.include = c("method", "description", "gradient", "compounds", "column"), type = "unique")
+    checkmate::assertDataFrame(new_list$compounds)
+    new_list$compounds <- new_list$compounds[!is.na(new_list$compounds$compound), ] # remove empty rows
+    checkmate::assert(!anyDuplicated(new_list$compounds[,c("q1", "q3")]), 
+        msg = "The combination of q1 and q3 must be unique in the compounds data frame.")
+
     .check_sample_db()
-    # check if method_id exists
-    existing_method_id <- .get_method_id(new_list$method)
-    if(is.na(existing_method_id)) {
+    # check if method_id exists in db
+    if(!(method_id %in% .get_methodsdb()$method_id)){
         stop("Method ID ", method_id, " not found in database.")
     }
+    
+    db <- .connect_to_db()
+    DBI::dbBegin(db)
+    tryCatch({
+        # delete dependent records first
+        nrowtrans <- DBI::dbExecute(db, paste0("DELETE FROM compoundstab WHERE transition_id IN (SELECT transition_id FROM transtab WHERE method_id = ", method_id, ")"))
+        checkmate::assert(nrowtrans > 0, 
+            msg = "No compounds found to update for method_id ", method_id)
+        DBI::dbCommit(db) # commit deletion of dependent records first before adding new ones
+    }, error = function(e) {
+        # Roll back the transaction if any operation fails
+        DBI::dbRollback(db)
+        stop("Transaction failed: ", e$message)
+    }, finally = {
+        .close_db(db, gc = TRUE)
+    })
 
+
+    db <- .connect_to_db()
+    DBI::dbBegin(db)
+    tryCatch({
+        nrowtrans <- DBI::dbExecute(db, paste0("DELETE FROM transtab WHERE method_id = ", method_id))
+        checkmate::assert(nrowtrans > 0, "No transitions found to update for method_id ", method_id)
+        DBI::dbCommit(db) # commit deletion of dependent records first before adding new ones
+    }, error = function(e) {
+        DBI::dbRollback(db)
+        stop("Transaction failed: ", e$message)
+    }, finally = {
+        .close_db(db, gc = TRUE)
+    })
+
+    db <- .connect_to_db()
+    DBI::dbBegin(db)
+    tryCatch({        
+        nrowtrans <- DBI::dbExecute(db, paste0("DELETE FROM methodstab WHERE method_id = ", method_id))
+        checkmate::assert(nrowtrans > 0, "No method found to update for method_id ", method_id)
+        DBI::dbCommit(db) # commit deletion of method record
+    }, error = function(e) {
+        # Roll back the transaction if any operation fails
+        DBI::dbRollback(db)
+        stop("Transaction failed: ", e$message)
+    }, finally = {
+        .close_db(db, gc = TRUE)
+    })
+
+    .save_cmpd_db(new_list, method_id = method_id)
 }
-
-
-

@@ -5,10 +5,7 @@ setClass("ChromResBase",
         transitions = "data.frame", 
         compounds = "data.frame", 
         vendor = "character", 
-        pk_metadata = "list",
-        linearity = "list",
-        suitability = "list", 
-        resEstim = "list"
+        pk_metadata = "list"
     )
 )
 
@@ -105,21 +102,6 @@ check_all <- function(object){
 
 
 
-    ## check suitability
-    checkmate::assertNames(names(object@suitability), 
-        identical.to = c("config", "results")
-    )
-
-    checkmate::assertNames(names(object@suitability$config), 
-        identical.to = c("vial", "start_pos", "end_pos")
-    )
-
-
-    ##check linearity 
-    stopifnot(length(object@linearity) == nrow(object@compounds))
-    checkmate::assertNames(names(object@linearity),
-        identical.to = paste0("C", object@compounds$compound_id)) # compound_id
-    
     
     # check metadata columns names constistency
     # response_vec <- paste0("response_", unique(object@compounds$compound))
@@ -147,6 +129,7 @@ setValidity("ChromRes", function(object) {
     check_all(object)
     TRUE
 })
+
 
 #' @title Read Chromatogram Files
 #' @description This function reads chromatogram files from a directory and returns a data frame with the chromatogram data.
@@ -193,11 +176,6 @@ read_chrom <- function(dir, format = "waters_raw", method) {
     res <- .construct_experiment_peaktab(res) # Note res$runs must have files_metadata
 
     # get the compounds from the peaktab
-
-    res <- .construct_suitability(res)
-
-    res <- .construct_linearity(res)
-
     res <- .construct_pk_metadata(res)
 
     res <- new("ChromRes", 
@@ -207,17 +185,12 @@ read_chrom <- function(dir, format = "waters_raw", method) {
         transitions = res$exp_transitions,  # transitions global
         compounds = res$exp_compounds, # compounds global
         pk_metadata = res$pk_metadata,
-        linearity = res$linearity,
-        suitability = res$suitability,
         vendor = format) #FIXME: vendor is not always the format as mzML can be any vendor.
 
 
     # TODO automatically select any suitability vial, start and end)
     max_con <- rle(get_vials(res)) 
     max_con <- max_con$values[max_con$lengths |> which.max()]
-    res <- config_suitability(res, 
-        vial_pos =  max_con,
-        start = NULL, end = NULL)
 
     validObject(res)
     res
@@ -373,7 +346,7 @@ filter_chrom <- function(chrom_res, transitions_ids = NULL, samples_id = NULL, c
     if (is.null(transitions_ids)) {
         transitions_ids <- unique(exp_transitions$transition_id)  # already T'd
     } else{
-        transitions_ids <- paste0("T", transitions_ids) 
+        # transitions_ids <- paste0("T", transitions_ids) 
         if(all(transitions_ids %in% unique(exp_transitions$transition_id)) == FALSE){
             stop("Transition ID not found. Check the transition ID supplied.")
         }
@@ -392,7 +365,7 @@ filter_chrom <- function(chrom_res, transitions_ids = NULL, samples_id = NULL, c
     if(is.null(cmpd_ids)) {
         cmpd_ids <- unique(exp_compounds$compound_id) # already C'd
     } else if(!is.null(cmpd_ids)) {
-        cmpd_ids <- paste0("C", cmpd_ids)
+        # cmpd_ids <- paste0("C", cmpd_ids)
         if(all(cmpd_ids %in% unique(exp_compounds$compound_id)) == FALSE){
             stop("Compound ID not found. Check the compound ID supplied.")
         }

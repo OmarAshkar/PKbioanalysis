@@ -459,48 +459,4 @@
 
 }
 
-# needs compounds df and peaktab df
-.construct_linearity <- function(chrom_res){
-  # create a list with names compound_id
 
-  linearity <- list()
-  for(cmpd in chrom_res$exp_compounds$compound_id){
-    cmpd_id <- paste0("C", cmpd)
-    linearity[[cmpd_id]] <- list()
-
-    cmpd_name <- chrom_res$exp_compounds |> 
-      filter(.data$compound_id == cmpd) |> 
-      pull("compound")
-    spiked_name <- paste0("spiked_", cmpd_name)
-    stopifnot(length(spiked_name) == 1)
-
-    linearity[[cmpd_id]]$linearitytab <- 
-      chrom_res$exp_peaktab |>
-        filter(.data$compound_id == !!cmpd) |> 
-        dplyr::select("filename", "area") |>
-        dplyr::rename(response = "area") |>
-        dplyr::left_join(chrom_res$metadata, by = c("filename" = "filename")) |>
-        dplyr::select("filename", "type", "sample_location", "sample_id", "response", spiked_name) |>
-        dplyr::rename(actual_conc = !!spiked_name)  |>
-        dplyr::mutate(include = TRUE) |> 
-        dplyr::mutate(dev = as.numeric(NA)) 
-    
-    linearity[[cmpd_id]]$parameters  <- NA
-    linearity[[cmpd_id]]$results <- NA
-
-  }
-
-  chrom_res$linearity <- linearity
-  chrom_res
-}
-
-.construct_suitability <- function(chrom_res){
-  suitability <- list()
-  suitability[["config"]] <- list(vial = NULL, 
-                                  start_pos = NULL, 
-                                  end_pos = NULL)
-  # Dataframe with RSD
-  suitability[["results"]] <- data.frame()
-  chrom_res$suitability <- suitability
-  chrom_res
-}

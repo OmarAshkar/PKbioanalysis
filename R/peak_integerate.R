@@ -3,30 +3,29 @@
 #' @param chrom_res ChromRes object. Must have observed RT values
 #' @param compound_id Compound ID
 #' @param samples_ids Sample ID. If NULL, all samples will be used
-#' @import checkmate
+#' @param peak_start Minimum RT value. If NULL, all RT values will be used
+#' @param peak_end Maximum RT value. If NULL, all RT values will be used
+#' @param smoothed Logical. If TRUE, use smoothed chromatogram. Default is TRUE
 #' @importFrom pracma trapz
 #' @export
-integerate <- function(chrom_res, compound_id, samples_ids){
+integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE){
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
     checkmate::assertNumeric(samples_ids, lower = 1, null.ok = TRUE) # single sample
 
     
     transition_id <- .which_transition(chrom_res, compound_id)
 
 
-    min_cutoff <- chrom_res@peaks  |>  # get the min and max RT for the compound
-        dplyr::filter(.data[["compound_id"]] == !!compound_id) |>
-        dplyr::pull("observed_peak_start") |> min()
-
-    max_cutoff <- chrom_res@peaks |>
-        dplyr::filter(.data[["compound_id"]] == !!compound_id) |>
-        dplyr::pull("observed_peak_end") |> max()
+    bounds <- extract_peak_bounds(chrom_res, compound_id)
+    min_bound <- bounds$min
+    max_bound <- bounds$max
 
     # this first filter for performance using empirical cutoffs
     filtered_peaks <- .filter_peak(chrom_res = chrom_res, 
         transition = transition_id, samples_ids = samples_ids,
-        peak_start = min_cutoff, peak_end = max_cutoff)
+        peak_start = min_bound, peak_end = max_bound, smoothed = smoothed)
 
     if(is.null(samples_ids)){
         samples_ids <- names(chrom_res@runs$files)
@@ -49,9 +48,9 @@ integerate <- function(chrom_res, compound_id, samples_ids){
             .data$observed_peak_start, .data$observed_peak_end, 
             .data$observed_rt, .data$observed_peak_height) |>
         dplyr::filter(.data$RT >= observed_peak_start & .data$RT <= observed_peak_end) |>
-        dplyr::mutate(observed_peak_height = max(!!ensym(transition_id))) |>
-        dplyr::mutate(observed_rt =  .data$RT[which.max(!!ensym(transition_id))]) |>
-        dplyr::summarize(area = pracma::trapz(.data$RT, !!ensym(transition_id))) 
+        dplyr::mutate(observed_peak_height = max(.data[[paste0("T", transition_id)]])) |> # max peak height
+        dplyr::mutate(observed_rt =  .data$RT[which.max(.data[[paste0("T", transition_id)]])]) |> # observed RT
+        dplyr::summarize(area = pracma::trapz(.data$RT, .data[[paste0("T", transition_id)]]))
     
 
     peaktab <- dplyr::rows_update(chrom_res@peaks,
@@ -70,6 +69,66 @@ integerate <- function(chrom_res, compound_id, samples_ids){
     x$RT[which.max(intensity_vec)]
 }
 
+
+#' Check Matching of Compound and Transitions in chrom_res and method database
+#' @param chrom_res ChromRes object
+#' @param method_id Method ID in the method database
+#' This is important to give no error before merging quantification results to ensure consistency.
+#' @return TRUE if all compounds and transitions match, otherwise FALSE
+check_chrom_cmpds <- function(chrom_res, method_id){
+    checkmate::assertClass(chrom_res, "ChromRes")
+    checkmate::assertCount(method_id, positive = TRUE)
+
+
+    # expect_equal(n_samples * n_cmpd == nrow(dat1@peaks), TRUE)
+    # number of cmpds here is there
+    n_cmpd <- nrow(chrom_res@compounds) 
+    n_samples <- length(chrom_res@runs$files)
+    if(n_samples * n_cmpd != nrow(chrom_res@peaks)){
+        message("Number of compounds in chrom_res does not match number of compounds in method database")
+    }
+    # all cmpd names here in there
+    transitions_db <- .get_method_transitions(method_id)
+    cmpds_db <- .get_method_cmpds(method_id)
+
+    message("Number of compounds in chrom_res: ", n_cmpd)
+    message("Number of compounds in method database: ", nrow(cmpds_db))
+    message("Number of transitions in method database: ", nrow(transitions_db))
+    message("Number of transitions in chrom_res: ", nrow(chrom_res@transitions))
+
+    bool <- TRUE
+    cmpdsdb_names <- make.unique(cmpds_db$compound, sep = "_") # automatically convert repeted names like chromres
+    if(!all(chrom_res@compounds$compound %in% cmpdsdb_names)){
+        ("Some compounds in chrom_res not found in method database")
+        message(chrom_res@compounds$compound[!chrom_res@compounds$compound %in% cmpdsdb_names])
+        message("These compounds are not found in method database:")
+        message(paste(setdiff(chrom_res@compounds$compound, cmpdsdb_names), collapse = ", "))
+        bool <- FALSE
+    }
+
+    if(!all(cmpdsdb_names %in% chrom_res@compounds$compound)){
+        message("Some compounds in method database not found in chrom_res")
+        message(paste(cmpdsdb_names[!cmpdsdb_names %in% chrom_res@compounds$compound], collapse = ", "))
+        message("These compounds are not found in chrom_res:")
+        message(paste(setdiff(cmpdsdb_names, chrom_res@compounds$compound), collapse = ", "))
+        bool <- FALSE
+    }
+
+    # all transitions here in there 
+    if(!all(chrom_res@transitions$transition_label %in% transitions_db$transition_label)){
+        message("Some transitions in chrom_res not found in method database")
+        message("These transitions are not found in method database:")
+        message(paste(setdiff(chrom_res@transitions$transition_label, transitions_db$transition_label), collapse = ", "))
+        bool <- FALSE
+    }
+    if(!all(transitions_db$transition_label %in% chrom_res@transitions$transition_label)){
+        message("Some transitions in method database not found in chrom_res")
+        message("These transitions are not found in chrom_res:")
+        message(paste(setdiff(transitions_db$transition_label, chrom_res@transitions$transition_label), collapse = ", "))
+        bool <- FALSE
+    }
+    bool
+}
 
 # #' @title Add a compound to quantify
 # #' @description Add a compound to quantify. This function will add a compound to quantify in the chromatogram.
@@ -237,10 +296,14 @@ integerate <- function(chrom_res, compound_id, samples_ids){
 #' @import dplyr
 .which_transition <- function(chrom_res, compound_id){
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
 
     compounds <- chrom_res@compounds
     # find the transition_id for the compound_id
+    if(!(compound_id %in% compounds$compound_id)){
+        stop("Compound ID not found in compounds")
+    }
     index <- compounds$transition_id[which(compounds$compound_id == compound_id)]
 
     chrom_res@transitions |>
@@ -255,9 +318,9 @@ integerate <- function(chrom_res, compound_id, samples_ids){
 #' @param samples_ids Sample ID. If NULL, all samples will be used
 #' @param peak_start Minimum RT value. If NULL, all RT values will be used
 #' @param peak_end Maximum RT value. If NULL, all RT values will be used
-#' @import checkmate
-#' @import dplyr
-#' @import purrr
+#' @param smoothed Logical. If TRUE, use smoothed chromatogram. Default is FALSE
+#' @return Dataframe with RT, intensity and sample_id
+#' @noRd
 .filter_peak <- function(chrom_res, transition_id, samples_ids = NULL, 
     peak_start, peak_end, smoothed=FALSE){
     checkmate::assertClass(chrom_res, "ChromRes")
@@ -272,6 +335,10 @@ integerate <- function(chrom_res, compound_id, samples_ids){
         samples_ids <- names(chrom_res@runs$files)
     } 
     samples_ids <- as.character(samples_ids) 
+
+    if(is_smoothed(chrom_res)$smoothed |> all() == FALSE & smoothed){
+        stop("Chromatogram not smoothed. Please smooth the chromatogram first.")
+    }
 
     i <- ifelse(smoothed, "smoothed", "sample_chrom")
 
@@ -317,7 +384,8 @@ integerate <- function(chrom_res, compound_id, samples_ids){
 
 .integerate_all_slack<- function(chrom_res, compound_id, peak_start, peak_end, manual = TRUE){
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+
+    # compound_id <- .cmpds_string_handler(compound_id)
     checkmate::assertNumber(peak_start, lower = 0)
     checkmate::assertNumber(peak_end, lower = peak_start)
 
@@ -348,7 +416,7 @@ integerate <- function(chrom_res, compound_id, samples_ids){
         # set manual to TRUE
         peaktab <- dplyr::rows_update(peaktab, 
             data.frame(
-                sample_id = dat$files_metadata$sample_id, 
+                sample_id = names(dat$files),
                 observed_rt = as.numeric(NA),
                 observed_peak_start = peak_start , 
                 observed_peak_end = peak_end,
@@ -400,7 +468,7 @@ integerate <- function(chrom_res, compound_id, samples_ids){
     checkmate::assertClass(chrom_res, "ChromRes")
     checkmate::assertNumber(peak_start, lower = 0)
     checkmate::assertNumber(peak_end, lower = peak_start)
-    compound_id <- .cmpds_string_handler(compound_id)
+    # compound_id <- .cmpds_string_handler(compound_id)
 
 
     dat <- chrom_res@runs
@@ -429,7 +497,7 @@ integerate <- function(chrom_res, compound_id, samples_ids){
 .integerate_individual_slack <- function(chrom_res, compound_id, sample_id, peak_start, peak_end, manual = TRUE ){
 # >=sample_id
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+    # compound_id <- .cmpds_string_handler(compound_id)
     checkmate::assertNumber(peak_start, lower = 0)
     checkmate::assertNumber(peak_end, lower = peak_start)
     checkmate::assertLogical(manual)
@@ -501,7 +569,7 @@ integerate <- function(chrom_res, compound_id, samples_ids){
 apply_area_cutoff <- function(chrom_res, cutoff, compound_id){
     checkmate::assertClass(chrom_res, "ChromRes")
     checkmate::assertNumber(cutoff, lower = 0, upper = 1e20)
-    compound_id <- .cmpds_string_handler(compound_id)
+    # compound_id <- .cmpds_string_handler(compound_id)
 
     peaktab <- chrom_res@peaks
 
@@ -532,7 +600,7 @@ apply_area_cutoff <- function(chrom_res, cutoff, compound_id){
 update_RT <- function(chrom_res, compound_id, sample_id =NULL,
     peak_start , peak_end, manual = FALSE, target = "single", force = FALSE){
     checkmate::assertClass(chrom_res, "ChromRes")
-    compound_id <- .cmpds_string_handler(compound_id)
+    # compound_id <- .cmpds_string_handler(compound_id)
     checkmate::assertNumber(sample_id, lower = 1, null.ok = TRUE)
     checkmate::assertNumber(peak_start, lower = 0)
     checkmate::assertNumber(peak_end, lower = peak_start)
@@ -736,3 +804,85 @@ update_RT <- function(chrom_res, compound_id, sample_id =NULL,
     chrom_res
 }
 
+
+#' @title Set Expected RT Bounds
+#' @description Updates only RT from chrom_res
+update_expected_bounds <- function(chrom_res, method_id, df){
+    checkmate::assertClass(chrom_res, "ChromRes")
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertNumber(expected_rt, lower = 0)
+
+    compounds <- chrom_res@compounds
+    if(!(compound_id %in% compounds$compound_id)){
+        stop("Compound ID not found in compounds")
+    }
+
+    compounds <- compounds |>
+        dplyr::mutate(expected_rt = ifelse(.data$compound_id == !!compound_id, expected_rt, expected_rt))
+
+    chrom_res@compounds <- compounds
+    validObject(chrom_res)
+    chrom_res
+}
+
+set_observed_bounds <- function(chrom_res, compound_id, sample_id, peak_start, peak_end){
+    checkmate::assertClass(chrom_res, "ChromRes")
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
+    checkmate::assertIntegerish(sample_id, lower = 1, any.missing = FALSE, min.len = 1, unique = TRUE)
+    checkmate::assertNumber(peak_start, lower = 0)
+    checkmate::assertNumber(peak_end, lower = 0)
+
+    peaktab <- chrom_res@peaks
+    if(!(compound_id %in% peaktab$compound_id)){
+        stop("Compound ID not found in compounds")
+    }
+
+    new_rt <- data.frame(
+        sample_id = sample_id,
+        compound_id = compound_id,
+        observed_peak_start = peak_start,
+        observed_peak_end = peak_end
+    )
+    peaktab <- dplyr::rows_update(peaktab, new_rt, by = c("sample_id", "compound_id"))
+
+
+    chrom_res@peaks <- peaktab
+    validObject(chrom_res)
+    chrom_res
+}
+
+#' @title Extract Peak Boundaries
+#' @description Extract peak boundaries for a given compound ID
+#' @param chrom_res ChromRes object
+#' @param compound_id Compound ID
+#' The function automatically priortizes observed peak boundaries (manual integeration) over expected ones.
+#' If observed boundaries are not available, it falls back to expected boundaries.
+#' @return Dataframe with compound_id, min, max
+extract_peak_bounds <- function(chrom_res, compound_id){
+    checkmate::assertClass(chrom_res, "ChromRes")
+    checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
+    compounds <- chrom_res@compounds
+    if(!(compound_id %in% compounds$compound_id)){
+        stop("Compound ID not found in compounds")
+    }
+    peaktab <- chrom_res@peaks
+
+    peaktab <- peaktab |>
+        dplyr::filter(.data$compound_id == !!compound_id)
+
+    res <- data.frame(
+        compound_id = peaktab$compound_id,
+        min = ifelse(!is.na(peaktab$observed_peak_start), peaktab$observed_peak_start, peaktab$expected_peak_start),
+        max = ifelse(!is.na(peaktab$observed_peak_end), peaktab$observed_peak_end, peaktab$expected_peak_end)
+    )
+
+    if(any(is.na(res$min)) || any(is.na(res$max))){
+        stop("Some peaks do not have observed peak boundaries. Please check the peaktab.")
+    }
+
+    res
+
+}

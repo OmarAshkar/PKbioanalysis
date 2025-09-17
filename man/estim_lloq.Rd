@@ -4,14 +4,16 @@
 \alias{estim_lloq}
 \title{Estimate LLOQ From Existing Additive and Proportional errors}
 \usage{
-estim_lloq(add_err = 0.04, prop_err = 0.05, cv = 0.2)
+estim_lloq(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 0.15)
 }
 \arguments{
 \item{add_err}{Additive error (constant)}
 
 \item{prop_err}{Proportional error (CV)}
 
-\item{cv}{Maximum coefficient of variation at LLOQ
+\item{cv_lloq}{Maximum coefficient of variation at LLOQ}
+
+\item{cv_lqc}{Maximum coefficient of variation at LQC
 
 A method to estimate LLOQ from existing additive and proportional errors. The function does inequality constrained optimization to find the LLOQ.}
 }

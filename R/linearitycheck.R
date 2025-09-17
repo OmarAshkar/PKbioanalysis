@@ -47,31 +47,31 @@ relative_error <- function(actual, predicted){
 }
 
 
-#' Update linearity response, type and actual_conc columns
+#' Update linearity response, type and stdconc columns
 #' response from peaktab 
-#' type and actual_conc from filetab
-#' @param chrom_res ChromRes object
+#' type and stdconc from filetab
+#' @param quantres QuantRes object
 #' @param compound_id character. If NULL, all compounds will be updated
 #' @param meta_only logical. If TRUE, only metadata will be updated. lm will not be deleted
 #' 
-#' @return ChromRes object
+#' @return QuantRes object
 #' @author Omar Elashkar
 #' @noRd
-sync_linearity <- function(chrom_res, compound_id = NULL, meta_only = FALSE){
+sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE){
 
     if(is.null(compound_id)){
-        compound_id <- chrom_res@compounds$compound_id
+        compound_id <- quantres@compounds$compound_id
     }
 
     for(cmpd in compound_id){
-        cmpd_name <- get_compound_name(chrom_res, cmpd)
+        cmpd_name <- get_compound_name(quantres, cmpd)
         spiked_name <- paste0("spiked_", cmpd_name)
         
-        is_id <- get_cmpd_IS(chrom_res, cmpd)
+        is_id <- get_cmpd_IS(quantres, cmpd)
         if(!is.na(is_id)){
-            if(is_integrated(chrom_res, is_id)){
+            if(is_integrated(quantres, is_id)){
                 IS_area_df <- 
-                    chrom_res@peaks |>
+                    quantres@peaks |>
                     dplyr::filter(compound_id == is_id) |>
                     dplyr::select("filename", "area", "compound_id") |>
                     dplyr::rename(IS_area = area)
@@ -80,10 +80,10 @@ sync_linearity <- function(chrom_res, compound_id = NULL, meta_only = FALSE){
             IS_area_df <- data.frame(filename = character(), IS_area = numeric(), compound_id = character())
         }
 
-        chrom_res@linearity[[cmpd]]$linearitytab <- chrom_res@peaks |>
+        quantres@linearity[[cmpd]]$linearitytab <- quantres@peaks |>
             dplyr::filter(.data$compound_id == !!cmpd) |>
             dplyr::select("filename", "area", "compound_id") |>
-            dplyr::left_join(chrom_res@metadata, by = c("filename" = "filename")) |>
+            dplyr::left_join(quantres@metadata, by = c("filename" = "filename")) |>
             # dplyr::filter(.data$type %in% c("Standard", "QC")) |>
             dplyr::rename(abs_response = .data$area) |>
 
@@ -91,9 +91,9 @@ sync_linearity <- function(chrom_res, compound_id = NULL, meta_only = FALSE){
             dplyr::mutate(rel_response = abs_response/IS_area) |>
             dplyr::select("filename", "type", "sample_location", "sample_id", 
             "abs_response", "rel_response", spiked_name, "dilution_factor",
-            "subject_id", "sampling_time", "dosage", "factor", "invitro_conc") |>
+            "subject_id", "sampling_time", "dosage", "factor") |>
 
-            dplyr::rename(actual_conc = !!spiked_name) |> # rename to actual_conc/nominal_conc
+            dplyr::rename(stdconc = !!spiked_name) |> # rename to stdconc/nominal_conc
             dplyr::mutate(include = TRUE) |> 
             dplyr::mutate(estimated_conc = as.numeric(NA)) |> # reverse
             dplyr::mutate(residual_conc = as.numeric(NA)) |> # reverse
@@ -110,53 +110,54 @@ sync_linearity <- function(chrom_res, compound_id = NULL, meta_only = FALSE){
             dplyr::mutate(passed = as.logical(NA))
 
         if(!meta_only){
-            chrom_res@linearity[[cmpd]]$results <- NA
+            quantres@linearity[[cmpd]]$results <- NA
         }
         
     }
 
-    validObject(chrom_res)
+    validObject(quantres)
     
-    chrom_res
+    quantres
 }
 
-setGeneric("run_linearity", function(chrom_res, compound_id, weight = "1/x^2", model = "linear", 
+setGeneric("run_linearity", function(quantres, compound_id, weight = "1/x^2", model = "linear", 
     intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
     standardGeneric("run_linearity")
 })
 
 
-setMethod("run_linearity", signature(chrom_res = "ChromResBase"), function(chrom_res, compound_id, weight = "1/x^2", model = "linear", 
+setMethod("run_linearity", signature(quantres = "QuantRes"), function(quantres, compound_id, weight = "1/x^2", model = "linear", 
     intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
-    run_linearity_chrom_res(chrom_res, compound_id, weight, model, intercept, normalize, avg_rep)
+    run_linearity_quantres(quantres, compound_id, weight, model, intercept, normalize, avg_rep)
 })
 
-setMethod("run_linearity", signature(chrom_res = "list"), function(chrom_res, compound_id) {
-    run_linearity_list(chrom_res, compound_id, weight, model, intercept, normalize, avg_rep)
+setMethod("run_linearity", signature(quantres = "list"), function(quantres, compound_id) {
+    run_linearity_list(quantres, compound_id, weight, model, intercept, normalize, avg_rep)
 })
 
 
 
-run_linearity_list <- function(chrom_res, compound_id, weight = "1/x^2", model = "linear", 
+run_linearity_list <- function(quantres, compound_id, weight = "1/x^2", model = "linear", 
     intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
 
-    target_df <- chrom_res[[compound_id]]$linearitytab |> 
+    target_df <- quantres[[compound_id]]$linearitytab |> 
         dplyr::filter(include == TRUE & type == "Standard")
 }
 
 #' Run linearity check
-#' @param chrom_res ChromRes object
-#' @param compound_id character
+#' @param quantres QuantRes object
+#' @param compound_id character. Compound ID to run linearity for.
 #' @param weight character. Choices are "non", "1/x", "1/x^2", "1/y", "1/y^2"
 #' @param model character
 #' @param intercept logical
 #' @param avg_rep logical
+#' @param normalize logical. If TRUE, relative response will be used instead of absolute response.
 #' The function will run linearity on all included standards. The residuals will be calculated on all standards, 
 #' QCs, blanks, double blanks and suitability vials.
-#' @return ChromRes object
+#' @return QuantRes object
 #' @author Omar Elashkar
 #' @noRd
-run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", model = "linear", 
+run_linearity_quantres <- function(quantres, compound_id, weight = "1/x^2", model = "linear", 
     intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
     checkmate::assertChoice(weight, c("non", "1/x", "1/x^2", "1/y", "1/y^2", "1/x^0.5", "1/y^0.5"))
     checkmate::assertChoice(model, c("linear", "quadratic"))
@@ -166,30 +167,31 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
     # check if there is pkmeta 
 
-    target_df <- chrom_res@linearity[[compound_id]]$linearitytab |> 
-        dplyr::filter(include == TRUE & type == "Standard")
+    target_df <- quantres@linearity[[compound_id]]$linearitytab |> 
+        dplyr::filter(.data$include == TRUE & .data$type == "Standard")
 
     if(all(is.na(target_df$abs_response))){
-        stop("Response is missing. Please run sync_linearity")
+        warning(compound_id, ": Absolute response is missing.")
+        return(quantres)
     }
 
-    # if(!is_integrated(chrom_res, compound_id= compound_id)){
+    # if(!is_integrated(quantres, compound_id= compound_id)){
     #     stop("Compound has not been integrated")
     # }
 
-    # target_df_qc <- chrom_res@linearity[[compound_id]]$linearitytab |> 
+    # target_df_qc <- quantres@linearity[[compound_id]]$linearitytab |> 
     #     dplyr::filter(type != "QC" || (type == "Standard" & include == FALSE))
     if(nrow(target_df) == 0){
         stop("No standards available to run linearity")
     }
-    if(any(is.na(target_df$actual_conc))){
+    if(any(is.na(target_df$stdconc))){
         stop("Actual concentration is missing")
     }
 
     if(normalize){ # use rel_response instead of abs_response
         response <- "rel_response"
         if(all(is.na(target_df$rel_response))){
-            stop("Relative response is missing")
+            stop("Relative response is missing. Ensure there is IS associated with the compound")
         }
     } else{
         response <- "abs_response"
@@ -204,15 +206,15 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
     } 
 
     if (weight == "1/x") {
-        weight_vec <- 1 / target_df$actual_conc
+        weight_vec <- 1 / target_df$stdconc
     } else if (weight == "1/x^2") {
-        weight_vec <- 1 / target_df$actual_conc^2
+        weight_vec <- 1 / target_df$stdconc^2
     } else if (weight == "1/y") {
         weight_vec <- 1 / target_df[[response]]
     } else if (weight == "1/y^2") {
         weight_vec <- 1 / target_df[[response]]^2
     } else if (weight == "1/x^0.5") {
-        weight_vec <- 1 / sqrt(target_df$actual_conc)
+        weight_vec <- 1 / sqrt(target_df$stdconc)
     } else if (weight == "1/y^0.5") {
         weight_vec <- 1 / sqrt(target_df[[response]])
     } else if (weight == "non") {
@@ -221,23 +223,23 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
     #weight_vec <- ifelse(is.infinite(weight_vec) , NULL, weight_vec)
 
     if (avg_rep) {
-        chrom_res <- chrom_res |>
-            group_by(actual_conc) |>
+        quantres <- quantres |>
+            group_by(stdconc) |>
             summarise(response = ifelse(normalize, mean(rel_response), mean(abs_response))
             )
     }
     
     if (intercept) {
         if (model == "linear") {
-            fit <- model_func(as.formula(paste0(response, "~actual_conc")), weights = weight_vec, data = target_df)
+            fit <- model_func(as.formula(paste0(response, "~stdconc")), weights = weight_vec, data = target_df)
         } else if (model == "quadratic") {
-            fit <- model_func(response ~ I(actual_conc^2) + actual_conc, data = target_df, weights = weight_vec)
+            fit <- model_func(response ~ I(stdconc^2) + stdconc, data = target_df, weights = weight_vec)
         }
     } else {
         if (model == "linear") {
-            fit <- model_func(as.formula(paste0(response, "~actual_conc - 1")), weights = weight_vec, data = target_df)
+            fit <- model_func(as.formula(paste0(response, "~stdconc - 1")), weights = weight_vec, data = target_df)
         } else if (model == "quadratic") {
-            fit <- model_func(response ~ I(actual_conc^2) + 0, data = target_df, weights = weight_vec)
+            fit <- model_func(response ~ I(stdconc^2) + 0, data = target_df, weights = weight_vec)
         }
     }
 
@@ -255,8 +257,9 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
     # update target_df with resdiual_response and estimated_response
     
     
-    target_df <- target_df |> select("sample_id", "abs_response", "rel_response", "actual_conc") |> 
-        dplyr::mutate(estimated_response = fitted_res$fit) |> # predict on same data
+    target_df <- target_df |> 
+        dplyr::select("filename", "abs_response", "rel_response", "stdconc") |> 
+        dplyr::mutate(estimated_response = fitted_res$fit) |>
         dplyr::mutate(estimate_CI_lwr = fitted_res$lwr) |>
         dplyr::mutate(estimate_CI_upr = fitted_res$upr) |>
         dplyr::mutate(estimated_pred_lwr = fitted_res_pred$lwr) |>
@@ -265,21 +268,25 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
         dplyr::mutate(rstandard_response = rstandard(fit)) 
     
     # update the linearitytab 
+    quantres@linearity[[compound_id]]$linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
+        dplyr::mutate(estimated_response = NA_real_) |>
+        dplyr::mutate(estimate_CI_lwr = NA_real_) |>
+        dplyr::mutate(estimate_CI_upr = NA_real_) |>
+        dplyr::mutate(estimated_pred_lwr = NA_real_) |>
+        dplyr::mutate(estimated_pred_upr = NA_real_) |>
+        dplyr::mutate(residual_response = NA_real_) |>
+        dplyr::mutate(rstandard_response = NA_real_) |>
+        dplyr::mutate(estimated_conc = as.numeric(NA)) |>
+        dplyr::mutate(residual_conc = as.numeric(NA)) |> 
+        dplyr::mutate(dev_conc = as.numeric(NA)) |>
+        dplyr::mutate(passed = as.logical(NA)) |>
 
-    chrom_res@linearity[[compound_id]]$linearitytab <- chrom_res@linearity[[compound_id]]$linearitytab |>
-        mutate(estimated_response = as.numeric(NA)) |> 
-        mutate(residual_response = as.numeric(NA)) |>
-        mutate(estimated_conc = as.numeric(NA)) |>
-        mutate(residual_conc = as.numeric(NA)) |> 
-        mutate(dev_conc = as.numeric(NA)) |>
-        mutate(passed = as.logical(NA)) |>
-
-        rows_update(target_df, by = "sample_id")  |>
-        dplyr::mutate(estimated_conc = reverse_predict(fit, newdata =  chrom_res@linearity[[compound_id]]$linearitytab)) |>
-        dplyr::mutate(residual_conc = .data$estimated_conc - .data$actual_conc) |>
+        dplyr::rows_update(target_df, by = c("filename", "stdconc"))  |>
+        dplyr::mutate(estimated_conc = reverse_predict(fit, newdata =  quantres@linearity[[compound_id]]$linearitytab)) |>
+        dplyr::mutate(residual_conc = .data$estimated_conc - .data$stdconc) |>
         
-        dplyr::mutate(dev_conc = relative_error(.data$actual_conc, .data$estimated_conc)) |>
-        dplyr::mutate(passed = case_when(abs(dev_conc) <= 0.20 ~ TRUE, TRUE ~ FALSE))
+        dplyr::mutate(dev_conc = relative_error(.data$stdconc, .data$estimated_conc)) |>
+        dplyr::mutate(passed = dplyr::case_when(abs(dev_conc) <= 0.20 ~ TRUE, TRUE ~ FALSE))
 
 
     slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
@@ -289,7 +296,7 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
     sd_residuals <- sd(residuals(fit))
 
-    chrom_res@linearity[[compound_id]]$results <- list(model = fit, 
+    quantres@linearity[[compound_id]]$results <- list(model = fit, 
         model = model, 
         weight = weight, 
         avg_rep = avg_rep, 
@@ -297,29 +304,29 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
         IS = ifelse(normalize, "NA", "NA"),
         r_squared = summary(fit)$r.squared, 
         adj_r_squared = summary(fit)$adj.r.squared,
-        mape_cs = mean(abs(chrom_res@linearity[[compound_id]]$linearitytab$residual_response), na.rm = TRUE), # FIXME
-        mape_qc = mean(abs(chrom_res@linearity[[compound_id]]$linearitytab$residual_response), na.rm = TRUE), # FIXME
-        rsme_cs = sqrt(mean(chrom_res@linearity[[compound_id]]$linearitytab$residual_response^2, na.rm = TRUE)), # FIXME
-        rsme_qc = sqrt(mean(chrom_res@linearity[[compound_id]]$linearitytab$residual_response^2, na.rm = TRUE)), # FIXME
+        mape_cs = mean(abs(quantres@linearity[[compound_id]]$linearitytab$residual_response), na.rm = TRUE), # FIXME
+        mape_qc = mean(abs(quantres@linearity[[compound_id]]$linearitytab$residual_response), na.rm = TRUE), # FIXME
+        rsme_cs = sqrt(mean(quantres@linearity[[compound_id]]$linearitytab$residual_response^2, na.rm = TRUE)), # FIXME
+        rsme_qc = sqrt(mean(quantres@linearity[[compound_id]]$linearitytab$residual_response^2, na.rm = TRUE)), # FIXME
         intercept = intercept,
         slope = slope, 
         see_weighted = sum( (1/weight_vec) * (fit$residuals **2)),    # sum of squared residuals
         rse_weighted = summary(fit)$sigma, # weighted residual standard error
-        lloq_assumed = min(chrom_res@linearity[[compound_id]]$linearitytab$actual_conc),
-        uloq_assumed = max(chrom_res@linearity[[compound_id]]$linearitytab$actual_conc),
-        lloq_passed = .find_passed_lloq(chrom_res, compound_id),
-        uloq_passed = .find_passed_uloq(chrom_res, compound_id),
-        loq2 = chemCal::loq(fit, w.loq = 1)$actual_conc,
+        lloq_assumed = min(quantres@linearity[[compound_id]]$linearitytab$stdconc),
+        uloq_assumed = max(quantres@linearity[[compound_id]]$linearitytab$stdconc),
+        lloq_passed = .find_passed_lloq(quantres, compound_id),
+        uloq_passed = .find_passed_uloq(quantres, compound_id),
+        # loq2 = chemCal::loq(fit, w.loq = 1)$stdconc,
         loq = 10 * sd_residuals/slope, # FIXME. Study how weighted close to the standard deviation of lloq
 
-        cs_total_passed = .find_passed_cs(chrom_res, compound_id),
-        qc_total_passed = .find_passed_qc_total(chrom_res, compound_id),
-        qc_level_passed = .find_passed_qc_level(chrom_res, compound_id),
+        cs_total_passed = .find_passed_cs(quantres, compound_id),
+        qc_total_passed = .find_passed_qc_total(quantres, compound_id),
+        qc_level_passed = .find_passed_qc_level(quantres, compound_id),
 
         aic = AIC(fit)
         )
 
-    chrom_res
+    quantres
 }
 
 #'@author Omar Elashkar
@@ -331,32 +338,32 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
 #'@author Omar Elashkar
 #' @noRd 
-.find_passed_lloq <- function(chrom_res, compound_id){
-    chrom_res@linearity[[compound_id]]$linearitytab |>
+.find_passed_lloq <- function(quantres, compound_id){
+    quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.20, TRUE, FALSE)) |>
         dplyr::filter(passed) |>  
-        dplyr::mutate(actual_conc = as.numeric(actual_conc)) |>
-        dplyr::pull("actual_conc") |>
+        dplyr::mutate(stdconc = as.numeric(stdconc)) |>
+        dplyr::pull("stdconc") |>
         min()
 }
 
 
 #'@author Omar Elashkar
 #' @noRd 
-.find_passed_uloq <- function(chrom_res, compound_id){
-    chrom_res@linearity[[compound_id]]$linearitytab |>
+.find_passed_uloq <- function(quantres, compound_id){
+    quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.15, TRUE, FALSE)) |>
         dplyr::filter(passed) |>  
-        dplyr::mutate(actual_conc = as.numeric(actual_conc)) |>
-        dplyr::pull("actual_conc") |>
+        dplyr::mutate(stdconc = as.numeric(stdconc)) |>
+        dplyr::pull("stdconc") |>
         max()
 }
 
 
 #'@author Omar Elashkar
 #' @noRd 
-.find_passed_cs <- function(chrom_res, compound_id){
-    standards_passed <- chrom_res@linearity[[compound_id]]$linearitytab |> 
+.find_passed_cs <- function(quantres, compound_id){
+    standards_passed <- quantres@linearity[[compound_id]]$linearitytab |> 
         dplyr::filter(type == "Standard") |> 
         dplyr::summarise(passed = sum(passed), total = n()) |>
         dplyr::mutate(standards_passed = paste0(passed, "/", total, " (", round(passed / total * 100, 2), "%)")) |>
@@ -370,8 +377,8 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
 #'@author Omar Elashkar
 #' @noRd 
-.find_passed_qc_total <- function(chrom_res, compound_id){
-    QCs_passed <- chrom_res@linearity[[compound_id]]$linearitytab |>
+.find_passed_qc_total <- function(quantres, compound_id){
+    QCs_passed <- quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::filter(type == "QC") |>
         dplyr::summarise(passed = sum(passed), total = n()) |>
         dplyr::mutate(QCs_passed = paste0(passed, "/", total, " (", round(passed / total * 100, 2), "%)")) |>
@@ -381,12 +388,12 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
 #'@author Omar Elashkar
 #' @noRd
-.find_passed_qc_level <- function(chrom_res, compound_id){
-    QCs_passed_level <- chrom_res@linearity[[compound_id]]$linearitytab |>
+.find_passed_qc_level <- function(quantres, compound_id){
+    QCs_passed_level <- quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::filter(type == "QC") |>
-        dplyr::group_by(actual_conc) |>
+        dplyr::group_by(stdconc) |>
         dplyr::summarise(passed = sum(passed), total = n()) |>
-        dplyr::mutate(QCs_passed = paste0( .data$actual_conc, ": ", 
+        dplyr::mutate(QCs_passed = paste0( .data$stdconc, ": ", 
             .data$passed, "/", .data$total, 
             " (", round(.data$passed / .data$total * 100, 2), "%)") ) |>
         pull("QCs_passed") |> paste(collapse = ", ")
@@ -398,40 +405,40 @@ run_linearity_chrom_res <- function(chrom_res, compound_id, weight = "1/x^2", mo
 
 #' @author Omar Elashkar
 #' @noRd
-plot_linearity <- function(chrom_res, compound_id) {
+plot_linearity <- function(quantres, compound_id) {
 
-    stopifnot(has_linearity(chrom_res, compound_id))
+    stopifnot(has_linearity(quantres, compound_id))
 
-    response <- chrom_res@linearity[[compound_id]]$results$normalized  |> 
+    response <- quantres@linearity[[compound_id]]$results$normalized  |> 
         ifelse("rel_response", "abs_response")
 
     ## extract the linearitytab 
-    linearitytab <- chrom_res@linearity[[compound_id]]$linearitytab |> 
+    linearitytab <- quantres@linearity[[compound_id]]$linearitytab |> 
         dplyr::filter(type %in% c("Standard", "QC")) 
 
     ## extract the results
-    results <- chrom_res@linearity[[compound_id]]$results
+    results <- quantres@linearity[[compound_id]]$results
 
-    linearityfig <- ggplot(linearitytab |> arrange(actual_conc) |> 
+    linearityfig <- ggplot(linearitytab |> arrange(stdconc) |> 
         mutate(include = ifelse(include, "Included", "Excluded"))) +
         ggplot2::geom_line( 
             data = linearitytab[!is.na(linearitytab$estimated_response),],
-            aes(x = actual_conc, y = estimated_response), na.rm = TRUE) +
+            aes(x = stdconc, y = estimated_response), na.rm = TRUE) +
         ggplot2::geom_line( 
             data = linearitytab[!is.na(linearitytab$estimate_CI_lwr),],
-            aes(x = actual_conc, y = estimate_CI_lwr), linetype = "dashed", na.rm = TRUE, color = "blue") +
+            aes(x = stdconc, y = estimate_CI_lwr), linetype = "dashed", na.rm = TRUE, color = "blue") +
         ggplot2::geom_line(
             data = linearitytab[!is.na(linearitytab$estimate_CI_upr),],
-            aes(x = actual_conc, y = estimate_CI_upr), linetype = "dashed", na.rm = TRUE, color = "blue") +
+            aes(x = stdconc, y = estimate_CI_upr), linetype = "dashed", na.rm = TRUE, color = "blue") +
         ggplot2::geom_line(
             data = linearitytab[!is.na(linearitytab$estimated_pred_lwr),],
-            aes(x = actual_conc, y = estimated_pred_lwr), linetype = "dotted", na.rm = TRUE, color = "red") +
+            aes(x = stdconc, y = estimated_pred_lwr), linetype = "dotted", na.rm = TRUE, color = "red") +
         ggplot2::geom_line(
             data = linearitytab[!is.na(linearitytab$estimated_pred_upr),],
-            aes(x = actual_conc, y = estimated_pred_upr), linetype = "dotted", na.rm = TRUE, color = "red") +
+            aes(x = stdconc, y = estimated_pred_upr), linetype = "dotted", na.rm = TRUE, color = "red") +
         ggiraph::geom_point_interactive(aes(tooltip = paste0(filename, " ", dev_conc , "%"), 
             data_id = filename,
-            x = actual_conc, y = .data[[response]], color = type, shape = include),
+            x = stdconc, y = .data[[response]], color = type, shape = include),
             size = 3) +
         ggplot2::scale_shape_manual(values = c('Included' = 16, 'Excluded' = 13)) +
         labs(title = paste0("Linearity of ", compound_id),
@@ -459,23 +466,23 @@ plot_linearity <- function(chrom_res, compound_id) {
 
 #' @author Omar Elashkar
 #' @noRd
-plot_residuals <- function(chrom_res, compound_id){
+plot_residuals <- function(quantres, compound_id){
     ## extract the linearitytab 
-    linearitytab <- chrom_res@linearity[[compound_id]]$linearitytab |>
+    linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::filter(type %in% c("Standard", "QC", "Suitability")) 
 
     residualsfig <- ggplot(linearitytab |> 
         dplyr::mutate(include = ifelse(include, "Included", "Excluded"))) +
         ggiraph::geom_point_interactive(aes(tooltip = paste0(filename, " \n", residual_response , "%"),
             data_id = filename,
-            x = actual_conc, y = residual_response,
+            x = stdconc, y = residual_response,
             color = type, shape = include),
             size = 3) +
         ggplot2::scale_shape_manual(values = c('Included' = 16, 'Excluded' = 13)) +
         labs(title = paste0("Residuals of ", compound_id),
             x = "Actual Concentration", y = "Residuals (response)") +
         geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-        geom_smooth(aes(x = actual_conc, y = residual_response), method = "loess", linetype = "dashed", se = FALSE) +
+        geom_smooth(aes(x = stdconc, y = residual_response), method = "loess", linetype = "dashed", se = FALSE) +
         theme_minimal()
     residualsfig <- ggiraph::girafe(ggobj = residualsfig, 
         width_svg = 7, height_svg = 4,
@@ -490,21 +497,21 @@ plot_residuals <- function(chrom_res, compound_id){
 #' @author Omar Elashkar
 #' @noRd
 # x = actual conc, y = %deviation
-plot_deviations <- function(chrom_res, compound_id){
+plot_deviations <- function(quantres, compound_id){
     ## extract the linearitytab 
-    linearitytab <- chrom_res@linearity[[compound_id]]$linearitytab |>
+    linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::filter(type %in% c("Standard", "QC", "Suitability")) 
     deviationsfig <- ggplot(linearitytab |>
         dplyr::mutate(include = ifelse(include, "Included", "Excluded"))) +
         ggiraph::geom_point_interactive(aes(tooltip = paste0(filename, " \n", dev_conc*100 , "%"),
             data_id = filename,
-            x = actual_conc, y = dev_conc*100,
+            x = stdconc, y = dev_conc*100,
             color = type, shape = include)) +
         ggplot2::scale_shape_manual(values = c('Included' = 16, 'Excluded' = 13)) +
         labs(title = paste0("Deviations of ", compound_id),
             x = "Actual Concentration", y = "Deviation (%)") +
         geom_hline(yintercept = 0, color = "red") +
-        geom_smooth(aes(x = actual_conc, y = dev_conc, linetype = "dashed"), method = "loess", se = FALSE) +
+        geom_smooth(aes(x = stdconc, y = dev_conc, linetype = "dashed"), method = "loess", se = FALSE) +
         theme_minimal()
     deviationsfig <- ggiraph::girafe(ggobj = deviationsfig,
             width_svg = 7, height_svg = 4,
@@ -518,70 +525,70 @@ plot_deviations <- function(chrom_res, compound_id){
 }
 
 #' Plot SD vs actual concentration from blanks and QCs aggregates
-#' @param chrom_res ChromRes object
+#' @param quantres QuantRes object
 #' @param compound_id character
 #' @noRd 
 #' @author Omar Elashkar
-plot_standard_deviation <- function(chrom_res, compound_id){
-    linearitytab <- chrom_res@linearity[[compound_id]]$linearitytab |>
+plot_standard_deviation <- function(quantres, compound_id){
+    linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
         dplyr::filter(include == TRUE & type %in% c("Blank", "QC")) |> 
-        dplyr::mutate(actual_conc = as.numeric(actual_conc)) |> 
-        dplyr::group_by("actual_conc") |>
+        dplyr::mutate(stdconc = as.numeric(stdconc)) |> 
+        dplyr::group_by("stdconc") |>
         dplyr::summarise(sd = sd(estimated_conc, na.rm = TRUE))
     
     ggplot(linearitytab |>
         dplyr::mutate(include = ifelse(include, "Included", "Excluded"))) +
-        geom_point(aes(x = actual_conc, y = sd)) +
-        geom_smooth(aes(x = actual_conc, y = sd), method = "loess") +
+        geom_point(aes(x = stdconc, y = sd)) +
+        geom_smooth(aes(x = stdconc, y = sd), method = "loess") +
         labs(title = paste0("Standard Deviation vs Actual Concentration of ", compound_id),
             x = "Actual Concentration", y = "Standard Deviation") +
         theme_minimal()
 }
 
-plot_cv <- function(chrom_res, compound_id){
+plot_cv <- function(quantres, compound_id){
     
 }
 
 #' @author Omar Elashkar
 #' @noRd
-tabulate_summary_linearity <- function(chrom_res, compound_id = NULL){
+tabulate_summary_linearity <- function(quantres, compound_id = NULL){
 
     if(is.null(compound_id)){
         # select all compounds
-        compound_id <- chrom_res@compounds$compound_id
+        compound_id <- quantres@compounds$compound_id
     }
 
     linearitytab <- data.frame()
     for(cmpd in compound_id){
         # from list to data.frame
-        if(has_linearity(chrom_res, cmpd)){
+        if(has_linearity(quantres, cmpd)){
 
             x <- data.frame(compound_id = cmpd,
-                # model = chrom_res@linearity[[cmpd]]$results$model,
-                weight = chrom_res@linearity[[cmpd]]$results$weight,
-                normalized = chrom_res@linearity[[cmpd]]$results$normalized,
-                avg_rep = chrom_res@linearity[[cmpd]]$results$avg_rep,
-                slope = chrom_res@linearity[[cmpd]]$results$slope,
-                intercept = chrom_res@linearity[[cmpd]]$results$intercept,
-                r_squared = chrom_res@linearity[[cmpd]]$results$r_squared,
-                adj_r_squared = chrom_res@linearity[[cmpd]]$results$adj_r_squared,
-                mape_cs = chrom_res@linearity[[cmpd]]$results$mape_cs,
-                mape_qc = chrom_res@linearity[[cmpd]]$results$mape_qc,
-                rsme_cs = chrom_res@linearity[[cmpd]]$results$rsme_cs,
-                rsme_qc = chrom_res@linearity[[cmpd]]$results$rsme_qc,
-                aic = chrom_res@linearity[[cmpd]]$results$aic,
-                lloq_assumed = chrom_res@linearity[[cmpd]]$results$lloq_assumed,
-                uloq_assumed = chrom_res@linearity[[cmpd]]$results$uloq_assumed,
-                lloq_passed = chrom_res@linearity[[cmpd]]$results$lloq_passed,
-                uloq_passed = chrom_res@linearity[[cmpd]]$results$uloq_passed,
-                # loq = chrom_res@linearity[[cmpd]]$results$loq,
-                loq2 = chrom_res@linearity[[cmpd]]$results$loq2,
-                rse = chrom_res@linearity[[cmpd]]$results$rse_weighted,
-                see = chrom_res@linearity[[cmpd]]$results$see_weighted,
+                # model = quantres@linearity[[cmpd]]$results$model,
+                weight = quantres@linearity[[cmpd]]$results$weight,
+                normalized = quantres@linearity[[cmpd]]$results$normalized,
+                avg_rep = quantres@linearity[[cmpd]]$results$avg_rep,
+                slope = quantres@linearity[[cmpd]]$results$slope,
+                intercept = quantres@linearity[[cmpd]]$results$intercept,
+                r_squared = quantres@linearity[[cmpd]]$results$r_squared,
+                adj_r_squared = quantres@linearity[[cmpd]]$results$adj_r_squared,
+                mape_cs = quantres@linearity[[cmpd]]$results$mape_cs,
+                mape_qc = quantres@linearity[[cmpd]]$results$mape_qc,
+                rsme_cs = quantres@linearity[[cmpd]]$results$rsme_cs,
+                rsme_qc = quantres@linearity[[cmpd]]$results$rsme_qc,
+                aic = quantres@linearity[[cmpd]]$results$aic,
+                lloq_assumed = quantres@linearity[[cmpd]]$results$lloq_assumed,
+                uloq_assumed = quantres@linearity[[cmpd]]$results$uloq_assumed,
+                lloq_passed = quantres@linearity[[cmpd]]$results$lloq_passed,
+                uloq_passed = quantres@linearity[[cmpd]]$results$uloq_passed,
+                # loq = quantres@linearity[[cmpd]]$results$loq,
+                loq2 = quantres@linearity[[cmpd]]$results$loq2,
+                rse = quantres@linearity[[cmpd]]$results$rse_weighted,
+                see = quantres@linearity[[cmpd]]$results$see_weighted,
                 # fraction over total for standards
-                standards_passed = chrom_res@linearity[[cmpd]]$results$cs_total_passed,
-                QCs_passed_level = chrom_res@linearity[[cmpd]]$results$qc_level_passed,
-                QCs_passed_total = chrom_res@linearity[[cmpd]]$results$qc_total_passed
+                standards_passed = quantres@linearity[[cmpd]]$results$cs_total_passed,
+                QCs_passed_level = quantres@linearity[[cmpd]]$results$qc_level_passed,
+                QCs_passed_total = quantres@linearity[[cmpd]]$results$qc_total_passed
             )
 
             linearitytab <- rbind(linearitytab, x)
@@ -592,55 +599,55 @@ tabulate_summary_linearity <- function(chrom_res, compound_id = NULL){
 
 #' Exclude file from linearity run 
 #' This excludes only standards if found
-#' @param chrom_res ChromRes object
+#' @param quantres QuantRes object
 #' @param compound_id character
 #' @param filesnames character
-#' @return ChromRes object
+#' @return QuantRes object
 #' @author Omar Elashkar
 #' @noRd
-exclude_linearity <- function(chrom_res, compound_id, filesnames){
-    chrom_res@linearity[[compound_id]]$linearitytab <-
-        chrom_res@linearity[[compound_id]]$linearitytab |>
+exclude_linearity <- function(quantres, compound_id, filesnames){
+    quantres@linearity[[compound_id]]$linearitytab <-
+        quantres@linearity[[compound_id]]$linearitytab |>
             dplyr::mutate(include = ifelse(filename %in% filesnames & type == "Standard", FALSE, include))
 
-    chrom_res
+    quantres
 }
 
 
 #' Include file from linearity run
 #' This includes only standards if found
-#' @param chrom_res ChromRes object
+#' @param quantres QuantRes object
 #' @param compound_id character
 #' @param filesnames character
-#' @return ChromRes object
+#' @return QuantRes object
 #' @author Omar Elashkar
 #' @noRd
-include_linearity <- function(chrom_res, compound_id, filesnames){
-    chrom_res@linearity[[compound_id]]$linearitytab <-
-        chrom_res@linearity[[compound_id]]$linearitytab |>
+include_linearity <- function(quantres, compound_id, filesnames){
+    quantres@linearity[[compound_id]]$linearitytab <-
+        quantres@linearity[[compound_id]]$linearitytab |>
             dplyr::mutate(include = ifelse(filename %in% filesnames & type == "Standard", TRUE, include))
 
-    chrom_res
+    quantres
 }
 
 
 
 # check if cmpound has linearity normalized flag
-linearity_normalized <- function(chrom_res, compound_id){
-    stopifnot(has_linearity(chrom_res, compound_id))
-    chrom_res@linearity[[compound_id]]$results$normalized
+linearity_normalized <- function(quantres, compound_id){
+    stopifnot(has_linearity(quantres, compound_id))
+    quantres@linearity[[compound_id]]$results$normalized
 }
 
 #' Convert response to concentration
-#' @param chrom_res ChromRes object
+#' @param quantres QuantRes object
 #' @param compound_id character
 #' @param response numeric. Must match the response type used in linearity. Either abs_response or rel_response
 #' @return numeric
-response_to_conc <- function(chrom_res, compound_id, response){
-    stopifnot(has_linearity(chrom_res, compound_id))
-    fit <- chrom_res@linearity[[compound_id]]$results$model
-    intercept <- chrom_res@linearity[[compound_id]]$results$intercept
-    slope <- chrom_res@linearity[[compound_id]]$results$slope
+response_to_conc <- function(quantres, compound_id, response){
+    stopifnot(has_linearity(quantres, compound_id))
+    fit <- quantres@linearity[[compound_id]]$results$model
+    intercept <- quantres@linearity[[compound_id]]$results$intercept
+    slope <- quantres@linearity[[compound_id]]$results$slope
     if(is.null(fit)){
         stop("No linearity model has been run")
     }
@@ -653,6 +660,22 @@ response_to_conc <- function(chrom_res, compound_id, response){
     (response - intercept) / slope
 }
 
-check_QC_reps <- function(chrom_res, min_levels = 3, min_reps = 6){
+check_QC_reps <- function(quantres, min_levels = 3, min_reps = 6){
 
+}
+
+
+#' Check if linearity for specific compound has been executed
+#' @noRd
+has_linearity <- function(quantres, compound_id){
+    checkmate::assertClass(quantres, "QuantRes")
+    # checkmate::assertCount(compound_id, positive = TRUE)
+    # compound_id <- .cmpds_string_handler(compound_id)
+    
+    tryCatch({
+        linearity <- quantres@linearity[[compound_id]]$results$model
+        !is.null(linearity) 
+    }, error = function(e) {
+        FALSE
+    })
 }

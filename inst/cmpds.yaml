@@ -43,6 +43,7 @@ compounds:
     q1: 154.104
     q3: 118.95
     qualifier: True
+    IS: Dopamine D4
   - cmpd: Dopamine D4
     q1: 158.147
     q3: 94.759
