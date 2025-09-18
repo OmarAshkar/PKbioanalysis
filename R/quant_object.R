@@ -1,0 +1,222 @@
+setClass("QuantRes",
+    slots = c(
+        samples_metadata = "data.frame",
+        compounds_metadata = "data.frame",
+        quanttab = "list",
+        linearity = "list",
+        suitability = "list",
+        resEstim = "list"
+    )
+)
+
+
+check_quantRes <- function(object){
+
+    ## check quanttab
+    lapply(object@quanttab, function(x){
+        checkmate::assertNames(names(x), 
+            identical.to = c("filename", "vial", "type", "stdconc", "compound", "area", "height", "peak_start", "peak_end", "SN", "IS_name", "RT"))
+    })
+    
+    ## check suitability
+    checkmate::assertList(object@suitability)
+    checkmate::assertNames(names(object@suitability), 
+        identical.to = c("config", "results"))
+
+    checkmate::assertNames(names(object@suitability$config),
+        identical.to = c("vial", "start_pos", "end_pos"))
+
+    ##check linearity 
+    stopifnot(length(object@linearity) == length(object@quanttab))
+
+    ## check samples_metadata
+    checkmate::assertDataFrame(object@samples_metadata)
+    checkmate::assertNames(names(object@samples_metadata), 
+        must.include = c("filename", "vial", "type"))
+
+    lapply(object@quanttab, function(x){
+        stopifnot(nrow(x) == nrow(object@samples_metadata))
+    })
+
+}
+
+
+setValidity("QuantRes", function(object) {
+    check_quantRes(object)
+    TRUE
+})
+
+check_quant_method_quantres <- function(quantobj , method_id){
+    # check that all compounds in quantobj are in method_id
+    cmpds_metadata <- .get_method_cmpds(method_id)
+    if(nrow(cmpds_metadata) == 0){
+        stop("No compounds found for the given method_id")
+    }
+    missing_cmpds <- setdiff(names(quantobj@quanttab), cmpds_metadata$compound)
+    if(length(missing_cmpds) > 0){
+        stop(paste0("The following compounds are not in the method_id ", method_id, ": ", paste(missing_cmpds, collapse = ", ")))
+    }
+    TRUE
+
+}
+
+create_quant_object <- function(df, method_id = NULL){
+    checkmate::assertDataFrame(df)
+    checkmate::assertIntegerish(method_id, null.ok = TRUE, len = 1)
+
+    # df names 
+        # filename, compound_name, area, height, peak_start, peak_end, IS_name
+    checkmate::assertNames(names(df), 
+        must.include = c("filename", "vial", "type", "stdconc", "compound", "area", "height", "peak_start", "peak_end", "SN", "IS_name", "RT"),
+        type = "unique")
+
+    quantlist <- df |> 
+        select("filename", "vial", "type", "stdconc", "compound", "area", "height", "peak_start", "peak_end", "SN", "IS_name", "RT") |>
+        split(df, f = df$compound)
+    
+    # create linearity list
+    linearitylist <- .construct_linearity(quantlist)
+    suitabilitylist <- .construct_suitability(quantlist)
+    resEstimlist <- .construct_resEstim(quantlist)
+
+    cmpd_metadata <- data.frame(compound = names(quantlist))
+    res <- new("QuantRes",
+        samples_metadata = .construct_samples_metadata(quantlist),
+        compounds_metadata = cmpd_metadata,
+        quanttab = quantlist,
+        linearity = linearitylist,
+        suitability = suitabilitylist,
+        resEstim = resEstimlist
+    )
+
+    if(!is.null(method_id)){
+        res <- update_IS_info(res, method_id)
+        res <- update_cmpd_info(res, method_id)
+    }
+
+    validObject(res)
+    res
+
+}
+
+
+.construct_samples_metadata <- function(quantlist){
+    quantlist[[1]] |> dplyr::select("filename", "vial", "type") |> distinct()
+}
+
+.construct_linearity <- function(quantlist){
+    # create a list with names compound_id
+
+    linearity <- list()
+    linearity <- lapply(quantlist, function(x){
+        spiked_name <- paste0("spiked_", unique(x$compound))
+        linearitytab <- data.frame(filename = x$filename, 
+                                    type = x$type,
+                                    abs_response = x$area, 
+                                    rel_response = NA,
+                                    stdconc = x$stdconc, 
+                                    include = TRUE, dev = as.numeric(NA))
+        parameters <- NA
+        results <- NA
+        list(linearitytab = linearitytab, parameters = parameters, results = results)
+    })
+
+    linearity
+}
+
+.construct_suitability <- function(quantlist){
+    list(config = list(vial = NA, start_pos = NA, end_pos = NA), results = data.frame())
+}
+
+.construct_resEstim <- function(quantlist){
+    resEstim <- lapply(quantlist, function(x){
+        data.frame(error = c("additive", "proportional"), value = as.numeric(NA), rse = as.numeric(NA))
+    })
+    resEstim
+}
+
+
+update_IS_info <- function(quantres, method_id){
+    checkmate::assertClass(quantres, "QuantRes")
+    check_quant_method_quantres(quantres, method_id)
+
+    cmpd_metadata <- .get_method_cmpds(method_id) 
+
+    quantres@quanttab <- lapply(quantres@quanttab, function(x){
+        IS_name <- cmpd_metadata$compound[match(x$compound, cmpd_metadata$compound)]
+        x$IS_name <- IS_name
+        x
+    })
+
+    validObject(quantres)
+    quantres
+}
+
+update_cmpd_info <- function(quantres, method_id){
+    checkmate::assertClass(quantres, "QuantRes")
+    check_quant_method_quantres(quantres, method_id)
+
+    cmpd_metadata <- .get_method_cmpds(method_id) 
+    quantres@compounds_metadata <- cmpd_metadata
+    validObject(quantres)
+    quantres
+}
+
+
+
+
+has_IS <- function(quantres){
+    any(!is.na(quantres@compounds_metadata$IS_id))
+}
+
+
+
+get_vials.QuantRes <- function(x){
+    # assume all compounds have same vials
+    lapply(x@quanttab[1], function(y) y$vial) |> unlist()  |> unname()
+}
+
+setMethod("get_vials", signature(x = "QuantRes"), get_vials.QuantRes)
+
+
+
+#' @title Convert the quantres to dataframe with last column sample type.
+#' @return dataframe with columns compound_trans and area values
+#' @noRd
+quantres_to_matrix <- function(quantres, wide = FALSE, val = "abs_response") {
+
+    if(val == "conc"){
+        haslin <- lapply(names(quantres@linearity), function(x){
+        has_linearity(quantres, x)
+        }) |> unlist()
+
+        if(sum(haslin) == 0){
+            stop("No single compound has linearity table. Please run run_linearity() first.")
+        }
+    } else if(val == "abs_response"){
+        haslin <- rep(TRUE, length(quantres@linearity))
+    } else {
+        stop("val must be either 'conc' or 'abs_response'")
+    }
+    
+
+
+    x <- lapply(names(quantres@linearity[haslin]), function(x){
+        x <- quantres@linearity[[x]]$linearitytab |>
+        mutate(compound = x ) |>
+        select("filename", "compound", all_of(val)) 
+    })
+    x <- do.call(rbind, x)
+    
+    if(wide){ 
+        x <- tidyr::pivot_wider(x, 
+            names_from = "compound",
+            values_from = all_of(val))
+    }
+    x
+
+}
+
+current_cmpds <- function(quantres){
+    names(quantres@quanttab)
+}

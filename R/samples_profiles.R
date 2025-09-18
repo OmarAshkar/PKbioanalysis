@@ -101,7 +101,7 @@ plot_precision <- function(chrom_res, compound_id = NULL){
         ggplot2::facet_wrap(~compound_id) +
         ggplot2::labs(title = "Precision Plot", y = "", x = "Nominal Concentration")
 
-    patchwork::wrap_plots(x, y)
+    list(x, y)
 }
 
 export_pk_profiles <- function(format = "nonmem"){

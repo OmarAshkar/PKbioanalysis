@@ -52,11 +52,15 @@ Imports:
     xml2,
     RaMS,
     data.tree,
-    nloptr
+    nloptr, 
+    forcats,
+    ggiraph, 
+    gt, 
+    plotly, 
+    pracma
 Suggests: 
     knitr,
     gtools,
-    gt,
     rmarkdown,
     testthat (>= 3.0.0)
 SystemRequirements: 

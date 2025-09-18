@@ -209,7 +209,7 @@ DBI::dbExecute(db, "
     compound_id INTEGER NOT NULL PRIMARY KEY,
     transition_id INTEGER NOT NULL REFERENCES transtab(transition_id),
     qualifier BOOLEAN NOT NULL,
-    compound TEXT,
+    compound TEXT NOT NULL,
     expected_peak_start REAL,
     expected_peak_end REAL,
     expected_rt REAL,

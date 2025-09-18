@@ -1472,7 +1472,6 @@ fill_scheme <- function(plate, fill = "h", tbound = "A", bbound = "H", lbound = 
 }
 
 
-#' @deprecated
 study_chart_2 <- function(plate){
   df <- plate@df
 
@@ -1484,91 +1483,6 @@ study_chart_2 <- function(plate){
   tree <- data.tree::as.Node(df, na.rm = TRUE)
   tree
 }
-
-#' Plot the design of the plate
-#' @param plate PlateObj object
-#' @returns DiagrammeR object
-#' @noRd
-#' @deprecated
-study_chart <- function(plate){
-  checkmate::assertClass(plate, "PlateObj")
-
-  d <- plate@df |> 
-    dplyr::filter(.data$TYPE == "Analyte") |>
-    dplyr::mutate(time = as.character(.data$time)) |>
-    dplyr::mutate(dose = as.character(.data$dose)) |>
-    dplyr::mutate(factor = as.character(.data$factor))
-
-  # check sample if time exist 
-  test_time <- d |> dplyr::filter(is.na(.data$time)) |> nrow()
-  if(test_time > 0) stop("Some samples do not have time")
-  
-  # check sample if dose exist
-  test_dose <- d |> dplyr::filter(is.na(.data$dose)) |> nrow()
-  if(test_dose > 0) stop("Some samples do not have dose")
-  
-
-
-# concat time in single string
-df_with_time <- d |>
-  arrange(.data$samples, .data$time) |>
-  group_by(.data$samples, .data$dose, .data$factor) |>
-  summarise(time_vec = paste0("(", paste(time, collapse = ", "), ")"), .groups = 'drop')
-
-# Create final groupings: by dose + factor
-grouped <- df_with_time |>
-  group_by(.data$dose, .data$factor) |>
-  summarise(
-    n = n(),
-    times = paste(.data$samples, .data$time_vec, collapse = "\\n"),
-    .groups = 'drop'
-  )
-
-n_total <- df_with_time$samples |> unique() |> length()
-
-# Build DiagrammeR syntax
-diagram_code <- "digraph flowchart {
-  graph [layout = dot, rankdir = TB]
-  node [shape = box, style = filled, fillcolor = lightblue, fontsize = 10]
-
-  root [label = 'Total Samples\\nn = "
-diagram_code <- paste0(diagram_code, n_total, "'];\n")
-
-# Get unique doses
-unique_doses <- unique(df_with_time$dose)
-
-# Add dose layer
-for (i in seq_along(unique_doses)) {
-  dose <- unique_doses[i]
-  dose_node <- paste0("dose_", i)
-  n_dose <- df_with_time |> filter(dose == !!dose) |> pull("samples") |> unique() |> length()
-
-  diagram_code <- paste0(diagram_code,
-                        dose_node, " [label = 'dose: ", dose, "\\nn = ", n_dose, "'];\n",
-                        "root -> ", dose_node, ";\n")
-}
-
-# Add factor layer with time vectors
-for (i in 1:nrow(grouped)) {
-  row <- grouped[i, ]
-  dose_index <- which(unique_doses == row$dose)
-  parent_node <- paste0("dose_", dose_index)
-  child_node <- paste0("factor_", i)
-
-  # Truncate if too long
-  times_display <- substr(row$times, 1, 500)
-
-  diagram_code <- paste0(diagram_code,
-                        child_node, " [label = 'Factor: ", row$factor, "\\nn = ", row$n, "\\n", times_display, "'];\n",
-                        parent_node, " -> ", child_node, ";\n")
-}
-  
-
-  diagram_code <- paste0(diagram_code, "}")
-  grViz(diagram_code)
-
-}
-
 
 
 # copied from https://stackoverflow.com/questions/43803949/create-and-print-a-product-hierarchy-tree-without-na-from-data-frame-in-r-with

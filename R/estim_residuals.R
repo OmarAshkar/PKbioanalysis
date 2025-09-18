@@ -142,6 +142,7 @@ formated_print <- function(x, digits = 3) {
 #' @author Omar I. Elashkar
 #' @export
 estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 0.15) {
+
     rsd_fn <- function(x, a, b) {
         sqrt(a^2 + b^2 * x^2) / x
     }
@@ -150,10 +151,16 @@ estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 
         rsd_fn(x, a, b) - cv
     }
 
-    lqc_constr <- function(x, a, b) {
+    lqc_constr <- function(x, a, b, cv) {
         x2 <- 3 * x
-        rsd_fn(x2, a, b) - 0.15
+        rsd_fn(x2, a, b) - cv
     }
+
+    # Lower bound constraint: x > 0 (numerically, x >= 1e-3)
+    lower_bound_constr <- function(x) {
+        1e-3 - x
+    }
+
     obj <- function(x) {
         x
     }
@@ -165,8 +172,9 @@ estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 
         eval_f = function(x) obj(x),
         eval_g_ineq = function(x) {
             c(
-                lloq_constr(x, add_err, prop_err, cv),
-                lqc_constr(x, add_err, prop_err)
+                lloq_constr(x, add_err, prop_err, cv_lloq),
+                lqc_constr(x, add_err, prop_err, cv_lqc),
+                lower_bound_constr(x)
             )
         },
         opts = list(
@@ -191,7 +199,8 @@ estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 
         rsd_lqc_x2 = rsd_lqc_x2,
         add_err = add_err,
         prop_err = prop_err,
-        cv = cv
+        lloq_rsd_contr = cv_lloq,
+        lqc_rsd_contr = cv_lqc
     )
 }
 

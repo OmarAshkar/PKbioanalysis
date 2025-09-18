@@ -337,7 +337,7 @@
 #
 # res$metadata must exist and it will be updated accordingly
 .construct_experiment_compounds <- function(method_id, transition_df){
-  compoundsdf <- PKbioanalysis:::.get_method_cmpds(method_id)
+  compoundsdf <- .get_method_cmpds(method_id)
 
   # compare both chrom and db transitions, stop if any mismatch by margin of 0.5
   tryCatch({
@@ -374,7 +374,7 @@
 #' @noRd
 .write_transitions <- function(chrom_res){
   
-  db <- PKbioanalysis:::.connect_to_db()
+  db <- .connect_to_db()
   
   # get id and labels or create id based on row number 
   ## if combination not in db, add to db and retived the new id

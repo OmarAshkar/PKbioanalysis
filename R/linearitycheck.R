@@ -545,24 +545,19 @@ plot_standard_deviation <- function(quantres, compound_id){
         theme_minimal()
 }
 
-plot_cv <- function(quantres, compound_id){
-    
-}
 
 #' @author Omar Elashkar
 #' @noRd
 tabulate_summary_linearity <- function(quantres, compound_id = NULL){
 
     if(is.null(compound_id)){
-        # select all compounds
-        compound_id <- quantres@compounds$compound_id
+        compound_id <- names(quantres@linearity)
     }
 
     linearitytab <- data.frame()
     for(cmpd in compound_id){
         # from list to data.frame
         if(has_linearity(quantres, cmpd)){
-
             x <- data.frame(compound_id = cmpd,
                 # model = quantres@linearity[[cmpd]]$results$model,
                 weight = quantres@linearity[[cmpd]]$results$weight,
@@ -582,7 +577,6 @@ tabulate_summary_linearity <- function(quantres, compound_id = NULL){
                 lloq_passed = quantres@linearity[[cmpd]]$results$lloq_passed,
                 uloq_passed = quantres@linearity[[cmpd]]$results$uloq_passed,
                 # loq = quantres@linearity[[cmpd]]$results$loq,
-                loq2 = quantres@linearity[[cmpd]]$results$loq2,
                 rse = quantres@linearity[[cmpd]]$results$rse_weighted,
                 see = quantres@linearity[[cmpd]]$results$see_weighted,
                 # fraction over total for standards

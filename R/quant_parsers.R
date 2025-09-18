@@ -14,15 +14,41 @@
 #' 
 #' @details
 #' Currently only targetlynx XML or CSV exported files are supported. 
-#' @return PeakRes object with the results of the experiment.
+#' @return List object with the results of the experiment.
 #' @export 
-read_experiment_results <- function(x, drop_prefix = FALSE, vendor = "targetlynx"){
-  if(vendor == "targetlynx"){
-    checkmate::assertFileExists(x)
+read_experiment_results <- function(x, drop_prefix = FALSE, vendor = "targetlynx_xml"){
+  checkmate::assertFileExists(x)
+
+  if(vendor == "targetlynx_xml"){
     if(grepl(".xml$", x)){
-      .parse_tlynx_xml(x, drop_prefix = drop_prefix)
-    } else if(grepl("\\.(csv|txt)$", x, ignore.case = TRUE)){
-        .parse_tlynx_csv(x) 
+      quantobj <- .parse_tlynx_xml(x, drop_prefix = drop_prefix)
+    }
+
+    }
+  
+  if(vendor == "targetlynx_csv"){
+    if(grepl("\\.(csv|txt)$", x, ignore.case = TRUE)){
+        dat <- .parse_tlynx_csv(x)  
+        quantobj <- lapply(names(dat$res), function(y){
+            dat$res[[y]]$compound <- y
+            dat$res[[y]]
+        })
+        quantobj <- do.call("rbind", quantobj)
+
+        quantobj <- quantobj |> rename(filename = "Name") |>
+            rename(vial = "Vial") |>
+            rename(type = "Type") |>
+            # rename(height = "PEAK_height") |>
+            # rename(peak_start = "PEAK_startrt") |>
+            # rename(peak_end = "PEAK_endrt") |>
+            rename(SN = "S/N") |> 
+            mutate(height = NA) |>
+            mutate(peak_start = NA) |>
+            mutate(peak_end = NA) |>
+            mutate(IS_name = NA) |>
+            dplyr::select("filename", "vial", "type", "stdconc", "compound", "area", "height", "peak_start", "peak_end", "SN", "IS_name", "RT") |>
+            mutate(across(c("stdconc", "area", "height", "peak_start", "peak_end", "SN", "RT"), as.numeric)) 
+
     } else {
       stop("Targetlynx file must be either XML or CSV")
     }
@@ -30,6 +56,7 @@ read_experiment_results <- function(x, drop_prefix = FALSE, vendor = "targetlynx
   else {
     stop("Vendor not supported")
   }
+  quantobj
 }
 
 # create list of compounds with 
@@ -251,11 +278,14 @@ df
     x <- readLines(filepath, n = 5)
 
     first_cmpd <- gsub("Compound \\d+:\\s+", "", x[5])
-
-    x <- readr::read_tsv(filepath, skip = 5)
+    x <- read.delim(filepath, skip = 5, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE)
+    colnames(x)[1] <- "cmpd"
 
     # Find which rows in first column starts with "Compound"
     compound_rows <- which(grepl("^Compound", x[[1]]))
+    if(length(compound_rows) == 1){
+      message("2 compounds detected")
+    }
 
     # add first cmpd starts from 1 till the first compound row 
     mylist[[1]] <- x[1:(compound_rows[1] - 1), ]

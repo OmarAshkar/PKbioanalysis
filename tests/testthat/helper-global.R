@@ -27,26 +27,8 @@ main <- read_chrom(path, method = 1)
 
 dat <- system.file("extdata", "08122019_MTG.txt", package = "PKbioanalysis")
 suppressWarnings(
-    dat <- .parse_tlynx_csv(dat)
+    quantobj <- read_experiment_results(dat, vendor = "targetlynx_csv")
 )
-quantobj <- lapply(names(dat$res), function(y){
-    dat$res[[y]]$compound <- y
-    dat$res[[y]]
-})
-quantobj <- do.call("rbind", quantobj)
-quantobj <- quantobj |> rename(filename = "Name") |>
-    rename(vial = "Vial") |>
-    rename(type = "Type") |>
-    # rename(height = "PEAK_height") |>
-    # rename(peak_start = "PEAK_startrt") |>
-    # rename(peak_end = "PEAK_endrt") |>
-    rename(SN = "S/N") |> 
-    mutate(height = NA) |>
-    mutate(peak_start = NA) |>
-    mutate(peak_end = NA) |>
-    mutate(IS_name = NA) |>
-    dplyr::select("filename", "vial", "type", "stdconc", "compound", "area", "height", "peak_start", "peak_end", "SN", "IS_name", "RT") |>
-    mutate(across(c("stdconc", "area", "height", "peak_start", "peak_end", "SN", "RT"), as.numeric)) 
 
 
 quantobj <- create_quant_object(quantobj)

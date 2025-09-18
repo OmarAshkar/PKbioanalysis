@@ -4,7 +4,7 @@
 \alias{read_experiment_results}
 \title{Read experiment results}
 \usage{
-read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx")
+read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx_xml")
 }
 \arguments{
 \item{x}{path to experiment results. See details}
@@ -14,7 +14,7 @@ read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx")
 \item{vendor}{vendor name. Only "targetlynx"}
 }
 \value{
-PeakRes object with the results of the experiment.
+List object with the results of the experiment.
 }
 \description{
 Read experiment results

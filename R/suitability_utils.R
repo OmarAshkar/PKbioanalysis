@@ -47,59 +47,82 @@ prepare_suitability <- function(quantres){
 
     start_pos <- ifelse(is.null(start_pos), 1, start_pos)
     end_pos <- ifelse(is.null(end_pos), sum(vial_pos == get_vials(quantres)), end_pos)
+    start_file <- 
 
     # get data
-    res <- quantres_to_matrix(quantres, wide = TRUE) |> 
-        dplyr::left_join(quantres@metadata |> dplyr::select("filename", "type", "vialpos"), 
+    res <- quantres_to_matrix(quantres, wide = FALSE, val = "abs_response") |> 
+        dplyr::left_join(quantres@samples_metadata |> dplyr::select("filename", "type", "vial"), 
         by = "filename") |>
-        dplyr::filter(.data$vialpos == !!vial_pos) |>
-        dplyr::mutate(include = ifelse(row_number() >= start_pos & row_number() <= end_pos, TRUE, FALSE)) |> # include/exclude
+        dplyr::filter(.data$vial == !!vial_pos)
+
+    files <- unique(res$filename)[start_pos:end_pos]
+
+    res <- res |>
+        dplyr::mutate(include = ifelse(filename %in% files, TRUE, FALSE)) |>
         dplyr::mutate(across(starts_with("spiked_"), as.numeric)) |>
         dplyr::select("filename", "include", everything())
             
 
-    dflist
+    quantres@suitability$suitabilitytab <- res
+    quantres
 }
 
 run_suitability <- function(quantres){
 
+    stopifnot(has_suitability_config(quantres))
 
-    lapply(quantres@suitability, function(x){
-        if(is.null(x$config) || any(sapply(x$config, is.null))){
-            stop("Suitability configuration not set. Please run config_suitability() first.")
-        }
-    })
+    # prepare suitability data
+    quantres <- prepare_suitability(quantres)
 
 
-    dflist <- lapply(names(quantres@suitability), function(x) prepare_suitability(quantres@suitability[[x]]))
-
-    quantres@suitability <- lapply(names(quantres@suitability), function(x){
-        x$results <- dflist[[x]] |>
+    quantres@suitability$results <- quantres@suitability$suitabilitytab |>
             dplyr::filter(include == TRUE) |>
-            dplyr::select(-"filename", -"include", -"vialpos", -"type") |>
-            tidyr::pivot_longer(cols = dplyr::everything(), names_to = "compound", values_to = "area") |>
+            dplyr::select(-"filename", -"include", -"vial", -"type") |>
+            # tidyr::pivot_longer(cols = dplyr::everything(), names_to = "compound", values_to = "area") |>
             dplyr::group_by(compound) |>
-            dplyr::summarize(RSD = precision(area))
-
-        list(config = x$config, results = x$results)
-    })
-
+            dplyr::summarize(RSD = precision(abs_response), n = dplyr::n()) 
 
     quantres
 }
 
 plot_suitability <- function(quantres){
     ggplot2::ggplot(quantres@suitability[["results"]],
-      aes(y = compound, x = RSD, fill = compound)) +
-      ggplot2::geom_col() + 
-      ggplot2::labs(title = "RSD Plot", x = "Compound", y = "RSD%") + 
-      ggplot2::theme_minimal() + 
-      ggplot2::geom_label(aes(label = paste0(round(RSD, 2), "%")),
-        fill  = "white",
-        position = ggplot2::position_stack(vjust = 0.5)) +
-      ggplot2::theme(legend.position = "none")
+        aes(y = compound, x = RSD, fill = compound)) +
+        ggplot2::geom_col() + 
+        ggplot2::labs(title = "RSD Plot", x = "Compound", y = "RSD%") + 
+        ggplot2::theme_minimal() + 
+        ggplot2::geom_label(aes(label = paste0(round(RSD, 2), "%")),
+            fill  = "white",
+            position = ggplot2::position_stack(vjust = 0.5)) +
+        ggplot2::theme(legend.position = "none")
 }
 
+
+plot_suitability_trend <- function(quantres){
+    df <- quantres@suitability$suitabilitytab |> 
+        tidyr::pivot_wider(names_from = "compound", values_from = "abs_response")
+
+
+    rsd_values <- df[, 5:ncol(df)]  # only cmpds
+    rsd_list <- list()
+    for(i in seq(nrow(df))){
+        # calulate RSD for each compound end at nrow(df), start at nrow(df) - i + 1
+        new_df <- apply(rsd_values[(nrow(df)-i+1):nrow(df), ], 2, precision)
+        new_df <- as.data.frame(t(new_df))
+        new_df$n <- i
+        rsd_list[[i]] <- new_df
+    }
+    rsd_values <- do.call(rbind, rsd_list) |> 
+        tidyr::pivot_longer(cols = -n, names_to = "compound", values_to = "RSD")
+
+    ggplot2::ggplot(rsd_values, aes(x = n, y = RSD, color = compound)) +
+        ggplot2::geom_line() +
+        ggplot2::geom_point() +
+        ggplot2::facet_wrap(~compound, scales = "free") +
+        ggplot2::labs(title = "RSD Trend Plot", x = "Number of Points", y = "RSD%") +
+        ggplot2::scale_x_reverse() +
+        ggplot2::theme_minimal()
+}
 
 
 #' Check if suitability configuraion is set
@@ -115,3 +138,12 @@ has_suitability_config <- function(quantres){
     all(c(vial_l))
 }
 
+
+has_suitability_results <- function(quantres){
+    checkmate::assertClass(quantres, "QuantRes")
+
+    x <- quantres@suitability
+    res_l <- !is.null(x$results) && nrow(x$results) > 0
+
+    res_l
+}

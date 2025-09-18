@@ -22,18 +22,42 @@
     res
 }
 
-.save_cmpd_db <- function(cmpds_list, method_id = NULL){
+.check_cmpd_list <- function(cmpds_list){
+
+    checkmate::assertList(cmpds_list)
 
     # check there is one method, description and compounds
     checkmate::assertNames(names(cmpds_list),
         must.include = c("method", "description", "gradient", "compounds", "column"), type = "unique")
+
     checkmate::assertDataFrame(cmpds_list$compounds)
-    # drop empty rows
+    checkmate::assertNames(names(cmpds_list$compounds), 
+        must.include = c("compound", "q1", "q3", "qualifier", "expected_peak_start", "expected_peak_end"), 
+        type = "unique")
+
+    if(any(duplicated(cmpds_list$compounds[,c("q1", "q3")]))){
+        stop("The combination of q1 and q3 must be unique in the compounds data frame.")
+    }
+
+    if(any(is.na(cmpds_list$compounds$compound))){
+        stop("Must supply all compound names")
+    }
+
+    if(is.null(cmpds_list$compounds$IS_id)){
+        cmpds_list$compounds$IS_id <- NA
+    }
+    cmpds_list
+
+}
+
+.save_cmpd_db <- function(cmpds_list, method_id = NULL){
+    cmpds_list <- .check_cmpd_list(cmpds_list)
+
+    # drop empty rows (shiny)
     cmpds_list$compounds <- cmpds_list$compounds[!is.na(cmpds_list$compounds$compound), ]
 
     # compound names doen't have to be unique
 
-    # assert combination of q1 and q3 is unique to be saved in transition table
 
     .check_sample_db()
     db <- .connect_to_db()
@@ -70,11 +94,13 @@
         dplyr::mutate(transition_id = seq(trans_id, trans_id+dplyr::n()-1)) 
 
     # avoid repeated transitions in the same method
+    # assert combination of q1 and q3 is unique to be saved in transition table
     checkmate::assertVector(unique_trans_df$transition_label, unique = TRUE)
 
     checkmate::assertNames(names(unique_methods_df),
         must.include = c("method_id", "method_descr", "method_gradient",
             "method_column", "method"), type = "unique")
+
 
     # autoincrement compound_id
     cmpd_id <- seq(cmpd_id, nrow(cmpds_list$compounds) + cmpd_id - 1)
@@ -82,7 +108,6 @@
     # join transition_id to compoundstab
     transitions_df <- cmpds_list$compounds |>
         dplyr::left_join(unique_trans_df, by = c("q1", "q3"))
-
 
     # Begin a transaction
     DBI::dbBegin(db)
@@ -100,8 +125,9 @@
             transitions_df |>
                 dplyr::mutate(method_id = method_id) |>
                 dplyr::mutate(compound_id = cmpd_id) |>
-                dplyr::mutate(IS_id = ifelse(is.na(.data$IS_id), NA,
+                dplyr::mutate(IS_id = ifelse(is.na(.data$IS_id), as.character(.data$IS_id),
                     cmpd_id[match(.data$IS_id, transitions_df$compound)])) |>
+                dplyr::mutate(qualifier = ifelse(is.na(qualifier), FALSE, qualifier)) |>
                 dplyr::select(
                     "compound_id",
                     "compound",
@@ -112,7 +138,6 @@
                     "transition_id")
         )
 
-        # Commit the transaction if all operations succeed
         DBI::dbCommit(db)
     }, error = function(e) {
         # Roll back the transaction if any operation fails
@@ -180,14 +205,9 @@
 
 modify_method <- function(method_id, new_list){
     checkmate::assertNumeric(method_id, len = 1)
-    checkmate::assertList(new_list)
-    # check there is one method, description and compounds
-    checkmate::assertNames(names(new_list),
-        must.include = c("method", "description", "gradient", "compounds", "column"), type = "unique")
-    checkmate::assertDataFrame(new_list$compounds)
+    new_list <- .check_cmpd_list(new_list)
+
     new_list$compounds <- new_list$compounds[!is.na(new_list$compounds$compound), ] # remove empty rows
-    checkmate::assert(!anyDuplicated(new_list$compounds[,c("q1", "q3")]), 
-        msg = "The combination of q1 and q3 must be unique in the compounds data frame.")
 
     .check_sample_db()
     # check if method_id exists in db
