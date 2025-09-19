@@ -1,6 +1,6 @@
 @echo off
 
-Rscript -e "PKbioanalysis::plate_app()"
+Rscript -e "PKbioanalysis::study_app()"
 
 
 pause

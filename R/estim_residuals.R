@@ -1,4 +1,4 @@
-#' Estimate Additive and proportional errors from calibration data 
+#' Estimate Additive and proportional errors from calibration data
 #' @param data Data frame with columns: conc (concentration), stdconc (standardized concentration, e.g. conc/LLOQ)
 #' @param level Confidence level for the CI (default is 0.95)
 #' @param method Optimization method (default is "nlminb")
@@ -7,11 +7,18 @@
 #' @author Omar I. Elashkar
 #' @import RTMB
 #' @export
-fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_boot = 1000) {
-    method %in% c("Nelder-Mead", "BFGS", "L-BFGS-B", "nlminb", "nlme") |>
+fit_var <- function(
+    data,
+    level = 0.95,
+    method = "nlminb",
+    bootstrap = FALSE,
+    n_boot = 1000
+) {
+    method %in%
+        c("Nelder-Mead", "BFGS", "L-BFGS-B", "nlminb", "nlme") |>
         stopifnot()
 
-    X <- model.matrix( ~ stdconc - 1, data = data)
+    X <- model.matrix(~ stdconc - 1, data = data)
     vecdata <- list(X = X, y = data$conc, varpred = data$stdconc)
     nll <- function(par) {
         RTMB::getAll(par, vecdata)
@@ -21,30 +28,44 @@ fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_
         -sum(dnorm(x = y, mean = mu, sd = sd, log = TRUE))
     }
     par1 <- list(beta = rep(0, ncol(X)), omega = c(0.1, 0.1))
-    obj <- RTMB::MakeADFun(nll, par = par1 , silent = TRUE)
+    obj <- RTMB::MakeADFun(nll, par = par1, silent = TRUE)
     if (method == "nlminb") {
         fit <- with(obj, nlminb(start = par, objective = fn, gradient = gr))
     } else if (method == "BFGS") {
         fit <- with(obj, optim(par = par, fn = fn, gr = gr, method = method))
     } else if (method == "L-BFGS-B") {
-        fit <- with(obj, optim(
-            par = par, fn = fn, gr = gr, method = method,
-            lower = rep(-Inf, length(par)), upper = rep(Inf, length(par))
-        ))
+        fit <- with(
+            obj,
+            optim(
+                par = par,
+                fn = fn,
+                gr = gr,
+                method = method,
+                lower = rep(-Inf, length(par)),
+                upper = rep(Inf, length(par))
+            )
+        )
     } else if (method == "Nelder-Mead") {
-        fit <- with(obj, optim(
-            par = par, fn = fn, gr = gr, method = method,
-            control = list(maxit = 1000)
-        ))
+        fit <- with(
+            obj,
+            optim(
+                par = par,
+                fn = fn,
+                gr = gr,
+                method = method,
+                control = list(maxit = 1000)
+            )
+        )
     } else if (method == "nlme") {
-        fit <- nlme::gls(conc ~ stdconc - 1,
+        fit <- nlme::gls(
+            conc ~ stdconc - 1,
             data = data,
-            weights = nlme::varConstProp(form = ~stdconc), control = list(sigma = 1)
+            weights = nlme::varConstProp(form = ~stdconc),
+            control = list(sigma = 1)
         )
     } else {
         stop("method not supported")
     }
-
 
     # # solve the Hessian to get the covariance matrix
     # Hes <- optimHess(par = fit$par, fn = obj$fn, gr = obj$gr, hessian = TRUE)
@@ -61,7 +82,6 @@ fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_
     upr <- est + qq * sdvec
     tab0 <- cbind(est = est, lwr = lwr, upr = upr)
 
-
     # When you transform back (by exp()), the SE on the natural scale is not just exp(SE).
     # You have to use the Delta method (first-order Taylor expansion approximation).
     se_nat <- exp(est) * sqrt(exp(sdvec^2) - 1) # SE on natural scale
@@ -72,10 +92,12 @@ fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_
     }
 
     return(data.frame(
-        term = c("const", "prop"), exp(tab0),
+        term = c("const", "prop"),
+        exp(tab0),
         method = method,
         grad = sdr$gradient.fixed[-1],
-        sd = se_nat, rse_pct = rse_pct
+        sd = se_nat,
+        rse_pct = rse_pct
     ))
 }
 
@@ -83,13 +105,15 @@ fit_var <- function(data, level = 0.95, method = "nlminb", bootstrap = FALSE, n_
 #' @param x Data frame with results
 #' @param digits Number of digits to display
 #' @author Omar I. Elashkar
-#' @export 
+#' @export
 formated_print <- function(x, digits = 3) {
     x <- x |>
-        mutate(term = case_when(
-            term == "const" ~ "Constant",
-            term == "prop" ~ "Proportional"
-        ))
+        mutate(
+            term = case_when(
+                term == "const" ~ "Constant",
+                term == "prop" ~ "Proportional"
+            )
+        )
 
     gt::gt(x) |>
         gt::cols_label(
@@ -131,18 +155,21 @@ formated_print <- function(x, digits = 3) {
 }
 
 
-
 #' Estimate LLOQ From Existing Additive and Proportional errors
 #' @param add_err Additive error (constant)
 #' @param prop_err Proportional error (CV)
 #' @param cv_lloq Maximum coefficient of variation at LLOQ
 #' @param cv_lqc Maximum coefficient of variation at LQC
-#' 
+#'
 #' A method to estimate LLOQ from existing additive and proportional errors. The function does inequality constrained optimization to find the LLOQ.
 #' @author Omar I. Elashkar
 #' @export
-estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 0.15) {
-
+estim_lloq <- function(
+    add_err = 0.04,
+    prop_err = 0.05,
+    cv_lloq = 0.2,
+    cv_lqc = 0.15
+) {
     rsd_fn <- function(x, a, b) {
         sqrt(a^2 + b^2 * x^2) / x
     }
@@ -206,29 +233,26 @@ estim_lloq <- function(add_err = 0.04, prop_err = 0.05, cv_lloq = 0.2, cv_lqc = 
 
 # estim_lloq(add_err=1, prop_err=0.15, cv = 0.2)
 
-
 #' Plot Relationship Between Concentration and CV/SD
 #' @param df Data frame with columns: stdconc (standardized concentration), cv (coefficient of variation), sdev (standard deviation), Type (e.g., "Estimated", "Observed")
 #' @param title Plot title
 #' @author Omar I. Elashkar
-#' @export 
-plot_res_rel <- function(df, title){
+#' @export
+plot_res_rel <- function(df, title) {
     x <- ggplot(df) +
         geom_point(aes(x = stdconc, y = cv)) +
         geom_line(aes(x = stdconc, y = cv)) +
         labs(y = "Coefficient of Variation", x = "Standard Concentration") +
         scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-        theme(text = element_text(size = 21), 
-          title = element_text(size = 21))
+        theme(text = element_text(size = 21), title = element_text(size = 21))
 
     y <- ggplot(df) +
         geom_point(aes(x = stdconc, y = sd)) +
         geom_line(aes(x = stdconc, y = sd)) +
         labs(y = "Standard Deviation", x = "Standard Concentration") +
-        theme(text = element_text(size = 21), 
-          title = element_text(size = 21))
+        theme(text = element_text(size = 21), title = element_text(size = 21))
 
-    list(x, y) 
-        # plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
-        # plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
+    list(x, y)
+    # plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
+    # plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
 }

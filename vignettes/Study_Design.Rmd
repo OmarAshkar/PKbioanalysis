@@ -98,9 +98,6 @@ study <- generate_96() |>
 plot(study)
 ```
 
-```{r}
-plot_design(study)
-```
 
 
 ```{r}
@@ -111,8 +108,7 @@ plate <- generate_96() |>
     time = Indometh$time, 
     dose = "100mg",
     route = "IV",
-    cmt = "plasma",
-    vtime = TRUE)
+    cmt = "plasma")
 ```
 
 ```{r}

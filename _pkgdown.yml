@@ -56,7 +56,6 @@ reference:
 - subtitle: Plate and Study Inspection
   contents:
   - plot.PlateObj
-  - plot_design
   - plate_metadata
 - subtitle: Plate Registration
   contents: register_plate

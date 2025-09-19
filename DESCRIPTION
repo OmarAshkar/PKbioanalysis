@@ -60,6 +60,7 @@ Imports:
     pracma
 Suggests: 
     knitr,
+    patchwork,
     gtools,
     rmarkdown,
     testthat (>= 3.0.0)
