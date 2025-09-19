@@ -57,11 +57,12 @@ Imports:
     ggiraph, 
     gt, 
     plotly, 
-    pracma
+    pracma,
+    gtools
 Suggests: 
     knitr,
     patchwork,
-    gtools,
+    reactable.extras,
     rmarkdown,
     testthat (>= 3.0.0)
 SystemRequirements: 
