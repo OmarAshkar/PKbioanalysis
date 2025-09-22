@@ -14,7 +14,7 @@ read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx_xml")
 \item{vendor}{vendor name. Only "targetlynx"}
 }
 \value{
-List object with the results of the experiment.
+QuantRes object with the results of the experiment.
 }
 \description{
 Read experiment results

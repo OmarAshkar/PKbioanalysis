@@ -48,6 +48,30 @@ check_quantRes <- function(object) {
     ##check linearity
     stopifnot(length(object@linearity) == length(object@quanttab))
 
+    lapply(object@linearity, function(x) {
+        checkmate::assertList(x)
+        checkmate::assertNames(
+            names(x),
+            identical.to = c("linearitytab", "results")
+        )
+        stopifnot(length(x) == 2)
+        checkmate::assertDataFrame(x$linearitytab)
+        checkmate::assertNames(
+            names(x$linearitytab),
+            must.include = c(
+                "filename",
+                "type",
+                "abs_response",
+                "rel_response",
+                "stdconc",
+                "include",
+                "dev",
+                "estimated_conc"
+            )
+        )
+    })
+
+
     ## check samples_metadata
     checkmate::assertDataFrame(object@samples_metadata)
     checkmate::assertNames(
@@ -148,10 +172,11 @@ create_quant_object <- function(df, method_id = NULL) {
         suitability = suitabilitylist,
         resEstim = resEstimlist
     )
-
     if (!is.null(method_id)) {
         res <- update_IS_info(res, method_id)
         res <- update_cmpd_info(res, method_id)
+        res <- update_rel_response(res)
+
     }
 
     validObject(res)
@@ -176,17 +201,15 @@ create_quant_object <- function(df, method_id = NULL) {
             rel_response = NA, 
             stdconc = x$stdconc,
             include = TRUE,
-            dev = as.numeric(NA)
+            dev = as.numeric(NA), 
+            estimated_conc = as.numeric(NA)
         )
-        parameters <- NA
         results <- NA
         list(
             linearitytab = linearitytab,
-            parameters = parameters,
             results = results
         )
     })
-
     linearity
 }
 
@@ -351,3 +374,58 @@ derive_rel_response <- function(quantres, compound_id) {
 
     rel_response
 }
+
+update_rel_response <- function(quantres) {
+    linearitylist <- quantres@linearity
+    res <- lapply(names(linearitylist), function(x) {
+        currlintab <- linearitylist[[x]]
+        if (has_IS(quantres, x)) {
+            rel_response <- derive_rel_response(quantres, x)
+            currlintab$linearitytab$rel_response <- rel_response
+        } else {
+            currlintab$linearitytab$rel_response <- NA
+        }
+        list(linearitytab = currlintab[["linearitytab"]], results = currlintab[["results"]])
+    })
+    names(res) <- names(quantres@linearity)
+    quantres@linearity <- res
+
+    validObject(quantres)
+    quantres
+}
+
+
+#' Filter data 
+#' @param x. Dataframe or QuantRes Object
+#' @param type. QC, DQC, or Standard
+#' @param cutoff. Accuracy cutoff. 20% by default
+#' @export
+setGeneric("prefilter_precision_data", 
+    function(x, type, cutoff = 0.2, compound_id) standardGeneric("prefilter_precision_data"))
+
+#' @export
+prefilter_precision_data.QuantRes <- function(x, type, cutoff = 0.2, compound_id) {
+    stopifnot(inherits(x, "QuantRes"))
+    stopifnot(type %in% c("QC", "DQC", "Standard"))
+    checkmate::assertString(compound_id)
+    stopifnot(has_linearity(x, compound_id))
+
+    df <- x@linearity[[compound_id]]$linearitytab |> 
+        dplyr::rename(conc = estimated_conc) |> 
+        dplyr::select(conc, stdconc, type)
+
+    prefilter_precision_data(df, type, cutoff)
+}
+
+setMethod("prefilter_precision_data", signature(x = "QuantRes"), prefilter_precision_data.QuantRes)
+
+prefilter_precision_data.data.frame <- function(x, type, cutoff = 0.2) {
+    stopifnot(is.data.frame(x))
+    stopifnot(type %in% c("QC", "DQC", "Standard"))
+    checkmate::assertNames(colnames(x), must.include = c("conc", "stdconc", "type"))
+    x |>
+        mutate(accuracy = conc / stdconc) |>
+        dplyr::filter(.data$type == !!type) |>
+        dplyr::filter(dplyr::between(.data$accuracy, 1 - cutoff, 1 + cutoff))
+}
+setMethod("prefilter_precision_data", "data.frame", prefilter_precision_data.data.frame)

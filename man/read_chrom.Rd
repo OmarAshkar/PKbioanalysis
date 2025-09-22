@@ -16,5 +16,5 @@ This function reads chromatogram files from a directory and returns a data frame
 }
 \examples{
 path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
-main <- read_chrom(path)  
+main <- read_chrom(path)
 }

@@ -1,3 +1,16 @@
+clean_rht_to_df <- function(mylist) {
+  cleaned <- lapply(mylist, function(row) {
+    lapply(row, function(x) if (is.null(x)) NA else x)
+  })
+  cleaned <- lapply(cleaned, \(x) {
+    x <- as.data.frame(x)
+    colnames(x) <- paste("col", seq_along(x), sep = "_")
+    x
+  })
+  cleaned <- do.call(rbind, cleaned)
+  cleaned
+}
+
 ui <- bslib::page_navbar(
   title = "Study Management",
   shinyjs::useShinyjs(),
@@ -2475,19 +2488,6 @@ study_app <- function() {
 
   remove_old_ui <- function() {
     removeUI(selector = "#dynamic_ui", immediate = TRUE)
-  }
-
-  clean_rht_to_df <- function(mylist) {
-    cleaned <- lapply(mylist, function(row) {
-      lapply(row, function(x) if (is.null(x)) NA else x)
-    })
-    cleaned <- lapply(cleaned, \(x) {
-      x <- as.data.frame(x)
-      colnames(x) <- paste("col", seq_along(x), sep = "_")
-      x
-    })
-    cleaned <- do.call(rbind, cleaned)
-    cleaned
   }
 
   # module_compounds <- function(id, number){

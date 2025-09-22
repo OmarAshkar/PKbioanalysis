@@ -239,8 +239,7 @@ run_linearity_quantres <- function(
         dplyr::filter(.data$include == TRUE & .data$type == "Standard")
 
     if (all(is.na(target_df$abs_response))) {
-        warning(compound_id, ": Absolute response is missing.")
-        return(quantres)
+        stop(compound_id, ": Absolute response is missing.")
     }
 
     # if(!is_integrated(quantres, compound_id= compound_id)){
@@ -410,7 +409,7 @@ run_linearity_quantres <- function(
     sd_residuals <- sd(residuals(fit))
 
     quantres@linearity[[compound_id]]$results <- list(
-        model = fit,
+        modelobj = fit,
         model = model,
         weight = weight,
         avg_rep = avg_rep,

@@ -238,7 +238,7 @@ estim_lloq <- function(
 #' @param title Plot title
 #' @author Omar I. Elashkar
 #' @export
-plot_res_rel <- function(df, title) {
+plot_var_pattern <- function(df, title= "") {
     x <- ggplot(df) +
         geom_point(aes(x = stdconc, y = cv)) +
         geom_line(aes(x = stdconc, y = cv)) +
@@ -252,7 +252,20 @@ plot_res_rel <- function(df, title) {
         labs(y = "Standard Deviation", x = "Standard Concentration") +
         theme(text = element_text(size = 21), title = element_text(size = 21))
 
-    list(x, y)
-    # plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
-    # plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
+    patchwork::wrap_plots(x, y) + 
+        patchwork::plot_layout(ncol = 2, axis_titles = "collect", guides = "collect") +
+        patchwork::plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
+}
+
+
+# Must have 3 QCs sets at least
+calc_var_pattern <- function(df) {
+    df |>
+        # dplyr::filter(type == "QC") |>
+        group_by(.data$stdconc) |>
+        dplyr::summarize(
+            sd = sd(conc),
+            cv = sd(conc) / mean(conc) * 100, 
+            n = dplyr::n()
+        )
 }

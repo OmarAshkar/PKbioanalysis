@@ -29,27 +29,169 @@ upload_quant_file_ui <- function(id) {
   )
 }
 
-quant_ui <- function(id) {
+res_ui <- function(id) {
   ns <- NS(id)
   bslib::page_fillable(
     bslib::navset_underline(
       bslib::nav_panel(
-        title = "Table",
-        reactable::reactableOutput(ns("quant_table"))
-      ),
+        title = "Intra-Precision",
+        layout_sidebar(
+          sidebar = sidebar(
+            selectInput(ns("compound_id"), "Compound", choices = NA),
+            selectInput(
+              ns("filter_type"),
+              "Type",
+              choices = c("QC", "DQC", "Standard"),
+              selected = "QC"
+            ),
+            numericInput(
+              ns("accuracy_threshold"),
+              "Accuracy Threshold",
+              value = 0.2,
+              min = 0,
+              max = 1,
+              step = 0.05
+            ),
+          ),
+          bslib::card(plotOutput((ns("method_var_plot"))), full_screen = TRUE),
+          bslib::layout_columns(
+            col_widths = c(12, 12),
+            bslib::card(
+              reactable::reactableOutput((ns("method_var_naive_table"))),
+              full_screen = TRUE
+            ),
+            bslib::card(
+              reactable::reactableOutput((ns("method_var_estim"))),
+              full_screen = TRUE
+            )
+          )
+        )
+      )
     )
   )
 }
+
+res_tab_server <- function(id, quantres, cmpds_vec) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    output$method_var_plot <- renderPlot({
+      req(quantres())
+
+      tryCatch(
+        {
+          x <- prefilter_precision_data(
+            quantres(),
+            input$filter_type,
+            input$accuracy_threshold,
+            input$compound_id
+          )
+          x <- calc_var_pattern(x)
+          plot_var_pattern(x, title = input$compound_id)
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error in method_var_plot:", e$message),
+            type = "error"
+          )
+        },
+        warning = function(e) {
+          showNotification(
+            paste(e$warning),
+            type = "warning"
+          )
+        }
+      )
+    })
+
+    output$method_var_naive_table <- reactable::renderReactable({
+      req(quantres())
+      tryCatch(
+        {
+          x <- prefilter_precision_data(
+            quantres(),
+            input$filter_type,
+            input$accuracy_threshold,
+            input$compound_id
+          )
+          calc_var_pattern(x) |>
+            reactable::reactable()
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error in method_var_naive_table:", e$message),
+            type = "error"
+          )
+        },
+        warning = function(e) {
+          showNotification(
+            paste(e$warning),
+            type = "warning"
+          )
+        }
+      )
+    })
+
+    output$method_var_estim <- reactable::renderReactable({
+      req(quantres())
+
+      tryCatch(
+        {
+          x <- prefilter_precision_data(
+            quantres(),
+            input$filter_type,
+            input$accuracy_threshold,
+            input$compound_id
+          )
+          fit_var(x) |>
+            dplyr::select(
+              "term",
+              "est",
+              "lwr",
+              "upr",
+              "method",
+              "grad",
+              "sd",
+              "rse_pct"
+            ) |>
+            dplyr::mutate(dplyr::across(is.numeric, \(x) round(x, 2))) |>
+            reactable::reactable(
+              rownames = FALSE,
+              columns = list(
+                term = reactable::colDef(name = "Term"),
+                est = reactable::colDef(name = "Estimate"),
+                lwr = reactable::colDef(name = "Lower CI"),
+                upr = reactable::colDef(name = "Upper CI"),
+                method = reactable::colDef(name = "Method"),
+                grad = reactable::colDef(name = "Gradient"),
+                sd = reactable::colDef(name = "SE"),
+                rse_pct = reactable::colDef(name = "RSE%")
+              )
+            )
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error in method_var_estim:", e$message),
+            type = "error"
+          )
+        },
+        warning = function(e) {
+          showNotification(
+            paste(e$warning),
+            type = "warning"
+          )
+        }
+      )
+    })
+  })
+}
+
 
 pk_ui <- function(id) {
   ns <- NS(id)
   bslib::page_fillable(
     actionButton("update_pk_btn", "Update"),
     bslib::navset_underline(
-      bslib::nav_panel(
-        title = "Intra-Precision",
-        bslib::card(plotOutput((ns("method_var_plot"))), full_screen = TRUE)
-      ),
       bslib::nav_panel(
         title = "PK Profiles",
         bslib::card(ggiraph::girafeOutput(ns("pk_profs_plot"))),
@@ -68,20 +210,6 @@ pk_server <- function(id, quantres, cmpd_trans_df) {
   # stopifnot(is.reactive(chrom_res))
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
-    output$method_var_plot <- renderPlot({
-      tryCatch(
-        {
-          plot_precision(quantres())
-        },
-        error = function(e) {
-          print(e)
-        },
-        warning = function(e) {
-          print(e)
-        }
-      )
-    })
 
     output$pk_profs_plot <- ggiraph::renderGirafe({
       tryCatch(
@@ -218,6 +346,7 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
     cmpd_id <- reactiveVal(NULL)
 
     output$linearity_table <- renderDT({
+      req(quantres())
       input$compound_id |>
         cmpd_id()
 
@@ -271,6 +400,7 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
 
     output$linearity_plot <- ggiraph::renderGirafe({
       req(cmpd_id())
+      req(quantres())
       req(has_linearity(quantres(), cmpd_id()))
 
       plot_linearity(quantres(), cmpd_id())
@@ -278,41 +408,49 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
 
     output$residual_plot <- ggiraph::renderGirafe({
       req(cmpd_id())
+      req(quantres())
       req(has_linearity(quantres(), cmpd_id()))
+
       plot_residuals(quantres(), cmpd_id())
     })
 
     output$deviations_plot <- ggiraph::renderGirafe({
       req(cmpd_id())
       req(has_linearity(quantres(), cmpd_id()))
+      req(quantres())
+
       plot_deviations(quantres(), cmpd_id())
     })
 
     output$linearity_summary <- renderUI({
       req(cmpd_id())
       req(has_linearity(quantres(), cmpd_id()))
+      req(quantres())
+
       table <- tabulate_summary_linearity(quantres(), cmpd_id())
 
-    str <- tags$ul(
-      tags$h3(paste("Linearity Summary for", cmpd_id())),
-      tags$li(paste("Weight:", table$weight)),
-      tags$li(paste("Average Replicates:", table$avg_rep)),
-      tags$li(paste("Slope (Sensitivity):", table$slope)),
-      tags$li(paste("Intercept:", table$intercept)),
-      tags$li(paste("Adj. R Squared:", table$adj_r_squared)),
-      tags$li(paste("MAPE CS:", table$mape_cs)),
-      tags$li(paste("MAPE QC:", table$mape_qc)),
-      tags$li(paste("AIC:", table$aic)),
-      tags$li(paste("LLOQ (Assumed):", table$lloq_assumed)),
-      tags$li(paste("ULOQ (Assumed):", table$uloq_assumed)),
-      tags$li(paste("LLOQ (Passed):", table$lloq_passed)),
-      tags$li(paste("ULOQ (Passed):", table$uloq_passed)),
-      tags$li(paste("LOQ (Calibration SE):", table$loq)),
-      tags$li(paste("Standards Passed:", table$standards_passed)),
-      tags$li(paste("QCs Passed (Level):", table$QCs_passed_level)),
-      tags$li(paste("QCs Passed (Total):", table$QCs_passed_total))
-    )
-    str
+      bslib::card(
+        tags$ul(
+          tags$h3(paste("Linearity Summary for", cmpd_id())),
+          tags$li(paste("Weight:", table$weight)),
+          tags$li(paste("Average Replicates:", table$avg_rep)),
+          tags$li(paste("Slope (Sensitivity):", table$slope)),
+          tags$li(paste("Intercept:", table$intercept)),
+          tags$li(paste("Adj. R Squared:", table$adj_r_squared)),
+          tags$li(paste("MAPE CS:", table$mape_cs)),
+          tags$li(paste("MAPE QC:", table$mape_qc)),
+          tags$li(paste("AIC:", table$aic)),
+          tags$li(paste("LLOQ (Assumed):", table$lloq_assumed)),
+          tags$li(paste("ULOQ (Assumed):", table$uloq_assumed)),
+          tags$li(paste("LLOQ (Passed):", table$lloq_passed)),
+          tags$li(paste("ULOQ (Passed):", table$uloq_passed)),
+          tags$li(paste("LOQ (Calibration SE):", table$loq)),
+          tags$li(paste("Standards Passed:", table$standards_passed)),
+          tags$li(paste("QCs Passed (Level):", table$QCs_passed_level)),
+          tags$li(paste("QCs Passed (Total):", table$QCs_passed_total))
+        ),
+        full_screen = TRUE
+      )
     })
 
     last_selected_points <- reactiveVal(NULL)
@@ -642,14 +780,9 @@ quantapp_ui <- function() {
       linearity_ui("linearitymod")
     ),
     bslib::nav_panel(
-      "Residual Analysis",
-      id = "residual_page",
-      quant_ui("residualmod")
-    ),
-    bslib::nav_panel(
-      "Quantification",
-      id = "quantification_page",
-      quant_ui("quantificationmod")
+      "Residuals Pattern",
+      id = "res_page",
+      res_ui("resmod")
     ),
     bslib::nav_panel("PK", id = "pk_page", pk_ui("pkmod")),
     bslib::nav_panel(
@@ -750,6 +883,7 @@ quantapp_server <- function(input, output, session) {
   })
 
   output$suitability_table <- reactable::renderReactable({
+    req(quantobj())
     req(nrow(quantobj()@samples_metadata) > 0)
     req(quantobj()@suitability$suitabilitytab)
     quantobj()@suitability$suitabilitytab |>
@@ -782,6 +916,7 @@ quantapp_server <- function(input, output, session) {
 
   ## suitability plot and table ####
   output$suitability_text <- renderDT({
+    req(quantobj())
     req(nrow(quantobj()@samples_metadata) > 0)
     quantobj()@suitability[["results"]] |>
       DT::datatable(
@@ -806,12 +941,12 @@ quantapp_server <- function(input, output, session) {
 
   ## AI suitability report ####
   observeEvent(input$ai_suitability_btn, {
+    req(quantobj())
     req(nrow(quantobj()@samples_metadata) > 0)
     req(has_suitability_results(quantobj()))
 
     tryCatch(
       {
-
         withProgress(message = "Waiting for AI answer", value = 0, {
           txtoutput <- suitability_ai(quantobj())
         })
@@ -849,7 +984,18 @@ quantapp_server <- function(input, output, session) {
   })
 
   linearity_data_server("linearitymod", quantobj, current_cmpds_names)
+  #############################################################
+  observeEvent(current_cmpds_names(), {
+    updateSelectInput(
+      session,
+      "resmod-compound_id",
+      choices = current_cmpds_names()
+    )
+  })
 
+  res_tab_server("resmod", quantobj, current_cmpds_names)
+
+  ###############################################
   pk_server("pkmod", quantobj, current_cmpds_names)
 
   # exit button ####

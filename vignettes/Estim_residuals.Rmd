@@ -28,7 +28,7 @@ only_qc
 ```
 
 ```{r}
-plot_res_rel(only_qc)
+plot_var_pattern(only_qc)
 ```
 
 

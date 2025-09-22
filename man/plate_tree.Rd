@@ -13,7 +13,7 @@ plate_tree(plate, plot = TRUE)
 }
 \value{
 data.tree Node object or DiagrammeR object
-plot_tree will focus only on bioanalytical vial types, namely blanks, analytes, standards, QCs. 
+plot_tree will focus only on bioanalytical vial types, namely blanks, analytes, standards, QCs.
 The tree order will be plate_id, then group, then vial type, then entity, then number of technical replicates.
 }
 \description{
