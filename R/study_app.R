@@ -2452,12 +2452,7 @@ study_app_server <- function(input, output, session) {
 
 #' @title bioanalytic_app
 #' @description This function creates a shiny app for plate management
-#' @import shiny
-#' @import bslib
 #' @import bsicons
-#' @import shinyWidgets
-#' @import DiagrammeR
-#' @importFrom shinyjs hide show enable disable useShinyjs
 #' @returns A shiny app. No default return value. Can return a PlateObj if reuse_plate_button is clicked
 #' @export
 study_app <- function() {

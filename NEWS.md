@@ -19,7 +19,7 @@
 - 
 ## Version 0.5.0
 - Bioanalytical `group` adding allowing more systematic injection sequence creation. 
-- Support for plate generation from `plate_app` GUI 
+- Support for plate generation from `study_app` GUI 
 - plate generation undo support 
 - tree visualization for plate
 - Support for analytical blanks

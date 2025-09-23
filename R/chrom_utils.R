@@ -237,7 +237,7 @@ chromres_to_matrix <- function(chrom_res, wide = FALSE) {
 #' @export
 #' @examples
 #' \dontrun{
-#' lapply(1:10, \(x) check_integrated(chrom_res, sample_id = 1, compound_id = 1))
+#' lapply(1:10, \(x) is_integrated(chrom_res, sample_id = 1, compound_id = 1))
 #' }
 setGeneric("is_integrated", function(chrom_res, compound_id, sample_id = NULL) {
   standardGeneric("is_integrated")
@@ -299,7 +299,6 @@ is_integrated_chrom_res <- function(chrom_res, compound_id, sample_id = NULL) {
     )
 
   #}
-
   if (nrow(res) == 0) {
     stop(
       "No peaks found for the specified sample and compound. Please run update_RT() first"

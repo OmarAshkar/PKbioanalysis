@@ -1,3 +1,8 @@
+get_pkbioanalysis_option <- function(name) {
+  # getOption(paste0("PKbioanalysis.", name))
+  PKbioanalysis_env[[name]]
+}
+
 #'@noRd
 .connect_to_db <- function() {
   db_path <- PKbioanalysis_env$data_dir |>

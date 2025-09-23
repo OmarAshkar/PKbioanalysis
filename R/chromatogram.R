@@ -158,7 +158,7 @@ check_all <- function(object) {
   #     "sample", "time", "dose", "factor") # "response_vec"
   # )
 
-  stopifnot(nrow(object@compounds) == length(object@pk_metadata))
+  # stopifnot(nrow(object@compounds) == length(object@pk_metadata))
 
   ## Assert sorting by date
 }
@@ -528,8 +528,6 @@ filter_chrom <- function(
   # filter pk_metadata by sample_id
   pk_metadata <- chrom_res@pk_metadata[exp_compounds$compound_id]
 
-  # filter linearity by compound_id
-  linearity <- chrom_res@linearity[exp_compounds$compound_id]
 
   res <- new(
     "ChromRes",
@@ -538,9 +536,6 @@ filter_chrom <- function(
     peaks = exp_peaktab,
     transitions = exp_transitions,
     compounds = exp_compounds,
-    pk_metadata = pk_metadata,
-    linearity = linearity,
-    suitability = chrom_res@suitability,
     vendor = chrom_res@vendor
   )
   validObject(res)

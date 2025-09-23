@@ -4,7 +4,7 @@
 \alias{plot_var_pattern}
 \title{Plot Relationship Between Concentration and CV/SD}
 \usage{
-plot_var_pattern(df, title)
+plot_var_pattern(df, title = "")
 }
 \arguments{
 \item{df}{Data frame with columns: stdconc (standardized concentration), cv (coefficient of variation), sdev (standard deviation), Type (e.g., "Estimated", "Observed")}

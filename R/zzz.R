@@ -32,6 +32,10 @@ py <- NULL
   PKbioanalysis_env$data_dir <- options("PKbioanalysis.data_dir") |> unlist()
   PKbioanalysis_env$cache_dir <- options("PKbioanalysis.cache_dir") |> unlist()
 
+  PKbioanalysis_env$model <- "gpt-3.5-turbo"
+  PKbioanalysis_env$api_base_url <- "https://api.ai.it.ufl.edu"
+  PKbioanalysis_env$api_key <- Sys.getenv("OPENAI_API_KEY")
+
   if (!dir.exists(PKbioanalysis_env$data_dir)) {
     dir.create(PKbioanalysis_env$data_dir, showWarnings = F, recursive = T)
   }

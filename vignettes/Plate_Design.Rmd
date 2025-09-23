@@ -49,7 +49,7 @@ The first part of the plate ID is unique to the plate itself, while the second p
 ![Plate Database](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/plate_db.png)
 
 
-To find all previous plate, you can use `plate_app()` to find it and retrieve it for reuse.
+To find all previous plate, you can use `study_app()` to find it and retrieve it for reuse.
 
 Calibration study examples
 
@@ -96,9 +96,9 @@ After you are satisfied with the design, you can register the plates in the data
 plate <- register_plate(plate)
 ```
 
-Finally, you can use `plate_app()` to further inspect the plates or to generate injection sequences and dilution schemes.
+Finally, you can use `study_app()` to further inspect the plates or to generate injection sequences and dilution schemes.
 ```{r eval = FALSE}
-plate_app()
+study_app()
 ```
 
 ## Adding samples with pharmackinetic information

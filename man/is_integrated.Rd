@@ -21,6 +21,6 @@ This function checks if the peak has been integrated for a specific compound.
 }
 \examples{
 \dontrun{
-lapply(1:10, \(x) check_integrated(chrom_res, sample_id = 1, compound_id = 1))
+lapply(1:10, \(x) is_integrated(chrom_res, sample_id = 1, compound_id = 1))
 }
 }

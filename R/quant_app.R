@@ -1016,10 +1016,6 @@ quantapp_server <- function(input, output, session) {
 #' @title Quantification App
 #' @description This function creates a shiny app for quantification after peak integeration
 #' @param quantres A QuantRes object
-#' @import shiny
-#' @importFrom tidyr pivot_longer pivot_wider
-#' @import DT
-#' @import shinyjs
 #' @export
 quant_app <- function() {
   # user input

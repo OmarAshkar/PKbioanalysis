@@ -18,13 +18,13 @@ test_that("quantres_to_matrix", {
 
 
 test_that("has IS", {
-    has_IS(quantobj, "MITRAGYNINE") |> expect_true()
-    has_IS(quantobj, "Ketoconazole") |> expect_false()
+  has_IS(quantobj, "MITRAGYNINE") |> expect_true()
+  has_IS(quantobj, "Ketoconazole") |> expect_false()
 
-    derive_rel_response(quantobj, "MITRAGYNINE") |> 
-      length() |> expect_equal(nrow(quantobj@quanttab$MITRAGYNINE))
+  derive_rel_response(quantobj, "MITRAGYNINE") |>
+    length() |>
+    expect_equal(nrow(quantobj@quanttab$MITRAGYNINE))
 
-    derive_rel_response(quantobj, "Ketoconazole") |> 
-      expect_error("No internal standard")
-
+  derive_rel_response(quantobj, "Ketoconazole") |>
+    expect_error("No internal standard")
 })

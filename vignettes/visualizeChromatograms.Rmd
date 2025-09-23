@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 library(PKbioanalysis)
 ```
 
-We will load Waters `.raw` Chromatograms using `read_chrom()`. We need to have method specified in the `method` argument. This can be done or edited using the interface in `plate_app()`.
+We will load Waters `.raw` Chromatograms using `read_chrom()`. We need to have method specified in the `method` argument. This can be done or edited using the interface in `study_app()`.
 
 ```{r echo= FALSE}
 PKbioanalysis:::.reset_samples_db()

@@ -722,8 +722,8 @@ chromapp_server <- function(input, output, session, original_dat) {
       samples_ids = iloc_sample(),
       transition_id = current_trans_id(),
       smoothed = TRUE,
-      peak_start = NULL,
-      peak_end = NULL
+      peak_start = 0,
+      peak_end = NULL # full range
     )
 
     colnames(peak)[2] <- "Intensity"
@@ -1164,102 +1164,6 @@ chromapp_server <- function(input, output, session, original_dat) {
     ) # move to integration tab
   })
 
-  ################################################################################
-  ## suitability tab ####
-  observeEvent(peaksobj(), {
-    updateSelectInput(
-      session,
-      "select_vial_suitability",
-      choices = get_vials(peaksobj()),
-      selected = peaksobj()@suitability$config$vial
-    )
-
-    updateSelectInput(
-      session,
-      "start_vial_suitability",
-      choices = 1:10,
-      selected = peaksobj()@suitability$config$start_pos
-    )
-
-    updateSelectInput(
-      session,
-      "end_vial_suitability",
-      choices = 1:10,
-      selected = peaksobj()@suitability$config$end_pos
-    )
-  })
-
-  observeEvent(input$suitability_run_btn, {
-    req(input$select_vial_suitability)
-    req(input$start_vial_suitability)
-    req(input$end_vial_suitability)
-
-    tryCatch(
-      {
-        config_suitability(
-          peaksobj(),
-          vial = input$select_vial_suitability,
-          start = as.numeric(input$start_vial_suitability),
-          end = as.numeric(input$end_vial_suitability)
-        ) |>
-          run_suitability() |>
-          peaksobj()
-      },
-      error = function(e) {
-        showNotification(e$message, type = "error")
-      }
-    )
-  })
-
-  output$suitability_table <- rhandsontable::renderRHandsontable({
-    req(nrow(peaksobj()@peaks) > 0)
-    prepare_suitability(peaksobj()) |>
-      rhandsontable::rhandsontable(readOnly = TRUE)
-  })
-
-  ## suitability plot and table ####
-  output$suitability_text <- renderDT({
-    req(nrow(peaksobj()@peaks) > 0)
-    peaksobj()@suitability[["results"]] |>
-      DT::datatable(
-        options = list(
-          pageLength = 100,
-          searching = FALSE,
-          paging = FALSE,
-          info = FALSE
-        )
-      )
-  })
-
-  output$suitability_plot <- renderPlot({
-    req(nrow(peaksobj()@peaks) > 0)
-    plot_suitability(peaksobj())
-  })
-
-  ########################################################################################
-  #### Linearity tab
-
-  # have navset_tab with each nav_panel the linearity_module. The name is compound_id
-  # output$linearity_ui <- renderUI({
-  #   req(nrow(isolate(peaksobj()@peaks)) > 0)
-  #   bslib::navset_card_tab(
-  #     nav_panel(linearity_ui("linearitymod", current_cmpds_df()$compound_trans, selected_cmpd = isolate(input$compound_trans_input)))
-  #   )
-  # })
-
-  observeEvent(current_cmpds_df(), {
-    updateSelectInput(
-      session,
-      "linearitymod-compound_id",
-      choices = current_cmpds_df()$compound_trans,
-      selected = input$compound_trans_input
-    )
-  })
-
-  linearity_data_server("linearitymod", peaksobj, current_cmpds_df)
-
-  pk_server("pkmod", peaksobj, current_cmpds_df)
-
   ########################################################################################
 
   ## buttons for next and previous sample ####
@@ -1312,12 +1216,8 @@ chromapp_server <- function(input, output, session, original_dat) {
 #' @title chrom_apps
 #' @description This function creates a shiny app for peak integration.
 #' @param chrom_res A ChromRes object
-#' @import shiny
-#' @import dplyr
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @import checkmate
-#' @import DT
-#' @import shinyjs
 #' @export
 chrom_app <- function(chrom_res) {
   # user input

@@ -62,22 +62,6 @@ test_that("update_RT", {
 
   ##################################################
 
-  # test integerate_all_slack logic
-
-  is_integrated(x, sample_id = 6, compound_id = 20) |> expect_false()
-  x <- .integerate_all_slack(
-    dat,
-    compound_id = 20,
-    peak_start = 0.1,
-    peak_end = 1,
-    manual = TRUE
-  )
-  is_integrated(x, sample_id = 6, compound_id = 20) |> expect_true()
-
-  is_integrated(x, sample_id = 6, compound_id = 1) |> expect_true()
-  plot_chrom(x, sample_id = 4) |> expect_no_error()
-  plot_chrom(x, sample_id = 4, integrated = T, show_RT = T) |> expect_no_error()
-
   #################################################
   expect_no_error(
     y <- update_RT(

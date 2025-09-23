@@ -58,10 +58,10 @@ register_plate(x)
 ```
 
 
-Accessing dilution scheme generation is done through the `plate_app()` function, which is same for historical plate navigation and generation of injection sequence.
+Accessing dilution scheme generation is done through the `study_app()` function, which is same for historical plate navigation and generation of injection sequence.
 
 ```{r eval=FALSE}
-plate_app()
+study_app()
 ```
 
 Make sure to select the plate you want to generate dilution scheme for. The last registered plate will be selected by default.

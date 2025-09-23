@@ -48,7 +48,7 @@ register_plate(plate)
 ```
 
 ```{r eval=FALSE}
-plate_app()
+study_app()
 ```
 
 For here, you may select one or more plate and generate injection sequences.
