@@ -74,9 +74,6 @@ test_that("multiple_stds_n_qcs", {
 })
 
 test_that("rep_stdTest", {
-  skip_on_cran()
-  skip_on_ci()
-
   generate_96() |>
     fill_scheme("v", tbound = "A", bbound = "C") |>
     add_samples(rep("SLOQ/4", 3), conc = 0.25) |>
@@ -92,13 +89,8 @@ test_that("rep_stdTest", {
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q") |>
-    plot(layoutOverlay = TRUE) |>
+    plot(layoutOverlay = TRUE) |> 
     expect_no_error()
-
-  # register_plate(x)
-
-  plot(x, color = "conc", watermark = F)
-  plot(x, color = "conc", watermark = F, transform_dil = T)
 })
 
 
@@ -119,19 +111,6 @@ test_that("test_factor_samples", {
   x |> plot(color = "time") |> expect_no_error()
 })
 
-test_that("make_metabolic_study", {
-  x <- make_metabolic_study(letters[1:8])
-  plot(x[[1]], color = "time") |> expect_no_error()
-  plot(x[[1]], color = "factor") |> expect_no_error()
-  plot(x[[1]], color = "conc") |> expect_no_error()
-  plot(x[[1]], color = "samples") |> expect_no_error()
-})
-
-test_that("metabolic_last_plate", {
-  x <- make_metabolic_study(letters[1:8])
-  length(x) |> expect_equal(8)
-  is.na(x[[8]]@df$time[1]) |> expect_equal(FALSE)
-})
 
 test_that("qc_ranges", {
   suppressWarnings({
@@ -171,7 +150,7 @@ test_that("fill_verticalTest", {
 test_that("spot_maskTest", {
   generate_96() |>
     fill_scheme(fill = "v", tbound = "D", bbound = "E") |>
-    .spot_mask()
+    .spot_mask() |> expect_no_error()
 })
 
 
@@ -233,15 +212,6 @@ test_that("samples_combination", {
   expect_equal(length(unique(x$factor)), 2 + 1)
 })
 
-
-test_that("plotstudyDesignTest", {
-  generate_96() |>
-    add_samples(1:5, dose = 100, sex = "M", time = 1:5 * 30) |>
-    add_samples(6:10, dose = 200, sex = "F", time = 1:5 * 30) |>
-    add_samples(11:15, dose = 200, sex = "M", time = 1:5 * 30) |>
-    add_samples(16:18, dose = 200, sex = "F", time = 1:3 * 30) |>
-    study_chart_2()
-})
 
 test_that("plotPlateDesignTest", {
   generate_96() |>

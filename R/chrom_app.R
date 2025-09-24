@@ -251,6 +251,7 @@ chromapp_server <- function(input, output, session, original_dat) {
   peaksobj <- reactiveVal(original_dat)
   samples_df <- reactiveVal(get_sample_names(original_dat))
 
+
   current_trans_id <- reactiveVal(1) # transition i
 
   # sync filter compd_id with current selected transition
@@ -374,7 +375,7 @@ chromapp_server <- function(input, output, session, original_dat) {
         height = "100px",
         # actionButton("save_cmpd", "Save Compound"),
         # actionButton("remove_cmpd", "Remove Compound"),
-        actionButton("update_cmpd", "Update Compound"),
+        actionButton("update_cmpd", "How to Update Compound Information?"),
         actionButton("check_cmpd_db_btn", "Check Compound Consistency")
       )
     )

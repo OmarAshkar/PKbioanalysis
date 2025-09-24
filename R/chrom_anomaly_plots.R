@@ -39,7 +39,7 @@ plot_RT.ChromRes <- function(chrom_res) {
   # df: area vs filename vs compound
   res <- ggplot2::ggplot(
     dat,
-    aes(y = sample_id, x = observed_rt, color = type)
+    aes(y = .data$sample_id, x = .data$observed_rt, color = .data$type)
   ) +
     ggiraph::geom_point_interactive(
       aes(tooltip = split_id, data_id = split_id),

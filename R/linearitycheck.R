@@ -175,7 +175,8 @@ setMethod(
 setMethod(
   "run_linearity",
   signature(quantres = "list"),
-  function(quantres, compound_id) {
+  function(quantres, compound_id, weight = "1/x^2", model = "linear",
+          intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
     run_linearity_list(
       quantres,
       compound_id,

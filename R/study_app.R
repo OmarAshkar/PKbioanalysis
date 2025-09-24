@@ -11,6 +11,11 @@ clean_rht_to_df <- function(mylist) {
   cleaned
 }
 
+
+remove_old_ui <- function() {
+  removeUI(selector = "#dynamic_ui", immediate = TRUE)
+}
+
 ui <- bslib::page_navbar(
   title = "Study Management",
   shinyjs::useShinyjs(),
@@ -21,7 +26,11 @@ ui <- bslib::page_navbar(
       sidebar = bslib::sidebar(
         width = 600,
         actionButton("create_new_study_btn", "Create New Study"),
-        reactable::reactableOutput("studies_db_RT")
+        reactable::reactableOutput("studies_db_RT"),
+        # divider
+        tags$hr(),
+        h4("Predefined Designs"),
+        actionButton("metabolic_study_gen_btn", "Metabolic Study")
       ),
       bslib::navset_card_pill(
         nav_panel(
@@ -48,10 +57,14 @@ ui <- bslib::page_navbar(
         ),
         nav_panel(
           "Study Chart",
-          DiagrammeR::grVizOutput(
-            "study_chart_plot",
-            width = "100%",
-            height = "100%"
+          card(
+            full_screen = TRUE,
+            card_header("Study Chart"),
+            DiagrammeR::grVizOutput(
+              "study_chart_plot",
+              width = "100%",
+              height = "100%"
+            )
           )
         ),
         nav_panel(
@@ -211,7 +224,7 @@ ui <- bslib::page_navbar(
               selectInput(
                 "dropdown_naming_samples_input",
                 "Naming Style",
-                choices = 1
+                choices = c(1, 2)
               ),
               selectizeInput(
                 "samplesdb_group_input",
@@ -637,7 +650,7 @@ study_app_server <- function(input, output, session) {
       textInput("new_study_title", "Study Title", value = ""),
       textInput("new_study_descr", "Description", value = ""),
       selectInput("new_study_type", "Type", choices = c("SD", "MD", "FA")),
-      bslib::input_switch("new_study_pkstudy", "PK Study", value = TRUE),
+      bslib::input_switch("new_study_pkstudy", "PK Study", value = FALSE),
       actionButton("create_study_btn", "Create")
     ))
   })
@@ -731,7 +744,7 @@ study_app_server <- function(input, output, session) {
       rhandsontable::hot_col(
         col = 9,
         type = "dropdown",
-        source = c("IV", "PO", "SC", "IP", "IM")
+        source = c("IV", "PO", "SC", "IP", "IM", "SL")
       ) |>
       rhandsontable::hot_col(col = 10, type = "text")
   })
@@ -861,7 +874,16 @@ study_app_server <- function(input, output, session) {
       rhandsontable::hot_col(
         col = 7,
         type = "dropdown",
-        source = c("plasma", "tissue", "CSF")
+        source = c(
+          "Plasma",
+          'Serum',
+          'Whole Blood',
+          'Urine',
+          'Depot',
+          'CSF',
+          'Tissue',
+          'Other'
+        )
       ) |>
       rhandsontable::hot_col(col = 8, type = "text") # notes
   })
@@ -904,6 +926,80 @@ study_app_server <- function(input, output, session) {
     currSubjectTable()
     curr_dosing_db()
     plot_study_design(currStudyid())
+  })
+
+  #######################################################################################################
+  ##### Predefined Study Design#####
+  observeEvent(input$metabolic_study_gen_btn, {
+    showModal(modalDialog(
+      title = "Generate Metabolic Study",
+      textInput(
+        "metabolic_study_title",
+        "Study Title",
+        value = "Metabolic Study"
+      ),
+      textInput(
+        "metabolic_study_cmpds_input",
+        "Compounds (comma separated)",
+        value = "Cmpd1, Cmpd2"
+      ),
+      textInput(
+        "metabolic_study_timepoints_input",
+        "Time Points (comma separated)",
+        value = "0,0.5,1,2,4,8,12,24"
+      ),
+      textInput("metabolic_study_dose", "Dose (e.g. 10)", value = "10"),
+      numericInput(
+        "n_NAD_input",
+        "Number of NAD subjects",
+        value = 3,
+        min = 0,
+        step = 1
+      ),
+      numericInput(
+        "n_nonNAD_input",
+        "Number of non-NAD subjects",
+        value = 3,
+        min = 0,
+        step = 1
+      ),
+      actionButton("generate_metabolic_study_final_btn", "Generate Study")
+    ))
+  })
+
+  observeEvent(input$generate_metabolic_study_final_btn, {
+    tryCatch(
+      {
+        progress <- shiny::Progress$new()
+        on.exit(progress$close())
+        make_metabolic_study(
+          study = input$metabolic_study_title,
+          cmpds = trimws(unlist(strsplit(
+            input$metabolic_study_cmpds_input,
+            ","
+          ))),
+          time_points = trimws(unlist(strsplit(
+            input$metabolic_study_timepoints_input,
+            ","
+          ))),
+          dose = input$metabolic_study_dose,
+          n_NAD = input$n_NAD_input,
+          n_noNAD = input$n_nonNAD_input
+        )
+        showNotification(
+          "Metabolic study generated successfully!",
+          type = "message"
+        )
+        all_studies_db(list_all_studies())
+        removeModal()
+      },
+      error = function(e) {
+        showNotification(
+          paste("Error generating metabolic study:", e$message),
+          type = "error"
+        )
+      }
+    )
   })
 
   #################################################################################################################
@@ -2479,10 +2575,6 @@ study_app <- function() {
 
   grep_input <- function(pattern, x) {
     x |> names() |> grep(pattern = pattern, value = TRUE) |> sapply(\(y) x[[y]])
-  }
-
-  remove_old_ui <- function() {
-    removeUI(selector = "#dynamic_ui", immediate = TRUE)
   }
 
   # module_compounds <- function(id, number){

@@ -2,6 +2,7 @@
 PlateObj <- function(
   m,
   df,
+  samples_metadata = data.frame(),
   plate_id,
   empty_rows = NULL,
   filling_scheme,
@@ -43,6 +44,7 @@ PlateObj <- function(
     "PlateObj",
     plate = m,
     df = df,
+    samples_metadata = samples_metadata,
     empty_rows = empty_rows,
     filling_scheme = filling_scheme,
     last_filled = last_filled,
@@ -558,7 +560,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   stopifnot(length(dil) == length(logIds))
 
   samplesdf <- retrieve_full_log_by_id(logIds) |>
-    dplyr::mutate(nominal_time = paste0("T", .data$nominal_time)) |>
+    dplyr::mutate(nominal_time = ifelse(!is.na(.data$nominal_time), paste0("T", .data$nominal_time), .data$nominal_time)) |>
     dplyr::mutate(
       dose_amount = ifelse(
         !is.na(.data$dose_amount),
@@ -575,22 +577,33 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
 
   if (namestyle == 1) {
     order <- c(
-      "subject_id",
-      "nominal_time",
-      "sex",
-      "sample_type",
+      "title",
       "arm_id",
+      "subject_id",
+      "sex",
+      "nominal_time",
+      "sample_type",
       "dose_amount",
       "dose_freq",
       "route",
       "formulation",
       "dilStr"
     )
-
-    values <- apply(samplesdf[, order], 1, function(row) {
-      paste(na.omit(row), collapse = "_")
-    })
+  } else if (namestyle == 2) {
+    order <- c(
+      "title",
+      "subject_id",
+      "nominal_time",
+      "dose_amount",
+      "dilStr"
+    )
+  } else {
+    stop("namestyle must be either 1 or 2")
   }
+  
+  values <- apply(samplesdf[, order], 1, function(row) {
+    paste(na.omit(row), collapse = "_")
+  })
   stopifnot(length(values) == nrow(samplesdf))
 
   empty_spots <- .spot_mask(plateobj)
@@ -1448,106 +1461,6 @@ plot.PlateObj <- function(
 #   NULL
 # }
 
-#' Create a metabolic study layout
-#' @param cmpds vector of compounds, including any standards
-#' @param time_points vector of time points
-#' @param n_NAD number of NAD positive samples. Default is 3
-#' @param n_noNAD number of NAD negative samples. Default is 2
-#'
-#' @details Note that this function does not require plate object. It will create a plate object automatically and return MultiPlate object
-#' @returns MultiPlate object
-#' @export
-make_metabolic_study <- function(
-  cmpds,
-  time_points = c(0, 5, 10, 15, 30, 45, 60, 75, 90, 120),
-  n_NAD = 3,
-  n_noNAD = 2
-) {
-  checkmate::assertVector(cmpds)
-  checkmate::assertVector(time_points)
-  checkmate::assertNumeric(n_NAD)
-  checkmate::assertNumeric(n_noNAD)
-
-  time_points <- rep(time_points, n_NAD)
-  # Create a data frame with all combinations of cmpd and time_points
-
-  df <- expand.grid(cmpd = cmpds, time_points = time_points, factor = "NAD") |>
-    dplyr::arrange(.data$time_points, .data$cmpd)
-
-  time_points <- rep(time_points, n_noNAD)
-  df2 <- expand.grid(
-    cmpd = cmpds,
-    time_points = time_points,
-    factor = "noNAD"
-  ) |>
-    arrange(.data$time_points, .data$cmpd)
-
-  df <- rbind(df, df2)
-
-  n_plates <- ceiling(nrow(df) / 96)
-
-  plates_ids <- .compile_cached_plates()
-
-  plates_ids <- str_split(plates_ids, "_") |>
-    sapply(function(x) x |> _[1]) |> # get plate_id, ignore exp id
-    as.numeric() |>
-    {
-      \(x) max(x)
-    }()
-
-  plates_ids <- plates_ids + c(1:n_plates)
-
-  plate <- lapply(1:n_plates, function(x) {
-    curr_plate <- generate_96()
-    if (x == 1) {
-      # first plate
-      vec <- 1:96
-      curr_plate <- add_samples(
-        curr_plate,
-        time = df$time_points[vec],
-        samples = df$cmpd[vec],
-        prefix = "",
-        factor = as.character(df$factor[vec])
-      )
-    } else if (x == n_plates) {
-      # last plate
-      y <- x - 1
-      vec <- (y * 96 + 1):nrow(df)
-      current_df <- df[vec, ]
-
-      stopifnot(nrow(current_df) <= 96)
-
-      curr_plate <- add_samples(
-        curr_plate,
-        time = current_df$time_points,
-        samples = current_df$cmpd,
-        prefix = "",
-        factor = as.character(current_df$factor)
-      )
-      curr_plate@plate_id <- paste0(plates_ids[x], "_1")
-    } else {
-      y <- x - 1
-      vec <- (y * 96 + 1):(y * 96 + 96)
-      current_df <- df[vec, ]
-
-      stopifnot(nrow(current_df) == 96)
-
-      curr_plate <- add_samples(
-        curr_plate,
-        time = current_df$time_points,
-        samples = current_df$cmpd,
-        prefix = "",
-        factor = as.character(current_df$factor)
-      )
-      curr_plate@plate_id <- paste0(plates_ids[x], "_1")
-    }
-    curr_plate
-  })
-
-  plate <- new("MultiPlate", plates = plate)
-
-  plate
-}
 
 
 #' Print PlateObj
@@ -1897,32 +1810,6 @@ fill_scheme <- function(
   empty_spots
 }
 
-
-study_chart_2 <- function(plate) {
-  df <- plate@df
-
-  df <- df |>
-    summarize(
-      time_n = n(),
-      .by = c(sex, factor, dose, II, addl, route, cmt, samples)
-    )
-
-  df$pathString <- paste5(
-    df$sex,
-    df$factor,
-    paste(df$dose, df$dose_unit),
-    df$II,
-    df$addl,
-    df$route,
-    df$cmt,
-    df$time_n,
-    sep = "/",
-    na.rm = TRUE
-  )
-
-  tree <- data.tree::as.Node(df, na.rm = TRUE)
-  tree
-}
 
 
 # copied from https://stackoverflow.com/questions/43803949/create-and-print-a-product-hierarchy-tree-without-na-from-data-frame-in-r-with

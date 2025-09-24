@@ -120,13 +120,15 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
     chrom_res = chrom_res,
     transition = transition_id,
     samples_ids = samples_ids,
-    peak_start = unique(min_bound),
-    peak_end = unique(max_bound),
+    peak_start = min_bound,
+    peak_end = max_bound,
     smoothed = smoothed
   )
 
   checkmate::assertDataFrame(filtered_peaks, min.rows = 1, ncols = 3)
   checkmate::assertNames(colnames(filtered_peaks), must.include = c("RT", paste0("T", transition_id), "sample_id"))
+  stopifnot(all(sort(unique(filtered_peaks$sample_id))  == sort(samples_ids)))
+
 
   # group intesities by sample_id and compound_id, then integerate
   # here I need to join to be able to find the peakstart and end at peaktab
@@ -455,7 +457,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 #' @param peak_end Maximum RT value. If NULL, all RT values will be used
 #' @param smoothed Logical. If TRUE, use smoothed chromatogram. Default is FALSE
 #' @return Dataframe with RT, intensity and sample_id
-#' @noRd
+#' @keywords internal
 .filter_peak <- function(
   chrom_res,
   transition_id,
@@ -465,8 +467,8 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   smoothed = FALSE
 ) {
   checkmate::assertClass(chrom_res, "ChromRes")
-  checkmate::assertNumber(peak_start, lower = 0, null.ok = FALSE)
-  checkmate::assertNumber(peak_end, lower = peak_start, null.ok = TRUE)
+  checkmate::assertNumeric(peak_start, lower = 0, null.ok = FALSE)
+  checkmate::assertNumeric(peak_end, lower = min(peak_start), null.ok = TRUE)
   transition_id <- .transition_string_handler(transition_id)
   samples_ids <- sample_ids_handler(samples_ids, chrom_res)
 
@@ -487,9 +489,11 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   if(is.null(peak_end)){
     peak_end <- max(intensities$RT)
   }
-
+  # ensure vectorization
   intensities <- intensities |>
-    dplyr::filter(RT >= peak_start & RT <= peak_end)
+    dplyr::left_join(data.frame(sample_id = samples_ids, peak_start = peak_start, peak_end = peak_end), by = "sample_id") |>
+    dplyr::filter(RT >= .data$peak_start & RT <= .data$peak_end) |> 
+    dplyr::select(-c("peak_start", "peak_end"))
 
   if (!(transition_id %in% colnames(intensities))) {
     stop(

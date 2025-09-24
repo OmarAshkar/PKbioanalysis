@@ -656,3 +656,102 @@ print.ChromRes <- function(x) {
 
   return(invisible(x))
 }
+
+
+#' @title Check if peak has been integrated
+#' @description This function checks if the peak has been integrated for a specific compound.
+#' @param chrom_res ChromRes object
+#' @param sample_id Sample ID. If NULL, all samples are checked
+#' @param compound_id Compound ID
+#' @return logical
+#' @export
+#' @examples
+#' \dontrun{
+#' lapply(1:10, \(x) is_integrated(chrom_res, sample_id = 1, compound_id = 1))
+#' }
+setGeneric("is_integrated", function(chrom_res, compound_id, sample_id = NULL) {
+  standardGeneric("is_integrated")
+})
+
+setMethod(
+  "is_integrated",
+  signature(chrom_res = "ChromRes"),
+  function(chrom_res, compound_id, sample_id = NULL) {
+    is_integrated_chrom_res(chrom_res, compound_id, sample_id)
+  }
+)
+
+setMethod(
+  "is_integrated",
+  signature(chrom_res = "ChromResBase"),
+  function(chrom_res, compound_id, sample_id = NULL) {
+    is_integrated_chrom_base(chrom_res)
+  }
+)
+
+#' @title check if peak is integrated before
+#' @param chrom_res ChromRes object
+#' @param sample_id Sample ID. If NULL, all samples are checked
+#' @param compound_id Compound ID
+#' @return logical
+#' @noRd
+is_integrated_chrom_res <- function(chrom_res, compound_id, sample_id = NULL) {
+  checkmate::assertNumber(sample_id, lower = 1, null.ok = TRUE)
+  checkmate::assertCount(compound_id, positive = TRUE)
+  # compound_id <- .cmpds_string_handler(compound_id)
+
+  peaktab <- chrom_res@peaks
+
+  if (is.null(sample_id)) {
+    sample_id <- chrom_res@metadata$sample_id
+  }
+
+  compound_id_filter <- compound_id
+  sample_id_filter <- sample_id
+
+  if (nrow(peaktab) == 0) {
+    stop("No compounds found")
+  }
+  # if(!(sample_id %in% unique(peaktab$sample_id))){
+  #     stop("Sample ID not found in peaks. Please run update_RT() first or update_compound() ")
+  # } else {
+  res <- peaktab |>
+    dplyr::filter(
+      .data$sample_id == sample_id_filter &
+        .data$compound_id == compound_id_filter
+    ) |>
+    dplyr::select(
+      observed_rt,
+      observed_peak_height,
+      observed_peak_start,
+      observed_peak_end,
+      area
+    )
+
+  #}
+  if (nrow(res) == 0) {
+    stop(
+      "No peaks found for the specified sample and compound. Please run update_RT() first"
+    )
+  }
+
+  res <- complete.cases(res)
+  all(res)
+}
+
+is_integrated_chrom_base <- function(chrom_res) {
+  TRUE
+}
+
+
+#' @title Get vial positions
+#' @param x ChromRes or QuantRes object
+#' @noRd
+#' @author Omar Elashkar
+setGeneric("get_vials", function(x) standardGeneric("get_vials"))
+
+get_vials.ChromRes <- function(x) {
+  x@metadata |>
+    dplyr::pull("vialpos")
+}
+setMethod("get_vials", signature(x = "ChromRes"), get_vials.ChromRes)

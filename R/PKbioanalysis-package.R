@@ -154,6 +154,7 @@
 #' @importFrom shiny updateSelectizeInput
 #' @importFrom shiny updateTabsetPanel
 #' @importFrom shiny verbatimTextOutput
+#' @importFrom shiny wellPanel
 #' @importFrom shiny withProgress
 #' @importFrom shinyalert shinyalert
 #' @importFrom shinyjs disable

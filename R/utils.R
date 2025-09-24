@@ -1,3 +1,8 @@
+empty_string_to_na <- function(df) {
+  df[df == ""] <- NA
+  df
+}
+
 get_pkbioanalysis_option <- function(name) {
   # getOption(paste0("PKbioanalysis.", name))
   PKbioanalysis_env[[name]]
@@ -305,8 +310,9 @@ studydesign_db <- function(con) {
     subject_id          TEXT PRIMARY KEY,
     study_id            TEXT REFERENCES study(id),
     group_label         TEXT NOT NULL, -- soft key not enforced
-    sex                 TEXT CHECK (sex IN ('M', 'F', 'NA')),
-    age                 INTEGER,
+    sex                 TEXT CHECK (sex IN ('M', 'F')) DEFAULT NULL,
+    age                 INTEGER CHECK (age >= 0) DEFAULT NULL,
+    extra_factors       TEXT DEFAULT NULL,
     UNIQUE(subject_id, study_id)
   );
   "
@@ -326,7 +332,7 @@ studydesign_db <- function(con) {
     dose_addl      INTEGER,
     dose_amount    REAL,
     dose_unit      TEXT CHECK (dose_unit IN ('g', 'mg', 'ug', 'NA')),
-    route          TEXT CHECK (route IN ('PO', 'IV', 'SC', 'IM', 'IP', 'NA')),
+    route          TEXT CHECK (route IN ('PO', 'IV', 'SC', 'IM', 'IP', 'SL', 'NA')),
     formulation    TEXT, 
     UNIQUE(group_label, arm_id, study_id)
   );
@@ -343,8 +349,8 @@ studydesign_db <- function(con) {
     study_id     TEXT NOT NULL REFERENCES study(id),
     nominal_time  TEXT, -- in hours
     actual_time  TEXT, -- in hours
-    status       TEXT CHECK (status IN ('Collected', 'Processed')),
-    sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Other')),
+    status       TEXT CHECK (status IN ('Planned', 'Collected', 'Processed')),
+    sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Depot', 'CSF', 'Tissue', 'Other')),
     notes         TEXT
   );
   "

@@ -477,7 +477,7 @@ retrieve_full_log_by_id <- function(log_ids) {
 plot_study_design <- function(study_id, plot = TRUE) {
   df <- retrieve_full_study_log(study_id)
   df$pathString <- paste5(
-    df$study_id,
+    paste0(get_study_name(study_id), " (", substr(df$study_id, 1, 4), ")"),
     df$group_label,
     paste("dose:", df$dose_amount),
     paste("route:", df$route),
@@ -513,4 +513,179 @@ plot_study_design <- function(study_id, plot = TRUE) {
   } else {
     tree
   }
+}
+
+get_study_name <- function(study_id) {
+  study <- retrieve_study(study_id)
+  study$title
+}
+
+
+#' Create a metabolic study layout
+#' @param cmpds vector of compounds, including any standards
+#' @param time_points vector of time points
+#' @param n_NAD number of NAD positive samples. Default is 3
+#' @param n_noNAD number of NAD negative samples. Default is 2
+#'
+#' @details Note that this function does not require plate object. It will create a plate object automatically and return MultiPlate object
+#' @returns MultiPlate object
+#' @export
+make_metabolic_study <- function(
+  study = "Metabolic Study",
+  cmpds,
+  time_points = c(0, 5, 10, 15, 30, 45, 60, 75, 90, 120),
+  dose = NA,
+  n_NAD = 3,
+  n_noNAD = 2
+) {
+  checkmate::assertVector(cmpds)
+  checkmate::assertVector(time_points)
+  checkmate::assertNumeric(n_NAD)
+  checkmate::assertNumeric(n_noNAD)
+
+  # Generate unique subject IDs across all compounds and factors
+  total_subjects <- n_NAD + n_noNAD
+  subject_ids <- seq_len(total_subjects * length(cmpds))
+  df_list <- lapply(seq_along(cmpds), function(i) {
+    cmpd <- cmpds[i]
+    nad_subjects <- subject_ids[seq((i - 1) * total_subjects + 1, length.out = n_NAD)]
+    nonad_subjects <- subject_ids[seq((i - 1) * total_subjects + n_NAD + 1, length.out = n_noNAD)]
+    # NAD samples 
+    nad_df <- expand.grid(
+      cmpd = cmpd,
+      time_points = time_points,
+      factor = "NAD",
+      subjects = nad_subjects
+    )
+    # noNAD samples
+    nonad_df <- expand.grid(
+      cmpd = cmpd,
+      time_points = time_points,
+      factor = "noNAD",
+      subjects = nonad_subjects
+    )
+    rbind(nad_df, nonad_df)
+  })
+  df <- do.call(rbind, df_list)
+  df <- dplyr::arrange(df, .data$cmpd, .data$factor, .data$subjects, .data$time_points)
+
+
+  # n_plates <- ceiling(nrow(df) / 96)
+  # plates_ids <- .compile_cached_plates()
+  # plates_ids <- str_split(plates_ids, "_") |>
+  #   sapply(function(x) x |> _[1]) |> # get plate_id, ignore exp id
+  #   as.numeric() |>
+  #   {
+  #     \(x) max(x)
+  #   }()
+
+  # plates_ids <- plates_ids + c(1:n_plates)
+
+  # plate <- lapply(1:n_plates, function(x) {
+  #   curr_plate <- generate_96()
+  #   if (x == 1) {
+  #     # first plate
+  #     vec <- 1:96
+  #     curr_plate <- add_samples(
+  #       curr_plate,
+  #       time = df$time_points[vec],
+  #       samples = df$cmpd[vec],
+  #       prefix = "",
+  #       factor = as.character(df$factor[vec])
+  #     )
+  #   } else if (x == n_plates) {
+  #     # last plate
+  #     y <- x - 1
+  #     vec <- (y * 96 + 1):nrow(df)
+  #     current_df <- df[vec, ]
+
+  #     stopifnot(nrow(current_df) <= 96)
+
+  #     curr_plate <- add_samples(
+  #       curr_plate,
+  #       time = current_df$time_points,
+  #       samples = current_df$cmpd,
+  #       prefix = "",
+  #       factor = as.character(current_df$factor)
+  #     )
+  #     curr_plate@plate_id <- paste0(plates_ids[x], "_1")
+  #   } else {
+  #     y <- x - 1
+  #     vec <- (y * 96 + 1):(y * 96 + 96)
+  #     current_df <- df[vec, ]
+
+  #     stopifnot(nrow(current_df) == 96)
+
+  #     curr_plate <- add_samples(
+  #       curr_plate,
+  #       time = current_df$time_points,
+  #       samples = current_df$cmpd,
+  #       prefix = "",
+  #       factor = as.character(current_df$factor)
+  #     )
+  #     curr_plate@plate_id <- paste0(plates_ids[x], "_1")
+  #   }
+  #   curr_plate
+  # })
+
+  # plate <- new("MultiPlate", plates = plate)
+  # plate
+
+  newstudy  <- create_new_study(
+    data.frame(
+      type = "SD",
+      title = study,
+      description = paste("Metabolic study with", length(cmpds), "compounds"),
+      pkstudy = FALSE
+    )
+  )
+  cli::cli_alert_info("Created study with ID: {newstudy$id}")
+  cli::cli_alert_info("Adding dosing and subjects information...")
+
+
+  add_dosing_db( 
+    study_id = newstudy$id,
+    df = data.frame(
+      group_label = unique(df$cmpd),
+      period_number = 1,
+      dose_freq = NA_real_,
+      dose_addl = NA_integer_,
+      dose_amount = dose,
+      dose_unit = NA_character_,
+      route = NA_character_,
+      formulation = NA_character_
+    )
+  )
+  cli::cli_alert_success("Dosing information added.")
+
+  cli::cli_alert_info("Adding subjects information...")
+
+  subjectsdf <- df |> dplyr::select(-"time_points") |> 
+    dplyr::distinct()
+  stopifnot(length(unique(subjectsdf$subjects)) == total_subjects * length(cmpds))
+
+  add_subjects_db(
+    study_id = newstudy$id,
+    df = data.frame(
+      subject_id = subjectsdf$subjects, 
+      study_id = newstudy$id,
+      group_label = subjectsdf$cmpd,
+      sex  = NA_character_,
+      age = NA_integer_,
+      extra_factors = subjectsdf$factor
+  ))
+  cli::cli_alert_success("Subjects information added.")
+  cli::cli_alert_info("Adding sample log information...")
+
+  add_sample_log(
+    study_id = newstudy$id,
+    df = data.frame(
+      subject_id = df$subjects,
+      nominal_time = as.character(df$time_points),
+      status = "Planned"
+    )
+  )
+  cli::cli_alert_success("Sample log information added.")
+  newstudy
+
 }

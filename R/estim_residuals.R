@@ -128,7 +128,7 @@ formated_print <- function(x, digits = 3) {
     ) |>
     gt::fmt_number(columns = everything(), decimals = 3) |>
     gt::fmt_percent(
-      columns = c(est, lwr, upr),
+      columns = c("est", "lwr", "upr"),
       rows = term == "Proportional",
       decimals = 2
     ) |>

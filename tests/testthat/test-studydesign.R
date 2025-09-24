@@ -206,3 +206,20 @@ test_that("check if study is pk study", {
 
   expect_false(is_pk_study(new_study$id))
 })
+
+
+test_that("invitro metabolic study", {
+  cmpds <- c("C1", "C2", "C3")
+  time_points <- c(0, 5, 10, 15, 30, 45, 60, 75, 90, 120)
+
+  newstudy <- make_metabolic_study(
+    study = "In Vitro Metabolic Study",
+    cmpds = cmpds,
+    time_points = time_points,
+    dose = 100, 
+    n_NAD = 3,
+    n_noNAD = 2
+  ) |> expect_no_error()
+
+  plot_study_design(newstudy$id) |> expect_no_error()
+})
