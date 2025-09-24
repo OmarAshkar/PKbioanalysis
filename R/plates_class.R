@@ -13,6 +13,7 @@ setClass(
   slots = list(
     plate = "matrix",
     df = "data.frame",
+    samples_metadata = "data.frame",
     empty_rows = "character",
     filling_scheme = "list",
     last_filled = "character",

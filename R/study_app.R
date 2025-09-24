@@ -26,6 +26,7 @@ ui <- bslib::page_navbar(
       sidebar = bslib::sidebar(
         width = 600,
         actionButton("create_new_study_btn", "Create New Study"),
+        ai_chat_module_ui(id = "study_ai", title = "Study Design Assistant"),
         reactable::reactableOutput("studies_db_RT"),
         # divider
         tags$hr(),
@@ -60,10 +61,18 @@ ui <- bslib::page_navbar(
           card(
             full_screen = TRUE,
             card_header("Study Chart"),
-            DiagrammeR::grVizOutput(
-              "study_chart_plot",
-              width = "100%",
-              height = "100%"
+            div(
+              DiagrammeR::grVizOutput(
+                "study_chart_plot",
+                width = "100%",
+                height = "100%"
+              ),
+              tags$script(shiny::HTML('panzoom($(".grViz").get(0))')),
+              shinyWidgets::actionGroupButtons(
+                inputIds = c("zoomout", "zoomin", "reset"),
+                labels = list(icon("minus"), icon("plus"), "Reset"),
+                status = "primary"
+              )
             )
           )
         ),
@@ -173,13 +182,16 @@ ui <- bslib::page_navbar(
                       "Color By",
                       choices = c(
                         "conc",
-                        "factor",
-                        "dose",
-                        "time",
-                        "samples",
                         "group",
+                        "study",
+                        "time",
+                        "factor",
+                        "samples",
+                        "arm",
+                        "sex",
                         "dose",
-                        "route"
+                        "route",
+                        "matrix"
                       )
                     ),
                     selectInput(
@@ -238,9 +250,11 @@ ui <- bslib::page_navbar(
         ),
         div(
           style = "margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;",
+          ai_chat_module_ui(id = "plate_ai", title = "Plate Design Assistant"),
           actionButton("undo_plate_design_btn", "Undo"),
           actionButton("save_plate_design_btn", "Save"),
           actionButton("new_plate_design_btn", "New")
+
         )
       )
     )
@@ -476,6 +490,7 @@ ui <- bslib::page_navbar(
                     textOutput("min_vol")
                   ),
                   column(width = 8, DT::DTOutput("sample_list_summary")),
+                  ai_chat_module_ui(id = "injeclist_ai", title = "Injection List Assistant")
                 )
               ),
               bslib::nav_panel(
@@ -693,6 +708,14 @@ study_app_server <- function(input, output, session) {
       )
     )
   })
+
+
+  ai_chat_module_server(
+    id = "study_ai",
+    chatfunc = chatfunc,
+    response_function = studydesign_ai,
+    response_args = reactive({ list(currStudyid()) })  # extra args for reponder 
+  )
 
   currStudyid <- reactiveVal(NULL)
   observeEvent(reactable::getReactableState("studies_db_RT", "selected"), {
@@ -970,7 +993,12 @@ study_app_server <- function(input, output, session) {
   observeEvent(input$generate_metabolic_study_final_btn, {
     tryCatch(
       {
-        progress <- shiny::Progress$new()
+        progress <- shiny::Progress$new(
+          session,
+          min = 0,
+          max = 1
+        )
+        progress$set(message = "Generating metabolic study...", value = 0)
         on.exit(progress$close())
         make_metabolic_study(
           study = input$metabolic_study_title,
@@ -990,6 +1018,7 @@ study_app_server <- function(input, output, session) {
           "Metabolic study generated successfully!",
           type = "message"
         )
+        progress$set(value = 1)
         all_studies_db(list_all_studies())
         removeModal()
       },
@@ -1622,6 +1651,13 @@ study_app_server <- function(input, output, session) {
     )
   })
 
+  ai_chat_module_server(
+    id = "plate_ai",
+    chatfunc = chatfunc,
+    response_function = plate_ai,
+    response_args = reactive({ list(curr_gen_plate_starter()) })  # extra args for reponder 
+  )
+
   #################################################################################################################
   ###### plate Database ######
 
@@ -2157,6 +2193,13 @@ study_app_server <- function(input, output, session) {
       NULL
     }
   })
+
+  ai_chat_module_server(
+    id = "injeclist_ai",
+    chatfunc = chatfunc,
+    response_function = injeclist_ai,
+    response_args = reactive({ list(current_injec_seq()$injec_list) })  # extra args for reponder 
+  )
   ###############################################################################################
   ### Dilutions
   current_dil_df <- reactiveVal(NULL)

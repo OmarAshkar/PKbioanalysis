@@ -478,12 +478,13 @@ plot_study_design <- function(study_id, plot = TRUE) {
   df <- retrieve_full_study_log(study_id)
   df$pathString <- paste5(
     paste0(get_study_name(study_id), " (", substr(df$study_id, 1, 4), ")"),
-    df$group_label,
+    paste("arm:", df$group_label),
+    paste("sex:", df$sex),
+    paste("extra_factors:", df$extra_factors), 
     paste("dose:", df$dose_amount),
     paste("route:", df$route),
     paste("formulation:", df$formulation),
     paste("subject_id:", df$subject_id),
-    paste("sex:", df$sex),
     paste("sample_type:", df$sample_type),
     paste("T:", df$nominal_time),
     sep = "/",

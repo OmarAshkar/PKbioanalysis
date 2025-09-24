@@ -892,7 +892,7 @@ quantapp_server <- function(input, output, session) {
         values_from = "abs_response"
       ) |>
       reactable::reactable(
-        selection = "multiple",
+        selection = "single",
         onClick = "select",
         columns = list(
           filename = reactable::colDef(name = "Filename", minWidth = 200),
@@ -912,6 +912,10 @@ quantapp_server <- function(input, output, session) {
         striped = TRUE,
         compact = TRUE
       )
+  })
+
+  observeEvent(input$suitability_table_rows_selected, {
+    selected_row <- input$suitability_table_rows_selected
   })
 
   ## suitability plot and table ####
@@ -951,7 +955,7 @@ quantapp_server <- function(input, output, session) {
           txtoutput <- suitability_ai(quantobj())
         })
 
-        showModal(modalDialog(
+        shiny::showModal(modalDialog(
           title = "AI Suitability Report",
           shiny::markdown(txtoutput),
           easyClose = TRUE,

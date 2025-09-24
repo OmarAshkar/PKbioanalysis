@@ -89,7 +89,7 @@ test_that("rep_stdTest", {
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
     add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q") |>
-    plot(layoutOverlay = TRUE) |> 
+    plot(layoutOverlay = TRUE) |>
     expect_no_error()
 })
 
@@ -150,7 +150,8 @@ test_that("fill_verticalTest", {
 test_that("spot_maskTest", {
   generate_96() |>
     fill_scheme(fill = "v", tbound = "D", bbound = "E") |>
-    .spot_mask() |> expect_no_error()
+    .spot_mask() |>
+    expect_no_error()
 })
 
 

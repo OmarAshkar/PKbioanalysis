@@ -181,11 +181,6 @@ test_that("nonpkstudy test", {
   retrieve_full_log_by_id(df$log_id)
 })
 
-test_that("plotStudyDesign", {
-  plot_study_design(new_study$id)
-  stop("not ready")
-})
-
 
 test_that("check if study is pk study", {
   new_study <- create_new_study(data.frame(

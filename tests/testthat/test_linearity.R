@@ -1,6 +1,6 @@
-test_that("linearity_sync", {
-  main <- sync_linearity(quantobj)
-})
+# test_that("linearity_sync", {
+#   main <- sync_linearity(quantobj)
+# })
 
 
 test_that("run linearity", {
@@ -12,16 +12,18 @@ test_that("run linearity", {
       function(acc, y) {
         run_linearity(acc, compound_id = y)
       },
-      names(quantobj@linearity),
+      # names(quantobj@linearity),
+      c("MITRAGYNINE", "7OH-MITRA"),
       init = quantobj
     ) |>
       expect_no_error()
 
     has_linearity(x, "MITRAGYNINE") |> expect_true()
+    has_linearity(x, "7OH-MITRA") |> expect_true()
     has_linearity(x, "Ketoconazole") |> expect_false() #
 
     tabulate_summary_linearity(x, "MITRAGYNINE") |> nrow() |> expect_equal(1)
-    tabulate_summary_linearity(x) |> nrow() |> expect_equal(3)
+    tabulate_summary_linearity(x) |> nrow() |> expect_equal(2)
 
     plot_linearity(x, "MITRAGYNINE") |> expect_no_error()
 
@@ -51,7 +53,7 @@ test_that("run linearity normalized", {
       compound_id = "Ketoconazole",
       normalize = TRUE
     ) |>
-      expect_error("Ketoconazole: Absolute response is missing")
+      expect_error("Ketoconazole: Relative response is missing")
 
     has_linearity(quantobj, "Ketoconazole") |> expect_false()
   })

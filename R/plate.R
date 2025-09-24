@@ -133,10 +133,11 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 
   # .plate(m, df, plate_id, empty_rows, descr = descr)
   PlateObj(
-    m,
-    df,
-    plate_id,
-    empty_rows,
+    m = m,
+    df = df,
+    samples_metadata = data.frame(), 
+    plate_id = plate_id,
+    empty_rows = empty_rows,
     descr = descr,
     filling_scheme = list(
       scheme = "h",
@@ -578,9 +579,10 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   if (namestyle == 1) {
     order <- c(
       "title",
-      "arm_id",
+      "group_label", # ARM
       "subject_id",
       "sex",
+      "extra_factors",
       "nominal_time",
       "sample_type",
       "dose_amount",
@@ -591,8 +593,10 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
     )
   } else if (namestyle == 2) {
     order <- c(
-      "title",
+      "group_label",
       "subject_id",
+      "sex", 
+      "extra_factors",
       "nominal_time",
       "dose_amount",
       "dilStr"
@@ -632,6 +636,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
 
   plateobj@df <- df
   plateobj@plate <- plate
+  plateobj@samples_metadata <- rbind(plateobj@samples_metadata, samplesdf)
 
   validObject(plateobj)
   plateobj
@@ -1198,7 +1203,7 @@ make_calibration_study <-
 #' Plotting 96 well plate
 #'
 #' @param x PlateObj
-#' @param color character. Coloring variable. Either "conc", "time", "factor", "samples", "dose", "route", "cmt", "sex", "group". Default is "conc"
+#' @param color character. Coloring variable. Choices: "conc", "group", "study", "time", "factor", "samples", "arm", "sex", "dose", "route", "matrix". Default is "conc"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
@@ -1241,14 +1246,16 @@ plot.PlateObj <- function(
     color,
     c(
       "conc",
+      "group",
+      "study",
       "time",
       "factor",
-      "dose",
       "samples",
-      "route",
-      "cmt",
+      "arm",
       "sex",
-      "group"
+      "dose",
+      "route",
+      "matrix"
     )
   )
   checkmate::assertCharacter(Instrument)
@@ -1267,21 +1274,24 @@ plot.PlateObj <- function(
   if (length(samples_on_plate) > 0) {
     plate_df <- left_join(
       plate_df,
-      retrieve_full_log_by_id(samples_on_plate),
+      plate@samples_metadata,
       by = c("log_id", "study_id")
     )
   }
-
   color_actual <- switch(
     color,
     "conc" = "conc",
+    "group" = "a_group",
+
+    "study" = "title",
     "time" = "nominal_time",
-    "factor" = "factor",
+    "factor" = "extra_factors",
     "samples" = "subject_id",
+    "arm" = "group_label",
+    "sex" = "sex",
     "dose" = "dose_amount",
     "route" = "route",
-    "cmt" = "sample_type",
-    "group" = "a_group"
+    "matrix" = "sample_type"
   )
 
   # remove bottle if there
@@ -1526,6 +1536,7 @@ print.PlateObj <- function(x, ...) {
     "RegisteredPlate",
     plate = plate@plate,
     df = plate@df,
+    samples_metadata = plate@samples_metadata,
     plate_id = plate_id,
     empty_rows = plate@empty_rows,
     last_filled = plate@last_filled,

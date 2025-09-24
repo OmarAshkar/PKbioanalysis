@@ -239,10 +239,6 @@ run_linearity_quantres <- function(
   target_df <- quantres@linearity[[compound_id]]$linearitytab |>
     dplyr::filter(.data$include == TRUE & .data$type == "Standard")
 
-  if (all(is.na(target_df$abs_response))) {
-    stop(compound_id, ": Absolute response is missing.")
-  }
-
   # if(!is_integrated(quantres, compound_id= compound_id)){
   #     stop("Compound has not been integrated")
   # }
@@ -253,19 +249,22 @@ run_linearity_quantres <- function(
     stop("No standards available to run linearity")
   }
   if (any(is.na(target_df$stdconc))) {
-    stop("Actual concentration is missing")
+    stop("Nominal concentration is missing")
   }
 
   if (normalize) {
     # use rel_response instead of abs_response
     response <- "rel_response"
     if (all(is.na(target_df$rel_response))) {
-      stop(
+      stop(compound_id,  ": ",
         "Relative response is missing. Ensure there is IS associated with the compound"
       )
     }
   } else {
     response <- "abs_response"
+    if (all(is.na(target_df$abs_response))) {
+      stop(compound_id, ": Absolute response is missing.")
+    }
   }
 
   # check if set_linearity
@@ -297,11 +296,7 @@ run_linearity_quantres <- function(
     quantres <- quantres |>
       group_by(stdconc) |>
       summarise(
-        response = ifelse(
-          normalize,
-          mean(rel_response),
-          mean(abs_response)
-        )
+        response = mean(!!sym(response), na.rm = TRUE)
       )
   }
 
