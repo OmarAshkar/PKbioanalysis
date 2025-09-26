@@ -16,6 +16,208 @@ remove_old_ui <- function() {
   removeUI(selector = "#dynamic_ui", immediate = TRUE)
 }
 
+
+injec_seq_block_protocol_ui <- function(id, number) {
+  ns <- NS(id)
+
+  equi <- fluidRow(
+    column(
+      width = 3,
+      selectizeInput(
+        ns(paste0("equi_vial_prot", number)),
+        "Equi Vial",
+        choices = c("A1")
+      )
+    ),
+    column(
+      width = 3,
+      numericInput(ns(paste0("equi_n_prot", number)), "Equi N", value = 5)
+    ),
+    column(
+      width = 3,
+      numericInput(
+        ns(paste0("equi_vol_prot", number)),
+        "Equi Vol",
+        value = 0.5
+      )
+    )
+  )
+
+  bslib::accordion_panel(
+    title = paste0("Protocol ", number),
+    value = paste0("protocol_", number),
+    if (number == 1) NULL else equi,
+    selectInput(
+      ns(paste0("a_group", number)),
+      "Analytical Group",
+      choices = c("A", "B", "C", "D"),
+      multiple = TRUE
+    ) |> bslib::tooltip("Not supported. All groups will be included"),
+    selectInput(
+      ns(paste0("inlet_method_select_prot", number)),
+      "Inlet Method",
+      choices = NA
+    ),
+    numericInput(ns(paste0("exploratory_samples_alg_prot", number)),
+                 "Exploratory Samples", value = 0) |>
+      bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
+    p("Repeats"),
+    fluidRow(
+      column(
+        width = 3,
+        numericInput(
+          ns(paste0("repeat_std_prot", number)),
+          "Standard",
+          value = "1"
+        )
+      ),
+      column(
+        width = 3,
+        numericInput(
+          ns(paste0("repeat_sample_prot", number)),
+          "Sample",
+          value = "1"
+        ) |>
+          bslib::tooltip(
+            "Number of sample injections. Currently working only if there are no QCs"
+          )
+      ),
+      column(
+        width = 3,
+        numericInput(ns(paste0("repeat_qc_prot", number)), "QC", value = "1") |>
+          bslib::tooltip("Not working :(")
+      ),
+      column(
+        width = 3,
+        numericInput(
+          ns(paste0("rep_suitability_number_prot", number)),
+          "Suitability",
+          value = "3"
+        ) |>
+          bslib::tooltip(
+            "Number of suitability injections. Must set to 0 or remove it if not in the plate"
+          )
+      ),
+      column(
+        width = 6,
+        bslib::input_switch(
+          ns(paste0("blank_after_top_conc_prot", number)),
+          "Blank after top conc",
+          value = TRUE
+        )
+      ),
+      column(
+        width = 6,
+        bslib::input_switch(
+          ns(paste0("blank_at_end_prot", number)),
+          "Blank at end",
+          value = TRUE
+        )
+      ),
+      column(
+        width = 6,
+        numericInput(
+          ns(paste0("blank_every_n_prot", number)),
+          "Blank every n analytes",
+          value = "20"
+        )
+      ),
+      column(
+        width = 6,
+        numericInput(
+          ns(paste0("injec_vol_prot", number)),
+          "Injection Volume",
+          value = "10"
+        )
+      ),
+      column(
+        width = 12,
+        textInput(ns(paste0("descr_prot", number)), "Description", value = "") |>
+          bslib::tooltip(
+            "Description of each injection. You can modify individually from the table"
+          )
+      ),
+      column(
+        width = 6,
+        textInput(ns(paste0("suffix_prot", number)), "Suffix", value = "1")
+      )
+    )
+  )
+}
+
+injec_seq_block_server <- function(id, number, methodsdb, currplate, current_cmpd_df, lock_export) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    observeEvent(methodsdb(),{
+      updateSelectInput(
+        session = getDefaultReactiveDomain(),
+        inputId = paste0("inlet_method_select_prot", number),
+        choices = methodsdb()$method)
+    })
+
+    observeEvent(currplate(), {
+      updateSelectInput(
+        session = getDefaultReactiveDomain(),
+        inputId = paste0("a_group", number),
+        choices = get_plate_a_groups(currplate()), 
+        selected = get_plate_a_groups(currplate())
+      )
+    })
+
+  
+  # for each protcol add, extra protocol accordion panel
+  #### methods
+  observeEvent(methodsdb(), {
+    updateSelectInput(
+      session,
+      inputId = paste0("inlet_method_select_prot", number),
+      choices = methodsdb()$method
+    )
+  })
+
+
+  observeEvent(input$inlet_method_select_prot1, {
+    req(input$inlet_method_select_prot1)
+    method_id <- .get_method_id(input$inlet_method_select_prot1)
+    req(method_id)
+    .get_method_cmpds(method_id) |>
+      dplyr::mutate(method = input$inlet_method_select_prot1, ratio = 1) |>
+      dplyr::select("method", "compound", "ratio") |>
+      distinct() |>
+      current_cmpd_df()
+  })
+  
+
+  # nav_hide("sample_list_nav", "Export")
+  # disable and clear export sample list on any change till click regenerate again.
+    observeEvent(
+      c(
+          input[[paste0("repeat_std_prot", number)]],
+          input[[paste0("repeat_qc_prot", number)]],
+          input[[paste0("repeat_sample_prot", number)]],
+          input[[paste0( "rep_suitability_number_prot", number)]],
+          input[[paste0( "blank_after_top_conc_prot", number)]],
+          input[[paste0("blank_at_end_prot", number)]],
+          input[[paste0("blank_every_n_prot", number)]],
+          input[[paste0("injec_vol_prot", number)]],
+          input[[paste0("descr_prot", number)]],
+          input[[paste0("suffix_prot", number)]],
+          input[[paste0("tray_prot", number)]],
+          input[[paste0( "exploratory_samples_alg_prot", number)]],
+          current_cmpd_df()
+      ),
+      {
+        req(number >= 1)
+        # nav_hide("sample_list_nav", "Export")
+        # nav_hide("sample_list_nav", "Summary")
+        # nav_hide("sample_list_nav", "Sample List")
+        lock_export(TRUE) # FIXME introduce a loop bug, but without it the tables will not clear
+      }
+    )
+    })
+}
+
+
 ui <- bslib::page_navbar(
   title = "Study Management",
   shinyjs::useShinyjs(),
@@ -232,19 +434,25 @@ ui <- bslib::page_navbar(
             bslib::nav_panel(
               "Add Samples",
               reactable.extras::reactable_extras_dependency(),
+              tags$script(HTML(
+                " $(document).on('blur', '.text-extra', function() { Shiny.setInputValue('text_blur', 'focusOut', {priority: 'event'}); }); "
+              )),
               reactable::reactableOutput("plate_design_samples_selector_RT"),
-              selectInput(
-                "dropdown_naming_samples_input",
-                "Naming Style",
-                choices = c(1, 2)
-              ),
-              selectizeInput(
-                "samplesdb_group_input",
-                "Group",
-                options = list(create = TRUE),
-                choices = "No Group"
-              ),
-              actionButton("add_samples_db_btn", "Add Samples")
+              bslib::layout_columns(
+                col_widths = c(4, 4, 4),
+                selectInput(
+                  "dropdown_naming_samples_input",
+                  "Naming Style",
+                  choices = c(1, 2)
+                ),
+                selectizeInput(
+                  "samplesdb_group_input",
+                  "Group",
+                  options = list(create = TRUE),
+                  choices = "No Group"
+                ),
+                actionButton("add_samples_db_btn", "Add Samples")
+              )
             )
           )
         ),
@@ -254,7 +462,6 @@ ui <- bslib::page_navbar(
           actionButton("undo_plate_design_btn", "Undo"),
           actionButton("save_plate_design_btn", "Save"),
           actionButton("new_plate_design_btn", "New")
-
         )
       )
     )
@@ -332,7 +539,6 @@ ui <- bslib::page_navbar(
           icon = icon("redo"),
           color = "primary"
         ),
-        # tabset with plate, sample list, dilution
         reactable::reactableOutput("plate_db_RT")
       )
     )
@@ -349,112 +555,11 @@ ui <- bslib::page_navbar(
             sidebar = sidebar(
               width = 500,
               textOutput("plate_ids_for_sample_list"),
+              selectInput("tray_prot1", "Tray", choices = as.character(1:12), multiple = TRUE),
               actionButton("add_protocols", "Add Protocol"),
               bslib::accordion(
                 id = "protocols_accordion",
-                bslib::accordion_panel(
-                  title = "Protocol 1",
-                  value = "protocol_1",
-                  selectInput(
-                    "inlet_method_select_prot1",
-                    "Inlet Method",
-                    choices = ""
-                  ),
-                  numericInput(
-                    "exploratory_samples_alg_prot1",
-                    "Exploratory Samples",
-                    value = 0
-                  ) |>
-                    bslib::tooltip(
-                      "Exploratory samples are samples that are not part of the sample list. They are used to check the system"
-                    ),
-                  p("Repeats"),
-                  fluidRow(
-                    column(
-                      width = 3,
-                      numericInput("repeat_std_prot1", "Standard", value = "1")
-                    ),
-                    column(
-                      width = 3,
-                      numericInput(
-                        "repeat_sample_prot1",
-                        "Sample",
-                        value = "1"
-                      ) |>
-                        bslib::tooltip(
-                          "Number of sample injections. Currently working only if there are no QCs"
-                        ),
-                    ),
-                    column(
-                      width = 3,
-                      numericInput("repeat_qc_prot1", "QC", value = "1") |>
-                        bslib::tooltip("Not working :(")
-                    ),
-                    column(
-                      width = 3,
-                      numericInput(
-                        "rep_suitability_number_prot1",
-                        "Suitability",
-                        value = "3"
-                      ) |>
-                        bslib::tooltip(
-                          "Number of suitability injections. Must set to 0 or remove it if not in the plate"
-                        )
-                    ),
-                    column(
-                      width = 6,
-                      bslib::input_switch(
-                        "blank_after_top_conc_prot1",
-                        "Blank after top conc",
-                        value = TRUE
-                      )
-                    ),
-                    column(
-                      width = 6,
-                      bslib::input_switch(
-                        "blank_at_end_prot1",
-                        "Blank at end",
-                        value = TRUE
-                      )
-                    ),
-                    column(
-                      width = 6,
-                      numericInput(
-                        "blank_every_n_prot1",
-                        "Blank every n analytes",
-                        value = "20"
-                      )
-                    ),
-                    column(
-                      width = 6,
-                      numericInput(
-                        "injec_vol_prot1",
-                        "Injection Volume",
-                        value = "10"
-                      )
-                    ),
-                    column(
-                      width = 12,
-                      textInput("descr_prot1", "Description", value = "") |>
-                        bslib::tooltip(
-                          "Description of each injection. You can modify individually from the table"
-                        )
-                    ),
-                    column(
-                      width = 6,
-                      textInput("suffix_prot1", "Suffix", value = "1")
-                    ),
-                    column(
-                      width = 6,
-                      selectInput(
-                        "tray_prot1",
-                        "Tray",
-                        choices = as.character(1:12),
-                        multiple = TRUE
-                      )
-                    )
-                  )
-                ),
+                injec_seq_block_protocol_ui("prot1", 1),
                 div(id = "prot_holder") #,
                 # accordion_panel(
                 #   title = "Compounds dilution",
@@ -490,7 +595,10 @@ ui <- bslib::page_navbar(
                     textOutput("min_vol")
                   ),
                   column(width = 8, DT::DTOutput("sample_list_summary")),
-                  ai_chat_module_ui(id = "injeclist_ai", title = "Injection List Assistant")
+                  ai_chat_module_ui(
+                    id = "injeclist_ai",
+                    title = "Injection List Assistant"
+                  )
                 )
               ),
               bslib::nav_panel(
@@ -588,6 +696,7 @@ ui <- bslib::page_navbar(
     title = "Links",
     align = "right",
     nav_item(shiny::actionButton("exit", "Exit", icon = icon("power-off"))),
+    nav_item(config_module_ui("config")),
     nav_item(shiny::actionButton(
       "help",
       "Help",
@@ -604,6 +713,10 @@ study_app_server <- function(input, output, session) {
 
   current_sample_list_metatable <- reactiveVal(.get_samplesdb_metadata())
   output$sample_list_metatable_DT <- DT::renderDT({
+    validate(need(
+      nrow(current_sample_list_metatable()) > 0,
+      "No Sample Lists in Database"
+    ))
     current_sample_list_metatable() |>
       DT::datatable(
         selection = list(mode = "single", target = "row"),
@@ -624,7 +737,11 @@ study_app_server <- function(input, output, session) {
   })
 
   output$sample_list_filtered_DT <- DT::renderDT({
-    req(current_visible_sample_db())
+    validate(need(
+      nrow(current_visible_sample_db()) > 0,
+      "No Samples in Selected List"
+    ))
+
     current_visible_sample_db() |>
       DT::datatable(
         selection = list(mode = "single", target = "row"),
@@ -665,6 +782,7 @@ study_app_server <- function(input, output, session) {
       textInput("new_study_title", "Study Title", value = ""),
       textInput("new_study_descr", "Description", value = ""),
       selectInput("new_study_type", "Type", choices = c("SD", "MD", "FA")),
+      selectInput("new_study_subject_type", "Subject Type", choices = c("Human", "Animal", "InVitro", "Other")),
       bslib::input_switch("new_study_pkstudy", "PK Study", value = FALSE),
       actionButton("create_study_btn", "Create")
     ))
@@ -677,7 +795,8 @@ study_app_server <- function(input, output, session) {
           title = input$new_study_title,
           type = input$new_study_type,
           pkstudy = input$new_study_pkstudy,
-          description = input$new_study_descr
+          description = input$new_study_descr,
+          subject_type = input$new_study_subject_type
         )
         create_new_study(df)
         showNotification("Study created successfully!", type = "message")
@@ -694,6 +813,7 @@ study_app_server <- function(input, output, session) {
   })
 
   output$studies_db_RT <- reactable::renderReactable({
+    validate(need(nrow(all_studies_db()) > 0, "No Studies in Database"))
     reactable::reactable(
       all_studies_db(),
       resizable = TRUE,
@@ -709,12 +829,14 @@ study_app_server <- function(input, output, session) {
     )
   })
 
-
   ai_chat_module_server(
     id = "study_ai",
     chatfunc = chatfunc,
     response_function = studydesign_ai,
-    response_args = reactive({ list(currStudyid()) })  # extra args for reponder 
+    response_args = reactive({
+      list(currStudyid())
+    }), # extra args for reponder
+    botname = "Study Design Reviewer"
   )
 
   currStudyid <- reactiveVal(NULL)
@@ -733,7 +855,11 @@ study_app_server <- function(input, output, session) {
 
   output$studyarms_RT <- rhandsontable::renderRHandsontable({
     req(currStudyid())
-    req(curr_dosing_db())
+    validate(
+      need(currStudyid() != "", "No Study Selected"),
+      need(nrow(curr_dosing_db()) > 0, "No Dosing Arms in Database")
+    )
+
     curr_dosing_db() |>
       rhandsontable::rhandsontable(
         useTypes = TRUE,
@@ -780,7 +906,7 @@ study_app_server <- function(input, output, session) {
 
   observeEvent(input$update_arms_db_btn, {
     df <- clean_rht_to_df(input$studyarms_RT$data)
-    df <- remove_all_empty_row(df)
+    df <- remove_all_empty_row(df) |> empty_string_to_na()
 
     colnames(df) <- c(
       "arm_id",
@@ -821,7 +947,10 @@ study_app_server <- function(input, output, session) {
   })
 
   output$subjects_RT <- rhandsontable::renderRHandsontable({
-    req(currStudyid())
+    validate(
+      need(currStudyid(), "No Study Selected")
+    )
+
     currSubjectTable() |>
       rhandsontable::rhandsontable(
         useTypes = TRUE,
@@ -830,9 +959,10 @@ study_app_server <- function(input, output, session) {
         width = "100%",
         fillHandle = list(direction = "vertical", autoInsertRow = TRUE)
       ) |>
-      rhandsontable::hot_col(col = 1, type = "text") |>
-      rhandsontable::hot_col(col = 2, readOnly = TRUE) |>
-      rhandsontable::hot_col(col = 3, type = "text") |>
+      rhandsontable::hot_col(col = 1, readOnly = TRUE) |> # uuid_subject
+      rhandsontable::hot_col(col = 2, type = "text") |>
+      rhandsontable::hot_col(col = 3, readOnly = TRUE) |>
+      rhandsontable::hot_col(col = 4, type = "text") |>
       rhandsontable::hot_col(
         col = 4,
         type = "dropdown",
@@ -845,9 +975,18 @@ study_app_server <- function(input, output, session) {
     req(currStudyid())
 
     df <- clean_rht_to_df(input$subjects_RT$data)
-    df <- remove_all_empty_row(df)
+    df <- remove_all_empty_row(df) |> empty_string_to_na()
 
-    colnames(df) <- c("subject_id", "study_id", "group_label", "sex", "age")
+    colnames(df) <- c(
+      "uuid_subject",
+      "subject_id",
+      "study_id",
+      "group_label",
+      "sex",
+      "age",
+      "race",
+      "extra_factors"
+    )
 
     tryCatch(
       {
@@ -875,7 +1014,9 @@ study_app_server <- function(input, output, session) {
   })
 
   output$sample_log_RT <- rhandsontable::renderRHandsontable({
-    req(currStudyid())
+    validate(
+      need(currStudyid(), "No Study Selected")
+    )
     currSampleLogTable() |>
       rhandsontable::rhandsontable(
         useTypes = TRUE,
@@ -915,7 +1056,7 @@ study_app_server <- function(input, output, session) {
     req(currStudyid())
 
     df <- clean_rht_to_df(input$sample_log_RT$data)
-    df <- remove_all_empty_row(df)
+    df <- remove_all_empty_row(df) |> empty_string_to_na()
 
     colnames(df) <- c(
       "log_id",
@@ -943,12 +1084,25 @@ study_app_server <- function(input, output, session) {
   })
 
   output$study_chart_plot <- DiagrammeR::renderGrViz({
-    req(currStudyid())
-    req(currSampleLogTable())
+    validate(
+      need(currStudyid(), "No Study Selected"),
+      need(nrow(currSampleLogTable()) > 0, "No samples in sample log")
+    )
     currSampleLogTable()
     currSubjectTable()
     curr_dosing_db()
     plot_study_design(currStudyid())
+  })
+
+  output$analysed_samples_RT <- reactable::renderReactable({
+    validate(
+      need(currStudyid(), "No Study Selected")
+    )
+
+    exported_list() # listen to changes saving
+    reactable::reactable(
+      get_injecseq_relation(currStudyid())
+    )
   })
 
   #######################################################################################################
@@ -1062,7 +1216,10 @@ study_app_server <- function(input, output, session) {
   })
 
   output$plate_design_plotOutput <- renderPlot({
-    req(curr_gen_plate_starter())
+    validate(
+      need(curr_gen_plate_starter(), "Create new plate")
+    )
+
     plot(
       curr_gen_plate_starter(),
       color = input$plate_design_color_toggle,
@@ -1567,7 +1724,12 @@ study_app_server <- function(input, output, session) {
 
   output$plate_design_samples_selector_RT <- reactable::renderReactable({
     req(curr_gen_plate_starter())
-    req(currStudyid())
+    validate(
+      need(
+        currStudyid(),
+        "Select a study to be able to add samples to current plate."
+      )
+    )
     curr_plate_sample_log_dil() |>
       reactable::reactable(
         resizable = TRUE,
@@ -1617,14 +1779,13 @@ study_app_server <- function(input, output, session) {
         if (is.null(selected_rows)) {
           stop("No Samples selected")
         }
-
         curr_gen_plate_expr(
           bquote(
             .(curr_gen_plate_expr()) |>
               add_samples_db(
                 logIds = .(curr_plate_sample_log_dil()$log_id[selected_rows]),
                 dil = .(ifelse(
-                  is.null(captured_dil()),
+                  rep(is.null(captured_dil()), length(selected_rows)),
                   1,
                   captured_dil()$dil[selected_rows]
                 )),
@@ -1655,7 +1816,10 @@ study_app_server <- function(input, output, session) {
     id = "plate_ai",
     chatfunc = chatfunc,
     response_function = plate_ai,
-    response_args = reactive({ list(curr_gen_plate_starter()) })  # extra args for reponder 
+    response_args = reactive({
+      list(curr_gen_plate_starter())
+    }), # extra args for reponder
+    botname = "Plate Design Reviewer"
   )
 
   #################################################################################################################
@@ -1722,54 +1886,8 @@ study_app_server <- function(input, output, session) {
   # })
 
   ##
-  observeEvent(input$inlet_method_select_prot1, {
-    req(input$inlet_method_select_prot1)
-    .get_method_cmpds(.get_method_id(input$inlet_method_select_prot1)) |>
-      dplyr::mutate(method = input$inlet_method_select_prot1, ratio = 1) |>
-      dplyr::select("method", "compound", "ratio") |>
-      distinct() |>
-      current_cmpd_df()
-  })
-
-  output$cmpd_ratio_seq_dt <- DT::renderDT({
-    req(current_cmpd_df())
-    current_cmpd_df() |>
-      DT::datatable(
-        escape = FALSE,
-        rownames = FALSE,
-        options = list(
-          scrollX = TRUE,
-          scrollY = TRUE,
-          scrollCollapse = TRUE,
-          pageLength = 100
-        ),
-        editable = list(target = "all", disable = list(columns = c(0, 1)))
-      )
-  })
-
-  proxy_ratio_cmpds = dataTableProxy('cmpd_ratio_seq_dt')
-
-  observeEvent(input$cmpd_ratio_seq_dt_cell_edit, {
-    DT::editData(
-      current_cmpd_df(),
-      input$cmpd_ratio_seq_dt_cell_edit,
-      'cmpd_ratio_seq_dt',
-      proxy = proxy_ratio_cmpds,
-      rownames = FALSE
-    ) |>
-      current_cmpd_df()
-  })
-
-  # for each protcol add, extra protocol accordion panel
-  #### methods
-  methodsdb <- reactiveVal(.get_methodsdb()) # get methods from db
-  observeEvent(methodsdb(), {
-    updateSelectInput(
-      session,
-      "inlet_method_select_prot1",
-      choices = methodsdb()$method
-    )
-  })
+  injec_seq_block_server("prot1", 1, methodsdb, current_plate, current_cmpd_df, lock_export)
+  
 
   observeEvent(
     input$add_protocols,
@@ -1787,8 +1905,8 @@ study_app_server <- function(input, output, session) {
       insertUI(
         selector = "#prot_holder",
         where = "beforeEnd",
-        ui = tagList(module_protocols(
-          paste0("var", protocol_last),
+        ui = tagList(injec_seq_block_protocol_ui(
+          paste0("prot", protocol_last),
           protocol_last
         ))
       )
@@ -1800,11 +1918,20 @@ study_app_server <- function(input, output, session) {
       # )
 
       current_injec_protcols(current_injec_protcols() + 1)
+      injec_seq_block_server(paste0("prot", protocol_last), protocol_last, methodsdb, current_plate, current_cmpd_df, lock_export)
+
     },
     priority = 1
   )
 
   output$plate_db_RT <- reactable::renderReactable({
+    validate(
+      need(
+        nrow(plate_db()) > 0,
+        "No plates in database. Create and save new plates to get started."
+      )
+    )
+
     plate_db() |>
       reactable::reactable(selection = "multiple", onClick = "select")
   })
@@ -1816,6 +1943,9 @@ study_app_server <- function(input, output, session) {
   selected_ids <- reactiveVal(NULL)
 
   output$plate_map_plot1 <- renderPlot({
+    validate(
+      need(current_plate_row(), "Select a plate from the table")
+    )
     plate_db()[current_plate_row(), ]$id |> selected_ids()
 
     # select last id for current plate list
@@ -1865,54 +1995,46 @@ study_app_server <- function(input, output, session) {
   })
 
   #########################
-
-  # nav_hide("sample_list_nav", "Export")
-  # disable and clear export sample list on any change till click regenerate again.
-  lock_export <- reactiveVal(TRUE) # FIXME
-  observeEvent(current_injec_protcols(), {
-    req(current_injec_protcols() >= 1)
-    if (current_injec_protcols() <= 10) {
-      observeEvent(
-        c(
-          input[[paste0("repeat_std_prot", current_injec_protcols())]],
-          input[[paste0("repeat_qc_prot", current_injec_protcols())]],
-          input[[paste0("repeat_sample_prot", current_injec_protcols())]],
-          input[[paste0(
-            "rep_suitability_number_prot",
-            current_injec_protcols()
-          )]],
-          input[[paste0(
-            "blank_after_top_conc_prot",
-            current_injec_protcols()
-          )]],
-          input[[paste0("blank_at_end_prot", current_injec_protcols())]],
-          input[[paste0("blank_every_n_prot", current_injec_protcols())]],
-          input[[paste0("injec_vol_prot", current_injec_protcols())]],
-          input[[paste0("descr_prot", current_injec_protcols())]],
-          input[[paste0("suffix_prot", current_injec_protcols())]],
-          input[[paste0("tray_prot", current_injec_protcols())]],
-          input[[paste0(
-            "exploratory_samples_alg_prot",
-            current_injec_protcols()
-          )]],
-          current_cmpd_df(),
-          input$add_cmpd,
-          input$remove_cmpd
+  output$cmpd_ratio_seq_dt <- DT::renderDT({
+    req(current_cmpd_df())
+    current_cmpd_df() |>
+      DT::datatable(
+        escape = FALSE,
+        rownames = FALSE,
+        options = list(
+          scrollX = TRUE,
+          scrollY = TRUE,
+          scrollCollapse = TRUE,
+          pageLength = 100
         ),
-        {
-          # nav_hide("sample_list_nav", "Export")
-          # nav_hide("sample_list_nav", "Summary")
-          # nav_hide("sample_list_nav", "Sample List")
-
-          hide("write_sample_list")
-          hide("export_sample_list")
-          lock_export(TRUE) # FIXME introduce a loop bug, but without it the tables will not clear
-        }
+        editable = list(target = "all", disable = list(columns = c(0, 1)))
       )
+  })
+
+  proxy_ratio_cmpds = dataTableProxy('cmpd_ratio_seq_dt')
+
+  observeEvent(input$cmpd_ratio_seq_dt_cell_edit, {
+    DT::editData(
+      current_cmpd_df(),
+      input$cmpd_ratio_seq_dt_cell_edit,
+      'cmpd_ratio_seq_dt',
+      proxy = proxy_ratio_cmpds,
+      rownames = FALSE
+    ) |>
+      current_cmpd_df()
+  })
+
+
+  current_cmpd_df <- reactiveVal(NULL)
+  lock_export <- reactiveVal(TRUE)
+
+  observeEvent(lock_export(), {
+    if (lock_export()) {
+      hide("write_sample_list")
+      hide("export_sample_list")
     }
   })
 
-  current_cmpd_df <- reactiveVal(NULL)
   observeEvent(input$create_sample_list, {
     req(class(current_plate()) == "RegisteredPlate")
 
@@ -1945,36 +2067,29 @@ study_app_server <- function(input, output, session) {
           if (!is.null(current_cmpd_df())) {
             # filter only correct method
             cmpd_df <- current_cmpd_df() |>
-              filter(
-                .data$method == input[[paste0("inlet_method_select_prot", i)]]
+                filter(
+                .data$method == input[[paste0("prot", i ,"-inlet_method_select_prot", i)]]
               ) |> # filter only correct method
               dplyr::select("compound", "ratio")
           } else {
             cmpd_df <- NULL
           }
-
           injseq_list[[i]] <- plates_list |>
             build_injec_seq(
-              descr = input[[paste0("descr_prot", i)]],
-              method = input[[paste0("inlet_method_select_prot", i)]],
-              suffix = input[[paste0("suffix_prot", i)]],
-              tray = input$tray_prot1, # always the same
-              blank_after_top_conc = input[[paste0(
-                "blank_after_top_conc_prot",
-                i
-              )]],
-              blank_at_end = input[[paste0("blank_at_end_prot", i)]],
-              blank_every_n = input[[paste0("blank_every_n_prot", i)]],
-              rep_suitability = input[[paste0(
-                "rep_suitability_number_prot",
-                i
-              )]],
-              repeat_std = input[[paste0("repeat_std_prot", i)]],
-              repeat_analyte = input[[paste0("repeat_sample_prot", i)]],
-              repeat_qc = input[[paste0("repeat_qc_prot", i)]],
-              n_explore = input[[paste0("exploratory_samples_alg_prot", i)]],
-              conc_df = cmpd_df,
-              inject_vol = input[[paste0("injec_vol_prot", i)]]
+                descr = input[[paste0("prot", i, "-descr_prot", i)]],
+                method = input[[paste0("prot", i, "-inlet_method_select_prot", i)]],
+                suffix = input[[paste0("prot", i, "-suffix_prot", i)]],
+                tray = input[[paste0("tray_prot", i)]],
+                blank_after_top_conc = input[[paste0("prot", i, "-blank_after_top_conc_prot", i)]],
+                blank_at_end = input[[paste0("prot", i, "-blank_at_end_prot", i)]],
+                blank_every_n = input[[paste0("prot", i, "-blank_every_n_prot", i)]],
+                rep_suitability = input[[paste0("prot", i, "-rep_suitability_number_prot", i)]],
+                repeat_std = input[[paste0("prot", i, "-repeat_std_prot", i)]],
+                repeat_analyte = input[[paste0("prot", i, "-repeat_sample_prot", i)]],
+                repeat_qc = input[[paste0("prot", i, "-repeat_qc_prot", i)]],
+                n_explore = input[[paste0("prot", i, "-exploratory_samples_alg_prot", i)]],
+                conc_df = cmpd_df,
+                injec_vol = input[[paste0("prot", i, "-injec_vol_prot", i)]]
             )
         } # filter only correct method
 
@@ -2198,7 +2313,10 @@ study_app_server <- function(input, output, session) {
     id = "injeclist_ai",
     chatfunc = chatfunc,
     response_function = injeclist_ai,
-    response_args = reactive({ list(current_injec_seq()$injec_list) })  # extra args for reponder 
+    response_args = reactive({
+      list(current_injec_seq()$injec_list)
+    }), # extra args for reponder
+    botname = "Injection List Reviewer"
   )
   ###############################################################################################
   ### Dilutions
@@ -2449,6 +2567,7 @@ study_app_server <- function(input, output, session) {
   })
 
   ## methods
+  methodsdb <- reactiveVal(.get_methodsdb()) # get methods from db
   current_method_capture_df <- reactiveVal(NULL)
   observeEvent(input$add_method, {
     i <- rep(NA, 5)
@@ -2553,8 +2672,14 @@ study_app_server <- function(input, output, session) {
     methodsdb(.get_methodsdb())
   })
 
+  
   output$methods_dt <- DT::renderDT({
-    req(methodsdb())
+    validate(
+      need(
+        nrow(methodsdb()) > 0,
+        "No methods in the database. Please add a method"
+      )
+    )
     methodsdb() |>
       DT::datatable(
         selection = list(mode = "single", target = "row"),
@@ -2564,9 +2689,19 @@ study_app_server <- function(input, output, session) {
 
   output$cmpd_methods_dt <- DT::renderDT({
     # get the method_id from the methodsdb
-    req(methodsdb())
-    req(input$methods_dt_rows_selected)
+    validate(
+      need(
+        nrow(methodsdb()) > 0,
+        "No methods in the database. Please add a method"
+      ),
+      need(
+        length(input$methods_dt_rows_selected) == 1,
+        "Please select a method"
+      )
+    )
     method_id <- methodsdb()[input$methods_dt_rows_selected, "method_id"]
+
+    req(method_id)
 
     .get_method_cmpds(method_id) |>
       DT::datatable(
@@ -2574,6 +2709,9 @@ study_app_server <- function(input, output, session) {
         options = list(scrollX = TRUE, scrollY = TRUE, scrollCollapse = TRUE)
       )
   })
+
+  # config
+  config_module_server("config")
 
   # exit button ####
   observeEvent(input$exit, {
@@ -2640,136 +2778,6 @@ study_app <- function() {
   # }
 
   methodsdb_init <- .get_methodsdb()
-
-  module_protocols <- function(id, number) {
-    ns <- NS(id)
-
-    accordion_panel(
-      # ns("prot_holder")
-      title = paste0("Protocol ", number),
-      value = paste0("protocol_", number),
-      fluidRow(
-        column(
-          width = 3,
-          selectizeInput(
-            paste0("equi_vial_prot", number),
-            "Equi Vial",
-            choices = c("A1")
-          ),
-        ),
-        column(
-          width = 3,
-          numericInput(paste0("equi_n_prot", number), "Equi N", value = 5),
-        ),
-        column(
-          width = 3,
-          numericInput(
-            paste0("equi_vol_prot", number),
-            "Equi Vol",
-            value = 0.5
-          ),
-        ),
-      ),
-      selectInput(
-        paste0("inlet_method_select_prot", number),
-        "Inlet Method",
-        choices = methodsdb_init$method
-      ),
-      bslib::input_switch(
-        paste0("exploratory_samples_alg_prot", number),
-        "Exploratory Samples",
-        value = FALSE
-      ) |>
-        bslib::tooltip(
-          "Exploratory samples are samples that are not part of the sample list. They are used to check the system"
-        ),
-      p("Repeats"),
-      fluidRow(
-        column(
-          width = 3,
-          numericInput(
-            paste0("repeat_std_prot", number),
-            "Standard",
-            value = "1"
-          ),
-        ),
-        column(
-          width = 3,
-          numericInput(
-            paste0("repeat_sample_prot", number),
-            "Sample",
-            value = "1"
-          ) |>
-            bslib::tooltip(
-              "Number of sample injections. Currently working only if there are no QCs"
-            ),
-        ),
-        column(
-          width = 3,
-          numericInput(paste0("repeat_qc_prot", number), "QC", value = "1") |>
-            bslib::tooltip("Not working :(")
-        ),
-        column(
-          width = 3,
-          numericInput(
-            paste0("rep_suitability_number_prot", number),
-            "Suitability",
-            value = "3"
-          ) |>
-            bslib::tooltip(
-              "Number of suitability injections. Must set to 0 or remove it if not in the plate"
-            )
-        ),
-        column(
-          width = 6,
-          bslib::input_switch(
-            paste0("blank_after_top_conc_prot", number),
-            "Blank after top conc",
-            value = TRUE
-          )
-        ),
-        column(
-          width = 6,
-          bslib::input_switch(
-            paste0("blank_at_end_prot", number),
-            "Blank at end",
-            value = TRUE
-          )
-        ),
-        column(
-          width = 6,
-          numericInput(
-            paste0("blank_every_n_prot", number),
-            "Blank every n analytes",
-            value = "20"
-          )
-        ),
-        column(
-          width = 6,
-          numericInput(
-            paste0("injec_vol_prot", number),
-            "Injection Volume",
-            value = "10"
-          )
-        ),
-        column(
-          width = 12,
-          textInput(paste0("descr_prot", number), "Description", value = "") |>
-            bslib::tooltip(
-              "Description of each injection. You can modify individually from the table"
-            )
-        ),
-        column(
-          width = 6,
-          textInput(paste0("suffix_prot", number), "Suffix", value = "1")
-        ) #,
-        #column(
-        #  width = 6,
-        #  textInput(paste0("tray_prot", number), "Tray", value = "1")
-        #)
-      )
-    )
-  }
 
   runApp(
     list(ui = ui, server = study_app_server),

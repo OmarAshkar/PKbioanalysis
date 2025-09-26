@@ -190,7 +190,7 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
 pk_ui <- function(id) {
   ns <- NS(id)
   bslib::page_fillable(
-    actionButton("update_pk_btn", "Update"),
+    actionButton("update_pk_btn", "Merge"),
     bslib::navset_underline(
       bslib::nav_panel(
         title = "PK Profiles",
@@ -282,7 +282,8 @@ linearity_ui <- function(id) {
             checkboxInput(ns("normalize"), "Normalize", value = FALSE),
             checkboxInput(ns("avg_rep"), "Average Replicates", value = FALSE),
             actionButton(ns("run_linearity_btn"), "Run Linearity"),
-            actionButton(ns("ai_report_linearity_btn"), "AI Linearity Report")
+            ai_chat_module_ui(ns("linearity_ai"))
+            
           ),
           bslib::card(
             bslib::layout_columns(
@@ -688,29 +689,18 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
       )
     })
 
-    observeEvent(input$ai_report_linearity_btn, {
-      req(cmpd_id())
-      tryCatch(
-        {
-          withProgress(message = "Waiting for AI answer", value = 0, {
-            txt_output <- linearity_ai(quantres(), cmpd_id())
-          })
+    ai_chat_module_server("linearity_ai",
+      chatfunc = chatfunc,
+      response_function = linearity_ai, 
+      response_args = reactive({
+        list(
+          quantres(), 
+          cmpd_id()
+        )
+      }),
+      botname = "Linearity Reviewer"
+    )
 
-          showModal(
-            modalDialog(
-              title = paste("AI Linearity Report for", cmpd_id()),
-              easyClose = TRUE,
-              size = "l",
-              footer = modalButton("Close"),
-              shiny::markdown(txt_output)
-            )
-          )
-        },
-        error = function(e) {
-          showNotification(paste("Error: ", e$message), type = "error")
-        }
-      )
-    })
   })
 }
 
@@ -747,7 +737,7 @@ quantapp_ui <- function() {
           bslib::layout_columns(
             width = NULL,
             style = bslib::css(grid_template_columns = "2fr 1fr"),
-            height = "800px",
+            # height = "800px",
             bslib::card(
               title = "Suitability Plot",
               full_screen = TRUE,
@@ -767,7 +757,7 @@ quantapp_ui <- function() {
               title = "Suitability Text",
               full_screen = TRUE,
               DTOutput("suitability_text"),
-              actionButton("ai_suitability_btn", "AI Suitability Report")
+              ai_chat_module_ui("suitability_ai")
             )
           )
         ),
@@ -784,7 +774,7 @@ quantapp_ui <- function() {
       id = "res_page",
       res_ui("resmod")
     ),
-    bslib::nav_panel("PK", id = "pk_page", pk_ui("pkmod")),
+    bslib::nav_panel("Merge", id = "pk_page", pk_ui("pkmod")),
     bslib::nav_panel(
       "Reports",
       id = "exports_settings",
@@ -795,7 +785,7 @@ quantapp_ui <- function() {
     bslib::nav_menu(
       title = "more",
       align = "right",
-      bslib::nav_item(actionButton("settings_btn", "Settings")),
+      bslib::nav_item(config_module_ui("config")),
       bslib::nav_item(actionButton("exit", "Exit"))
     )
   )
@@ -914,8 +904,12 @@ quantapp_server <- function(input, output, session) {
       )
   })
 
-  observeEvent(input$suitability_table_rows_selected, {
-    selected_row <- input$suitability_table_rows_selected
+  observeEvent(reactable::getReactableState("suitability_table", "selected"), {
+    selected_row <- reactable::getReactableState("suitability_table", "selected")
+    config_suitability(quantobj(), 
+      vial_pos = input$select_vial_suitability,
+      start = selected_row) |>
+      quantobj()
   })
 
   ## suitability plot and table ####
@@ -944,29 +938,11 @@ quantapp_server <- function(input, output, session) {
   })
 
   ## AI suitability report ####
-  observeEvent(input$ai_suitability_btn, {
-    req(quantobj())
-    req(nrow(quantobj()@samples_metadata) > 0)
-    req(has_suitability_results(quantobj()))
-
-    tryCatch(
-      {
-        withProgress(message = "Waiting for AI answer", value = 0, {
-          txtoutput <- suitability_ai(quantobj())
-        })
-
-        shiny::showModal(modalDialog(
-          title = "AI Suitability Report",
-          shiny::markdown(txtoutput),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      },
-      error = function(e) {
-        showNotification(e$message, type = "error")
-      }
-    )
-  })
+  ai_chat_module_server("suitability_ai", 
+  chatfunc =  chatfunc(), 
+  response_function = suitability_ai, 
+  response_args = reactive({list(quantobj())}),
+  botname = "suitability reviewer")
 
   ########################################################################################
   #### Linearity tab
@@ -1002,6 +978,7 @@ quantapp_server <- function(input, output, session) {
   ###############################################
   pk_server("pkmod", quantobj, current_cmpds_names)
 
+  config_module_server("config")
   # exit button ####
   observeEvent(input$exit, {
     shinyalert::shinyalert(

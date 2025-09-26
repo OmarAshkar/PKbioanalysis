@@ -1,12 +1,9 @@
 empty_string_to_na <- function(df) {
+  df <- df |> dplyr::mutate(dplyr::across(dplyr::everything(), trimws))
   df[df == ""] <- NA
   df
 }
 
-get_pkbioanalysis_option <- function(name) {
-  # getOption(paste0("PKbioanalysis.", name))
-  PKbioanalysis_env[[name]]
-}
 
 #'@noRd
 .connect_to_db <- function() {
@@ -49,15 +46,17 @@ get_pkbioanalysis_option <- function(name) {
   platesdb
 }
 
-.get_samplelist <- function(id) {
+.get_samplelist <- function(id = NULL) {
   .check_sample_db()
   db_path <- PKbioanalysis_env$data_dir |>
     file.path("samples.db")
   db <- duckdb::dbConnect(duckdb::duckdb(), dbdir = db_path)
-  sample_list <- DBI::dbGetQuery(
-    db,
-    paste0("SELECT * FROM samples WHERE list_id = ", id)
-  )
+  if (is.null(id)) {
+    query <- "SELECT * FROM samples"
+  } else {
+    query <- paste0("SELECT * FROM samples WHERE list_id = ", id)
+  }
+  sample_list <- DBI::dbGetQuery(db, query)
   .close_db(db)
   sample_list
 }
@@ -293,6 +292,7 @@ studydesign_db <- function(con) {
     id      TEXT PRIMARY KEY, --uuid
     type    TEXT CHECK (type IN ('SD', 'MD', 'FE', 'BE', 'NA')),
     title   TEXT NOT NULL,
+    subject_type TEXT CHECK (subject_type IN ('Human', 'Animal', 'InVitro', 'Other')) DEFAULT NULL,
     pkstudy BOOLEAN NOT NULL,
     description    TEXT,
     status  TEXT CHECK (status IN ('Planned', 'Ongoing', 'Completed', 'Terminated')),
@@ -307,11 +307,13 @@ studydesign_db <- function(con) {
     con,
     "
   CREATE TABLE  IF NOT EXISTS subject (
-    subject_id          TEXT PRIMARY KEY,
+    uuid_subject        TEXT PRIMARY KEY,
+    subject_id          TEXT NOT NULL, 
     study_id            TEXT REFERENCES study(id),
     group_label         TEXT NOT NULL, -- soft key not enforced
     sex                 TEXT CHECK (sex IN ('M', 'F')) DEFAULT NULL,
     age                 INTEGER CHECK (age >= 0) DEFAULT NULL,
+    race                TEXT DEFAULT NULL,
     extra_factors       TEXT DEFAULT NULL,
     UNIQUE(subject_id, study_id)
   );
@@ -371,17 +373,30 @@ studydesign_db <- function(con) {
   );
   "
   )
+}
 
-  # sample <=> injeseq
-  # Just log the relationship, no constraints
-  DBI::dbExecute(
-    con,
-    "
-CREATE TABLE IF NOT EXISTS sample_injeseq_link (
-  log_id    TEXT REFERENCES sample_log(log_id),
-  injeseq_id  INTEGER REFERENCES platesdb(list_id), 
-  date       DATE
-);
-"
-  )
+
+get_injecseq_relation <- function(study_id) {
+  # map sample_log.log_id to samples.log_id
+  # get unique samples.id
+  df <- retrieve_full_study_log(study_id)
+  study_ids <- df |>
+    dplyr::filter(!is.na(.data$log_id)) |>
+    dplyr::select("log_id")
+
+  sample_list <- .get_samplelist()
+
+  sample_list <- study_ids |>
+    dplyr::left_join(sample_list, by = c("log_id" = "log_id")) |>
+    dplyr::select("log_id", "file_name", "list_id", "plate_id") |>
+    dplyr::group_by(.data$log_id) |>
+    dplyr::summarise(
+      file_name = paste(.data$file_name, collapse = "; "),
+      list_id = paste(unique(.data$list_id), collapse = "; "),
+      plate_id = paste(unique(.data$plate_id), collapse = "; ")
+    ) |>
+    dplyr::ungroup() |>
+    distinct()
+
+  sample_list
 }

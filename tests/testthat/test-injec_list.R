@@ -1,6 +1,6 @@
 test_that("plate_registered_before_seq", {
   generate_96() |>
-    build_injec_seq(inject_vol = 2, tray = "2") |>
+    build_injec_seq(injec_vol = 2, tray = "2") |>
     expect_error("Plate is not registered")
 })
 
@@ -27,7 +27,7 @@ test_that("build_injec_seq", {
 
   injseq <- build_injec_seq(
     x,
-    inject_vol = 2,
+    injec_vol = 2,
     tray = "1",
     method = "method.q",
     n_explore = 4
@@ -49,7 +49,7 @@ test_that("save_injecseq_csv", {
 
   mylist <- x |>
     build_injec_seq(
-      inject_vol = 2,
+      injec_vol = 2,
       tray = "1",
       method = "method.ql",
       rep_suitability = 0
@@ -59,7 +59,7 @@ test_that("save_injecseq_csv", {
 
   x |>
     build_injec_seq(
-      inject_vol = 2,
+      injec_vol = 2,
       suffix = "4",
       tray = "1",
       method = "method.q",
@@ -97,7 +97,7 @@ test_that("multiple_plates", {
   build_injec_seq(
     x,
     tray = c("1", "2"),
-    inject_vol = 2,
+    injec_vol = 2,
     method = "method.q",
     rep_suitability = 0
   ) |>
@@ -117,7 +117,7 @@ test_that("exploratory_samples_added", {
   build_injec_seq(
     x,
     tray = "1",
-    inject_vol = 2,
+    injec_vol = 2,
     n_explore = 2,
     method = "method.q1",
     rep_suitability = 0
@@ -142,7 +142,7 @@ test_that("writing_increment_id", {
     x,
     method = "method.ql",
     tray = "1",
-    inject_vol = 2,
+    injec_vol = 2,
     n_explore = 2,
     rep_suitability = 0
   ) |>
@@ -154,7 +154,7 @@ test_that("writing_increment_id", {
     x,
     method = "method.ql",
     tray = "1",
-    inject_vol = 2,
+    injec_vol = 2,
     n_explore = 4,
     suffix = "2",
     rep_suitability = 0
@@ -180,7 +180,7 @@ test_that("export masslynx", {
     x,
     method = "method.ql",
     tray = "1",
-    inject_vol = 2,
+    injec_vol = 2,
     n_explore = 4,
     suffix = "2",
     rep_suitability = 0

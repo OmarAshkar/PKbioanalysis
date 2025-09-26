@@ -58,3 +58,38 @@ test_that("run linearity normalized", {
     has_linearity(quantobj, "Ketoconazole") |> expect_false()
   })
 })
+
+
+library(shiny)
+library(dplyr)
+library(reactable)
+library(reactable.extras)
+
+df <- mtcars %>% select(mpg, cyl, carb)
+
+shinyApp(
+  ui = fluidPage(
+    reactable_extras_dependency(),
+    reactableOutput("react"), 
+    dataTableOutput("out")
+  ),
+  server = function(input, output) {
+    rv <- reactiveValues(data = df)
+    output$react <- renderReactable({
+      reactable(
+        rv$data,
+        columns = list(
+          carb = colDef(cell = text_extra(id = "text1", class = "text-extra"))
+        )
+      )
+    })
+    
+    observeEvent(input$text1, {
+      rv$data[input$text1$row, input$text1$column] <- input$text1$value
+    })
+    
+    output$out <- renderDataTable({
+      rv$data
+    })
+  }
+)

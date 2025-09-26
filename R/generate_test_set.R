@@ -9,7 +9,7 @@
 
   x <- build_injec_seq(
     plate,
-    inject_vol = 2,
+    injec_vol = 2,
     tray = "1",
     method = 1,
     suffix = "NT",

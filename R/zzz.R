@@ -1,5 +1,71 @@
 PKbioanalysis_env <- new.env(parent = emptyenv())
 
+config_path <- function() {
+  tools::R_user_dir("PKbioanalysis", "config")
+}
+reset_config <- function() {
+  path <- config_path()
+
+  if (dir.exists(path)) {
+    unlink(path, recursive = TRUE)
+  }
+  dir.create(path, showWarnings = F, recursive = T)
+  # copy yaml template
+  file.copy(
+    system.file("extdata", "config.yaml", package = "PKbioanalysis"),
+    file.path(path, "config.yaml")
+  )
+}
+
+refresh_config <- function() {
+  path <- config_path()
+  configfile <- file.path(path, "config.yaml")
+  if (!file.exists(configfile)) {
+    reset_config()
+  }
+  config <- yaml::read_yaml(configfile)
+  PKbioanalysis_env$api_base_url <- config$api_base_url
+  PKbioanalysis_env$api_key <- config$api_key
+  PKbioanalysis_env$ai_model <- config$ai_model
+  PKbioanalysis_env$temprature <- config$temprature
+
+  invisible()
+}
+
+
+update_config <- function(base_url = NULL, api_key = NULL, model = NULL, temprature = NULL) {
+  path <- config_path()
+  configfile <- file.path(path, "config.yaml")
+  if (!file.exists(configfile)) {
+    stop(
+      "Config file not found. Please run reset_config() to create a default config file."
+    )
+  }
+  config <- yaml::read_yaml(configfile)
+
+  if (!is.null(base_url)) {
+    config$api_base_url <- base_url
+  }
+  if (!is.null(api_key)) {
+    config$api_key <- api_key
+  }
+  if (!is.null(model)) {
+    config$ai_model <- model
+  }
+  if (!is.null(temprature)) {
+    config$temprature <- temprature
+  }
+
+  yaml::write_yaml(config, configfile)
+
+}
+
+
+get_pkbioanalysis_option <- function(name) {
+  # getOption(paste0("PKbioanalysis.", name))
+  PKbioanalysis_env[[name]]
+}
+
 
 #' @import reticulate
 #' @export
@@ -22,6 +88,9 @@ py <- NULL
   options(PKbioanalysis.verbose = FALSE)
   options(PKbioanalysis.data_dir = tools::R_user_dir("PKbioanalysis", "data"))
   options(
+    PKbioanalysis.config_dir = config_path()
+  )
+  options(
     PKbioanalysis.cache_dir = file.path(
       options("PKbioanalysis.data_dir"),
       "plates_cache"
@@ -32,8 +101,8 @@ py <- NULL
   PKbioanalysis_env$data_dir <- options("PKbioanalysis.data_dir") |> unlist()
   PKbioanalysis_env$cache_dir <- options("PKbioanalysis.cache_dir") |> unlist()
 
-  PKbioanalysis_env$model <- "gpt-oss-20b"
-  PKbioanalysis_env$api_base_url <- "https://api.ai.it.ufl.edu"
+  refresh_config()
+
   PKbioanalysis_env$api_key <- Sys.getenv("OPENAI_API_KEY")
 
   if (!dir.exists(PKbioanalysis_env$data_dir)) {

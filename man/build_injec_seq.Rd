@@ -21,7 +21,7 @@ build_injec_seq(
   blank_after_top_conc = TRUE,
   blank_at_end = TRUE,
   blank_every_n = NULL,
-  inject_vol,
+  injec_vol,
   descr = "",
   prefix = Sys.Date(),
   suffix = "1",
@@ -45,7 +45,7 @@ build_injec_seq(
   blank_after_top_conc = TRUE,
   blank_at_end = TRUE,
   blank_every_n = NULL,
-  inject_vol,
+  injec_vol,
   descr = "",
   prefix = Sys.Date(),
   suffix = "1",
@@ -69,7 +69,7 @@ build_injec_seq(
   blank_after_top_conc = TRUE,
   blank_at_end = TRUE,
   blank_every_n = NULL,
-  inject_vol,
+  injec_vol,
   descr = "",
   prefix = Sys.Date(),
   suffix = "1",
@@ -97,7 +97,7 @@ build_injec_seq(
 
 \item{blank_every_n}{If no QCs, frequency of injecting blanks between analytes.}
 
-\item{inject_vol}{volume of injection in micro liters.}
+\item{injec_vol}{volume of injection in micro liters.}
 
 \item{descr}{Run description.}
 

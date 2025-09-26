@@ -3,7 +3,8 @@ test_that("pkstudy test", {
     type = "SD",
     pkstudy = TRUE,
     title = "New Study",
-    description = "Description of the new study"
+    description = "Description of the new study", 
+    subject_type = "Human"
   )
   new_study <- create_new_study(newstudy)
 
@@ -107,13 +108,13 @@ test_that("pkstudy test", {
     df = data.frame(
       subject_id = c("S1", "S2"),
       study_id = new_study$id,
-      status = c("Collected", "Not Collected")
+      status = c("Collected", "Planned")
     )
   )
 
   retrieve_sample_log(study_id = new_study$id) |>
     dplyr::pull("status") |>
-    expect_equal(c("Collected", "Not Collected"))
+    expect_equal(c("Collected", "Planned"))
 })
 
 test_that("nonpkstudy test", {
@@ -121,7 +122,8 @@ test_that("nonpkstudy test", {
     type = "SD",
     pkstudy = FALSE,
     title = "New Study",
-    description = "Description of the new study"
+    description = "Description of the new study",
+    subject_type = "Human"
   ))
   expect_false(is_pk_study(new_study$id))
 
@@ -187,7 +189,8 @@ test_that("check if study is pk study", {
     type = "SD",
     pkstudy = TRUE,
     title = "New Study",
-    description = "Description of the new study"
+    description = "Description of the new study",
+    subject_type = "Human"
   ))
 
   expect_true(is_pk_study(new_study$id))
@@ -196,7 +199,8 @@ test_that("check if study is pk study", {
     type = "SD",
     pkstudy = FALSE,
     title = "New Study",
-    description = "Description of the new study"
+    description = "Description of the new study",
+    subject_type = "InVitro"
   ))
 
   expect_false(is_pk_study(new_study$id))

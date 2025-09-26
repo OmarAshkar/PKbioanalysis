@@ -66,7 +66,7 @@ setMethod("length", signature(x = "MultiPlate"), function(x) {
 #' @param blank_at_end If True, adding blank at the end of queue.
 #' @param rep_suitability Number of re-injections for suitability vial.
 #' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
-#' @param inject_vol volume of injection in micro liters.
+#' @param injec_vol volume of injection in micro liters.
 #' @param descr Run description.
 #' @param suffix string to be added to the end of the filename. Default is "1".
 #' @param prefix string at the beginning of the filename. Default is today's date.
@@ -95,7 +95,7 @@ setGeneric(
     blank_after_top_conc = TRUE,
     blank_at_end = TRUE,
     blank_every_n = NULL,
-    inject_vol,
+    injec_vol,
     descr = "",
     prefix = Sys.Date(),
     suffix = "1",
@@ -133,7 +133,7 @@ setMethod(
     blank_after_top_conc = TRUE,
     blank_at_end = TRUE,
     blank_every_n = NULL,
-    inject_vol,
+    injec_vol,
     descr = "",
     prefix = Sys.Date(),
     suffix = "1",
@@ -144,7 +144,7 @@ setMethod(
     checkmate::assertNumber(repeat_std, finite = TRUE, lower = 1)
     checkmate::assertNumber(repeat_qc, finite = TRUE, lower = 1)
     checkmate::assertNumber(repeat_analyte, finite = TRUE, lower = 1)
-    checkmate::assertNumeric(inject_vol, finite = TRUE, lower = 0.1)
+    checkmate::assertNumeric(injec_vol, finite = TRUE, lower = 0.1)
     checkmate::assertNumber(
       blank_every_n,
       null.ok = TRUE,
@@ -318,7 +318,7 @@ setMethod(
       dplyr::mutate(
         Index = dplyr::row_number(),
         FILE_NAME = paste0(prefix, "_", .data$value, "_", suffix),
-        INJ_VOL = inject_vol,
+        INJ_VOL = injec_vol,
         # CONC_A = conc,
         FILE_TEXT = descr,
         INLET_METHOD = method
@@ -353,7 +353,7 @@ setMethod(
     blank_after_top_conc = TRUE,
     blank_at_end = TRUE,
     blank_every_n = NULL,
-    inject_vol,
+    injec_vol,
     descr = "",
     prefix = Sys.Date(),
     suffix = "1",
@@ -420,7 +420,7 @@ setMethod(
       blank_at_end = blank_at_end,
       rep_suitability = rep_suitability,
       blank_every_n = blank_every_n,
-      inject_vol = inject_vol,
+      injec_vol = injec_vol,
       descr = descr,
       prefix = prefix,
       suffix = suffix,
@@ -528,4 +528,13 @@ setMethod("register_plate", "PlateObj", function(plate) {
 #' @return a list of RegisteredPlate objects
 setMethod("register_plate", "MultiPlate", function(plate) {
   lapply(plate@plates, .register_plate_logic)
+})
+
+setGeneric("get_plate_a_groups", function(plate) standardGeneric("get_plate_a_groups"))
+
+setMethod("get_plate_a_groups", "PlateObj", function(plate) {
+  unique(plate@df$a_group)
+})
+setMethod("get_plate_a_groups", "MultiPlate", function(plate) {
+  unique(unlist(lapply(plate@plates, get_plate_a_groups)))
 })

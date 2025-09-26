@@ -1921,3 +1921,4 @@ length_empty_layout <- function(plate) {
 gen_plate_positions <- function() {
   gtools::mixedsort(levels(interaction(LETTERS[1:8], 1:12, sep = "")))
 }
+

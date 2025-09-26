@@ -1,9 +1,9 @@
 create_new_study <- function(df) {
   checkmate::assertNames(
     names(df),
-    must.include = c("type", "title", "description", "pkstudy")
+    must.include = c("type", "title", "description", "pkstudy", "subject_type")
   )
-  checkmate::assertDataFrame(df, nrows = 1, ncols = 4)
+  checkmate::assertDataFrame(df, nrows = 1, ncols = 5)
   checkmate::assertLogical(df$pkstudy, len = 1)
   checkmate::assertChoice(df$type, choices = c("SD", "MD", "FE", "BE", "NA"))
   checkmate::assertString(df$title, min.chars = 1)
@@ -172,8 +172,10 @@ add_subjects_db <- function(study_id, df) {
   checkmate::assertDataFrame(df, min.rows = 1)
   checkmate::assertNames(
     names(df),
-    must.include = c("subject_id", "study_id", "sex", "age", "group_label")
+    must.include = c("subject_id", "study_id", "group_label")
   )
+
+  df <- fill_uuid(df, "uuid_subject")
 
   if (any(df$group_label == "") | any(is.na(df$group_label))) {
     stop("Group label cannot be empty")
@@ -637,7 +639,8 @@ make_metabolic_study <- function(
       type = "SD",
       title = study,
       description = paste("Metabolic study with", length(cmpds), "compounds"),
-      pkstudy = FALSE
+      pkstudy = FALSE, 
+      subject_type = "InVitro"
     )
   )
   cli::cli_alert_info("Created study with ID: {newstudy$id}")
@@ -664,7 +667,6 @@ make_metabolic_study <- function(
   subjectsdf <- df |> dplyr::select(-"time_points") |> 
     dplyr::distinct()
   stopifnot(length(unique(subjectsdf$subjects)) == total_subjects * length(cmpds))
-
   add_subjects_db(
     study_id = newstudy$id,
     df = data.frame(
@@ -689,4 +691,9 @@ make_metabolic_study <- function(
   cli::cli_alert_success("Sample log information added.")
   newstudy
 
+}
+
+get_study_subject_type <- function(study_id) {
+  study <- retrieve_study(study_id)
+  study$subject_type
 }

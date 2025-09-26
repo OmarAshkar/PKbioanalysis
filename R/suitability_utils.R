@@ -8,7 +8,9 @@
 #' @return Updated QuantRes object with suitability configuration.
 config_suitability <- function(quantres, vial_pos, start = NULL, end = NULL) {
   checkmate::assertClass(quantres, "QuantRes")
-  checkmate::assertNumber(start, lower = 1, upper = end, null.ok = TRUE)
+  checkmate::assertNumber(start, lower = 1, 
+    upper = length(get_vials(quantres)),
+    null.ok = TRUE)
   checkmate::assertNumber(
     end,
     lower = start,
