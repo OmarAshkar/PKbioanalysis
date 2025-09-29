@@ -155,47 +155,12 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   plate_obj,
   samples,
   rep = 1,
-  time = NA,
-  conc = NA,
-  dil = NA,
-  factor = NA,
-  sex = NA,
-  dose = NA,
-  dose_unit = "mg",
-  II = NA,
-  addl = NA,
-  time_unit = "h",
-  prefix = "Sub",
-  route = NA,
-  cmt = NA,
-  group = NA
+  prefix = "S"
 ) {
   checkmate::assertVector(samples, unique = FALSE)
 
-  checkmate::assertVector(factor)
-
   checkmate::assertNumber(rep, lower = 1, upper = 100)
-  checkmate::assertNumeric(time)
-  checkmate::assertNumeric(conc)
-  checkmate::assertNumeric(dil)
-  checkmate::assertNumeric(dose, lower = 0, upper = 10^100)
-  checkmate::assertChoice(
-    toupper(route),
-    choices = c(NA, "IV", "IM", "IP", "SC", "PO", "INH")
-  )
-  checkmate::assertChoice(
-    cmt,
-    choices = c(NA, "plasma", "urine", "serum", "whole_blood", "tissue")
-  )
-  checkmate::assertChoice(
-    toupper(sex),
-    choices = c(NA, "MALE", "FEMALE", "M", "F")
-  )
-
-  checkmate::assertVector(cmt)
-  checkmate::assertVector(group, any.missing = TRUE)
   checkmate::assertString(prefix, na.ok = TRUE)
-  checkmate::assert_choice(time_unit, c("h", "min", "sec"))
   checkmate::assertClass(plate_obj, "PlateObj")
 
   df <- plate_obj@df
@@ -205,43 +170,17 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   samples_df <- samples_df |>
     dplyr::arrange(
       .data$group,
-      .data$samples,
-      .data$time,
-      .data$factor,
-      .data$conc,
-      .data$dose,
+      .data$samples, 
       .data$dil
     )
 
   samples_df <- samples_df[rep(seq_len(nrow(samples_df)), times = rep), ]
 
-  if (!all(is.na(samples_df$time))) {
-    samples_df$time_unit
-    new_time_vec <- c()
-    for (i in seq_along(samples_df$time)) {
-      if (is.na(samples_df$time[i])) {
-        new_time_vec[i] <- NA
-      } else if (samples_df$time[i] < 1) {
-        new_time_vec[i] <- paste0(samples_df$time[i] * 60, "min")
-      } else {
-        new_time_vec[i] <- paste0(samples_df$time[i], time_unit)
-      }
-    }
-    samples_df$time <- ifelse(is.na(samples_df$time), NA, new_time_vec)
-  }
-
   samples_df <- samples_df |>
     dplyr::mutate(
       samples = as.character(.data$samples),
       group = as.character(.data$group),
-      factor = as.character(.data$factor),
-      conc = as.numeric(.data$conc),
-      dose = as.character(.data$dose),
-      dil = as.numeric(.data$dil),
-      time = as.character(.data$time),
-      route = as.character(.data$route),
-      sex = as.character(.data$sex),
-      cmt = as.character(.data$cmt)
+      dil = as.numeric(.data$dil)
     ) |>
     rowwise() |>
     dplyr::mutate(
@@ -251,78 +190,15 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
         .data$samples
       )
     ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$dose),
-        paste0(.data$value, "_", .data$dose, .data$dose_unit),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$II),
-        paste0(.data$value, "_every ", .data$II),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$addl),
-        paste0(.data$value, "_ADDL", .data$addl),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$factor),
-        paste0(.data$value, "_", .data$factor),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$sex),
-        paste0(.data$value, "_", .data$sex),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$conc),
-        paste0(.data$value, "_", .data$conc),
-        .data$value
-      )
-    ) |>
+    
     dplyr::mutate(
       value = ifelse(
         !is.na(.data$dil),
         paste0(.data$value, "_", .data$dil, "X"),
         .data$value
       )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$route),
-        paste0(.data$value, "_", .data$route),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$cmt),
-        paste0(.data$value, "_", .data$cmt),
-        .data$value
-      )
-    ) |>
-    dplyr::mutate(
-      value = ifelse(
-        !is.na(.data$time),
-        paste0(.data$value, "_T", .data$time),
-        .data$value
-      )
-    )
+    ) 
 
-  # check if the length of the samples samples are equal
 
   empty_spots <- .spot_mask(plate_obj)
 
@@ -342,18 +218,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
         ),
         samples = samples_df$samples[i],
         a_group = samples_df$group[i],
-        conc = samples_df$conc[i],
-        dose = samples_df$dose[i],
-        dose_unit = dose_unit,
-        II = samples_df$II[i],
-        addl = samples_df$addl[i],
-        dil = samples_df$dil[i],
-        TYPE = "Analyte",
-        time = samples_df$time[i],
-        sex = samples_df$sex[i],
-        factor = samples_df$factor[i],
-        route = samples_df$route[i],
-        cmt = samples_df$cmt[i],
+        conc = NA,
         std_rep = NA,
         e_rep = .last_entity(plate_obj, "Analyte") + 1
       )
@@ -375,21 +240,10 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #'
 #' @param plate PlateObj
 #' @param samples A vector representing samples names. Must be unique.
-#' @param rep Number of technical replicates for each combination. Default is 1.
-#' @param time A vector representing time points.
-#' @param conc A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.
-#' @param dil A vector representing dilution factor. Must be same length as samples.
-#' @param sex A vector representing subject sex if applicable. Must be same length as samples.
-#' @param factor A vector representing factor. Must be same length as samples.
-#' @param route A vector representing route of administration. Must be same length as samples.
-#' @param cmt A vector representing compartment. Must be same length as samples.
-#' @param dose A vector representing dose. Must be same length as samples.
-#' @param dose_unit A string representing dose unit. Default is "mg".
-#' @param II A vector representing inter-dose interval. Must be same length as samples.
-#' @param addl A vector representing additional doses. Must be same length as samples.
-#' @param time_unit A string representing time unit. Default is "h". Can be "h", "min" or "sec".
 #' @param prefix A prefix to be added before samples names. Default is "Sub".
+#' @param dil A vector representing samples' dilution factor. Must be same length as samples.
 #' @param group A vector representing samples' bioanalytical group. Must be same length as samples.
+#' @param rep Number of technical replicates for each combination. Default is 1.
 #'
 #'
 #' @details final name will be of form. Prefix-SampleName-Time-Concentration-Factor
@@ -406,34 +260,12 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
 #' @examples
 #' plate <- generate_96() |>
 #'  add_samples(paste0("T", 1:12))
-#'
-#' data(Indometh)
-#' plate <- generate_96() |>
-#'  add_samples(
-#'    samples = Indometh$Subject,
-#'    time = Indometh$time,
-#'    dose = "100mg",
-#'    route = "IV",
-#'    cmt = "plasma")
-#' plot(plate, color = "samples")
-#' plot(plate, color = "time")
 add_samples <- function(
   plate,
   samples,
-  time = NA,
-  conc = NA,
+  prefix = NA,
   dil = NA,
-  factor = NA,
-  dose = NA,
-  II = NA,
-  addl = NA,
-  dose_unit = "mg",
-  sex = NA,
-  route = NA,
-  cmt = NA,
-  prefix = "Sub",
   group = NA,
-  time_unit = "h",
   rep = 1
 ) {
   plate_obj <- plate
@@ -451,106 +283,72 @@ add_samples <- function(
     ))
   }
 
-  samples_time <- expand.grid(samples = samples, time = time) |>
-    dplyr::arrange(.data$samples, .data$time)
-  samples_factors <- data.frame(
-    samples = samples,
-    group = group,
-    factor = factor,
-    conc = conc,
-    dose = dose,
-    dose_unit = dose_unit,
-    II = II,
-    addl = addl,
-    dil = dil,
-    route = route,
-    cmt = cmt,
-    sex = sex
-  ) |>
-    distinct()
-  samples_df <- left_join(samples_time, samples_factors, by = "samples")
+  samples_df <- data.frame(samples = samples, group = group, dil = dil)
 
   .add_samples_dispatch(
     samples_df = samples_df,
     plate_obj = plate_obj,
     samples = samples,
-    time = time,
-    conc = conc,
-    dil = dil,
-    factor = factor,
-    dose = dose,
-    II = II,
-    addl = addl,
-    dose_unit = dose_unit,
-    sex = sex,
-    route = route,
-    cmt = cmt,
     prefix = prefix,
-    group = group,
-    time_unit = time_unit,
     rep = rep
   )
 }
 
 
-#' Cartesian product of sample factors to a plate
-#' @param plate PlateObj
-#' @param n_rep number of samples to be added
-#' @param time A vector representing time points
-#' @param conc A vector representing concentration
-#' @param factor A vector representing factor
-#' @param dose A vector representing dose
-#' @param prefix A prefix to be added before samples names. Default is "S"
-#'
-#' @returns PlateObj
-#' @details This function is a variation of `add_samples()` where size of inputs does not matter.
-#' The function will automatically create a combination of all sample names with time, concentration and factor.
-#' final name will be of form. Prefix-SampleName-Time-Concentration-Factor
-#' @export
-add_samples_c <- function(
-  plate,
-  n_rep,
-  time = NA,
-  conc = NA,
-  factor = NA,
-  dose = NA,
-  prefix = "S"
-) {
-  checkmate::assertNumber(n_rep, lower = 1, finite = TRUE)
-  checkmate::assertNumeric(time, null.ok = FALSE)
-  checkmate::assertNumeric(conc, null.ok = FALSE)
-  checkmate::assertVector(factor, null.ok = FALSE)
-  checkmate::assertVector(dose, null.ok = FALSE)
+# #' Cartesian product of sample factors to a plate
+# #' @param plate PlateObj
+# #' @param n_rep number of samples to be added
+# #' @param time A vector representing time points
+# #' @param conc A vector representing concentration
+# #' @param factor A vector representing factor
+# #' @param dose A vector representing dose
+# #' @param prefix A prefix to be added before samples names. Default is "S"
+# #'
+# #' @returns PlateObj
+# #' @details This function is a variation of `add_samples()` where size of inputs does not matter.
+# #' The function will automatically create a combination of all sample names with time, concentration and factor.
+# #' final name will be of form. Prefix-SampleName-Time-Concentration-Factor
+# #' @export
+# add_samples_c <- function(
+#   plate,
+#   n_rep,
+#   time = NA,
+#   conc = NA,
+#   factor = NA,
+#   dose = NA,
+#   prefix = "S"
+# ) {
+#   checkmate::assertNumber(n_rep, lower = 1, finite = TRUE)
+#   checkmate::assertNumeric(time, null.ok = FALSE)
+#   checkmate::assertNumeric(conc, null.ok = FALSE)
+#   checkmate::assertVector(factor, null.ok = FALSE)
+#   checkmate::assertVector(dose, null.ok = FALSE)
 
-  last_unique <- plate@df$samples |> as.numeric() |> unique() |> length()
-  samples <- seq_len(n_rep) + last_unique
-  combined <- expand.grid(
-    samples = samples,
-    time = time,
-    conc = conc,
-    factor = factor,
-    dose = dose
-  ) |>
-    dplyr::arrange(
-      .data$samples,
-      .data$dose,
-      .data$factor,
-      .data$conc,
-      .data$time
-    ) |>
-    dplyr::group_by(.data$samples, .data$factor, .data$dose, .data$conc) |>
-    dplyr::mutate(samples = dplyr::cur_group_id() + last_unique)
+#   last_unique <- plate@df$samples |> as.numeric() |> unique() |> length()
+#   samples <- seq_len(n_rep) + last_unique
+#   combined <- expand.grid(
+#     samples = samples,
+#     time = time,
+#     conc = conc,
+#     factor = factor,
+#     dose = dose
+#   ) |>
+#     dplyr::arrange(
+#       .data$samples,
+#       .data$dose,
+#       .data$factor,
+#       .data$conc,
+#       .data$time
+#     ) |>
+#     dplyr::group_by(.data$samples, .data$factor, .data$dose, .data$conc) |>
+#     dplyr::mutate(samples = dplyr::cur_group_id() + last_unique)
 
-  plate |>
-    add_samples(
-      samples = unique(combined$samples),
-      time = unique(combined$time),
-      conc = unique(combined$conc),
-      factor = unique(as.character(combined$factor)),
-      dose = unique(combined$dose),
-      prefix = prefix
-    )
-}
+#   plate |>
+#     add_samples(
+#       samples = unique(combined$samples),
+#       prefix = prefix
+#     )
+# }
 
 add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   checkmate::assertVector(logIds, min.len = 1, any.missing = FALSE)
@@ -605,26 +403,23 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
     stop("namestyle must be either 1 or 2")
   }
   
-  values <- apply(samplesdf[, order], 1, function(row) {
+  samplesdf$values <- apply(samplesdf[, order], 1, function(row) {
     paste(na.omit(row), collapse = "_")
   })
-  stopifnot(length(values) == nrow(samplesdf))
 
   empty_spots <- .spot_mask(plateobj)
-  plate[
-    empty_spots[1:nrow(samplesdf), 1],
-    empty_spots[1:nrow(samplesdf), 2]
-  ] <- values
+  .check_feasible_adding(plateobj, empty_spots, nrow(samplesdf))
 
   new_df <- df[FALSE, ]
   for (i in seq_len(nrow(samplesdf))) {
-    sample_row <- samplesdf[i, ]
+    plate[empty_spots[i, 1], empty_spots[i, 2]] <- samplesdf$values[i]
+
     new_row <- data.frame(
       row = empty_spots[i, 1],
       col = empty_spots[i, 2],
-      value = values[i],
-      study_id = samplesdf[i, "study_id"],
-      log_id = samplesdf[i, "log_id"],
+      value = samplesdf$values[i],
+      study_id = samplesdf$study_id[i],
+      log_id = samplesdf$log_id[i],
       a_group = group,
       dil = dil[i],
       TYPE = "Analyte",

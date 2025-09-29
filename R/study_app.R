@@ -2549,7 +2549,7 @@ study_app_server <- function(input, output, session) {
 
         updateTabsetPanel(session, "main_tabs", "gen_tab") # switch
 
-        show_alert(
+        shinyWidgets::show_alert(
           title = "Plate Ready To Reuse",
           text = tags$div(
             h3("A new variable captured in R. Please close this window now")

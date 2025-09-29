@@ -1,7 +1,39 @@
+chrom_data_load_ui <- function(id) {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(
+        width = 4,
+        fileInput(
+          ns("chrom_file"),
+          "Upload Chromatography Data File",
+          multiple = TRUE,
+          accept = c(".rds", ".RDS", ".raw", ".mzML", ".mzml", "mzXML", ".mzxml")
+        )
+      ),
+      column(
+        width = 4,
+        actionButton(ns("load_chrom_data"), "Load Data")
+      )
+    )
+  )
+}
+
+chrom_data_load_server <- function(id, original_dat) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+  })
+}
+
 chromapp_ui <- function() {
   bslib::page_navbar(
     title = "Chromatography App",
     shinyjs::useShinyjs(),
+    bslib::nav_panel(
+      "Load Chromatography Data",
+      chrom_data_load_ui("chrom_data_load")
+    ),
     bslib::nav_panel(
       "Dashboard",
       bslib::navset_card_tab(

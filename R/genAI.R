@@ -6,7 +6,10 @@ chatfunc <- function() {
     api_key = get_pkbioanalysis_option("api_key"),
     params = ellmer::params(temperature = get_pkbioanalysis_option("temprature")),
     system = "You are experienced bioanalytical researcher to interpret bioanalytical data according to best practices and regulatory guidelines. 
-                Give concise less than 200 words reports. Use titles, bullets and highlight important parts in bold. Mark risky items in red. Answer in markdown format."
+                Give concise less than 200 words reports. Use titles, bullets and highlight important parts in bold. Mark risky items in red. Answer in markdown format. 
+                Your final bullet point is a single yes/no if the data is acceptable for conclusive decision making or not. For example, 'AI agent approves: No'. 
+                You are allowed to say 'I don't know' if you are not sure about something and ask for more information.
+                "
   )
   chat
 }

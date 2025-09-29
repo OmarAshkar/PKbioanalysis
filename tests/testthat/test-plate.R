@@ -34,6 +34,7 @@ test_that("reuse_plate", {
   validObject(x) |> expect_equal(TRUE)
 })
 
+
 test_that("suitability", {
   x <- generate_96() |> add_suitability("Suitability", conc = 2)
   as.vector(x@plate[1, 1]) |> expect_equal("Suitability")
@@ -76,7 +77,7 @@ test_that("multiple_stds_n_qcs", {
 test_that("rep_stdTest", {
   generate_96() |>
     fill_scheme("v", tbound = "A", bbound = "C") |>
-    add_samples(rep("SLOQ/4", 3), conc = 0.25) |>
+    # add_samples(rep("SLOQ/4", 3), conc = 0.25) |>
     fill_scheme("h", lbound = 2, rbound = 9) |>
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep = 3) |>
 
@@ -88,7 +89,7 @@ test_that("rep_stdTest", {
     # fill_scheme("h", lbound = 1, rbound = 12) |>
     add_QC(3, 80, 180, reg = T, n_qc = 6, qc_serial = F) |>
     fill_scheme("h") |>
-    add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q") |>
+    # add_samples(rep("QLOQ/4", 6), conc = 0.25, prefix = "Q") |>
     plot(layoutOverlay = TRUE) |>
     expect_no_error()
 })
@@ -102,14 +103,14 @@ test_that("Last position", {
   x@plate[8, 12] |> unname() |> expect_equal("DB")
 })
 
-test_that("test_factor_samples", {
-  x <- generate_96() |>
-    add_samples(samples = 1:5, time = 1:10 * 30, conc = 20)
+# test_that("test_factor_samples", {
+#   x <- generate_96() |>
+#     add_samples(samples = 1:5, time = 1:10 * 30, conc = 20)
 
-  x |> plot(color = "conc") |> expect_no_error()
-  x |> plot(color = "factor") |> expect_no_error()
-  x |> plot(color = "time") |> expect_no_error()
-})
+#   x |> plot(color = "conc") |> expect_no_error()
+#   x |> plot(color = "factor") |> expect_no_error()
+#   x |> plot(color = "time") |> expect_no_error()
+# })
 
 
 test_that("qc_ranges", {
@@ -158,60 +159,42 @@ test_that("spot_maskTest", {
 test_that("samples_vectorization", {
   # multiple samples, multiple time, one dose
   x <- generate_96() |>
-    add_samples(samples = 1, time = 1:10 * 30, dose = "A")
-
-  expect_equal(length(unique(x@df$time)), 10 + 1)
-  expect_equal(length(unique(x@df$dose)), 1 + 1)
-  expect_equal(length(unique(x@df$samples)), 1 + 1)
+    add_samples(samples = 1)
 
   # multiple samples, one time, multiple doses
   x <- generate_96() |>
-    add_samples(samples = 1:10, time = 1, dose = "A")
-  x <- select(x@df, "samples", "time", "dose") |> dplyr::distinct()
-  expect_equal(nrow(x), 10 + 1)
-  expect_equal(length(unique(x$time)), 1 + 1)
-  expect_equal(length(unique(x$dose)), 1 + 1)
-  expect_equal(length(unique(x$samples)), 10 + 1)
-
-  # multiple samples, multiple time, multiple doses
-  x <- generate_96() |>
-    add_samples(samples = 1:5, time = 1:10 * 30, dose = c("A"))
-  x <- select(x@df, "samples", "time", "dose") |> dplyr::distinct()
-  expect_equal(nrow(x), 5 * 10 + 1)
-  expect_equal(length(unique(x$time)), 10 + 1)
-  expect_equal(length(unique(x$dose)), 1 + 1)
-  expect_equal(length(unique(x$samples)), 5 + 1)
+    add_samples(samples = 1:10)
 })
 
-test_that("samples_combination", {
-  x <- generate_96() |>
-    add_samples_c(
-      n_rep = 3,
-      time = 0:5 * 30,
-      conc = c(1, 2),
-      factor = c("M", "F")
-    )
+# test_that("samples_combination", {
+#   x <- generate_96() |>
+#     add_samples_c(
+#       n_rep = 3,
+#       time = 0:5 * 30,
+#       conc = c(1, 2),
+#       factor = c("M", "F")
+#     )
 
-  sum(!is.na(x@df$samples)) |> expect_equal(72) # cartesian product
+#   sum(!is.na(x@df$samples)) |> expect_equal(72) # cartesian product
 
-  # 2 x 2 x 2
-  x <- generate_96() |>
-    add_samples_c(
-      n_rep = 2,
-      time = 1:10 * 30,
-      dose = c(100, 200),
-      factor = c("M", "F")
-    )
+#   # 2 x 2 x 2
+#   x <- generate_96() |>
+#     add_samples_c(
+#       n_rep = 2,
+#       time = 1:10 * 30,
+#       dose = c(100, 200),
+#       factor = c("M", "F")
+#     )
 
-  x <- x@df |>
-    dplyr::select("samples", "time", "dose", "factor") |>
-    dplyr::distinct()
-  expect_equal(nrow(x), 2 * 2 * 2 * 10 + 1)
-  expect_equal(length(unique(x$time)), 10 + 1)
-  expect_equal(length(unique(x$dose)), 2 + 1)
-  expect_equal(length(unique(x$samples)), 2 * 2 * 2 + 1)
-  expect_equal(length(unique(x$factor)), 2 + 1)
-})
+#   x <- x@df |>
+#     dplyr::select("samples", "time", "dose", "factor") |>
+#     dplyr::distinct()
+#   expect_equal(nrow(x), 2 * 2 * 2 * 10 + 1)
+#   expect_equal(length(unique(x$time)), 10 + 1)
+#   expect_equal(length(unique(x$dose)), 2 + 1)
+#   expect_equal(length(unique(x$samples)), 2 * 2 * 2 + 1)
+#   expect_equal(length(unique(x$factor)), 2 + 1)
+# })
 
 
 test_that("plotPlateDesignTest", {
@@ -222,9 +205,9 @@ test_that("plotPlateDesignTest", {
     add_blank() |>
     add_cs_curve(c(50, 20, 10, 5, 2, 1), group = "B", rep = 2) |>
     add_QC(3, 20, 180, reg = T, n_qc = 2, qc_serial = F, group = "B") |>
-    add_samples(1:5, dose = 100, factor = "M", time = 1:5 * 30) |>
+    add_samples(1:5) |>
     # add_samples(6:10, dose = "A", factor = "F", time = 1:5*30) |>
-    add_samples(11:15, dose = 200, factor = "M", time = 1:5 * 30) |>
+    add_samples(11:15) |>
     # add_samples(16:18, dose = "B", factor = "F", time = 1:3*30) |>
     plate_tree(plot = T) |>
     expect_no_error()
@@ -263,7 +246,8 @@ test_that("add samples from db", {
     type = "SD",
     pkstudy = FALSE,
     title = "New Study",
-    description = "Description of the new study"
+    description = "Description of the new study", 
+    subject_type = "Human"
   ))
   add_sample_log(
     study_id = new_study$id,
@@ -279,4 +263,42 @@ test_that("add samples from db", {
     add_samples_db(df$log_id, namestyle = 1, group = "A")
 
   plot(x) |> expect_no_error()
+})
+
+test_that("add_from_db2", {
+  
+  new_study <- create_new_study(data.frame(
+    type = "SD",
+    pkstudy = FALSE,
+    title = "New Study",
+    description = "Description of the new study", 
+    subject_type = "Human"
+  ))
+
+  add_sample_log(
+    study_id = new_study$id,
+    df = data.frame(
+      subject_id = rep(1:3, each = 4),
+      nominal_time = rep(c(0, 5, 10 , 30), 3)
+    )
+  )
+
+  df <- retrieve_sample_log(study_id = new_study$id)
+  suppressWarnings({
+    x <- generate_96() |> 
+      add_blank() |>
+      add_DB() |>
+      add_cs_curve(c(1, 3, 10, 50, 80, 100, 200, 300), rep = 2) |> 
+      add_QC(3, 90, 190, reg = FALSE, n_qc = 6) |>  
+      add_samples_db(df$log_id) |>
+      add_DQC(conc = 500, fac = 10, rep = 1)
+  })
+  
+  x@df$value[x@df$row == 5 & x@df$col == 7] |> unname() |>
+    expect_equal("DQC_500_10X")
+
+  # expect DQC str at E7.  
+  x@plate[["E", 7]] |> expect_equal("DQC_500_10X")
+  x@plate[["F", 1]] |> expect_equal(NA_character_)
+
 })

@@ -289,7 +289,6 @@ write_injec_seq <- function(injec_seq) {
 
   .check_sample_db()
   db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
 
   # find last unqiue ID and add 1
   max_id_query <- "SELECT MAX(list_id) AS max_id FROM platesdb"
@@ -324,6 +323,9 @@ write_injec_seq <- function(injec_seq) {
       stop(
         "Error writing to database: Might be due to duplicates. Try changing the suffix or plate."
       )
+    },
+    finally = {
+      .close_db(db, TRUE)
     }
   )
 

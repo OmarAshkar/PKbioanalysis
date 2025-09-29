@@ -58,8 +58,17 @@ Imports:
     gt,
     plotly,
     pracma,
+    reactable,
     reactable.extras,
-    gtools
+    gtools, 
+    ellmer, 
+    htmlWidgets, 
+    jsonlite, 
+    nlme, 
+    pmxTools,
+    scales, 
+    shinychat, 
+    uuid
 Suggests: 
     knitr,
     patchwork,

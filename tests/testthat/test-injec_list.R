@@ -166,7 +166,6 @@ test_that("writing_increment_id", {
 
 test_that("export masslynx", {
   skip_on_cran()
-  skip_on_ci()
 
   .reset_samples_db()
   x <- generate_96() |>
@@ -195,3 +194,5 @@ test_that("export masslynx", {
   ) |>
     expect_true()
 })
+
+

@@ -1006,6 +1006,6 @@ quant_app <- function() {
       quantapp_server(input, output, session)
     }
   )
-  x <- runApp(app)
+  x <- runApp(app, launch.browser = TRUE, port = 12345)
   return(x)
 }
