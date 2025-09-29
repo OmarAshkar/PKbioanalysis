@@ -62,7 +62,7 @@ Imports:
     reactable.extras,
     gtools, 
     ellmer, 
-    htmlWidgets, 
+    htmlwidgets, 
     jsonlite, 
     nlme, 
     pmxTools,
