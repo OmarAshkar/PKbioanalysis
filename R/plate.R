@@ -1802,11 +1802,11 @@ samples_naming_style <- function(
 
   df <- df |>
     dplyr::left_join(
-      samplesmetadata |> select(.data$log_id, .data$study_id, .data$new_value),
+      samplesmetadata |> select("log_id", "study_id", "new_value"),
       by = c("log_id", "study_id")
     ) |>
     dplyr::mutate(value = ifelse(TYPE == "Analyte", .data$new_value, .data$value)) |>
-    dplyr::select(-.data$new_value)
+    dplyr::select(-"new_value")
 
   plate@df <- df
   validObject(plate)

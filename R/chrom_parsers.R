@@ -1,3 +1,19 @@
+dir_or_files_to_files <- function(dir, file_pattern){
+  if(checkmate::checkDirectory(dir) & length(dir) == 1 & !all(grepl(dir, pattern = file_pattern))){
+    checkmate::assertDirectoryExists(dir)
+    x <- list.files(dir, full.names = T, pattern = file_pattern, all.files = TRUE)
+  } else if(checkmate::checkCharacter(dir)){
+    lapply(dir, checkmate::assertDirectoryExists)
+    x <- dir
+  } else if(checkmate::checkFile(dir)){
+    lapply(dir, checkmate::assertFileExists)
+    x <- dir
+  } else {
+    stop("Input must be a directory or a vector of files")
+  }
+  x
+}
+
 #' Read raw files
 #' @param dir directory containing raw files
 #' @importFrom reticulate import
@@ -8,6 +24,8 @@
 #' @importFrom tidyr pivot_longer
 #' @noRd
 .parsewatersraw <- function(dir) {
+  checkmate::assertDirectory(dir)
+
   cli::cli_h3("Reading Waters Raw Files")
 
   py <- reticulate::import_from_path(
@@ -15,8 +33,8 @@
     path = system.file("pysrc", package = "PKbioanalysis")
   )
   # py <<- reticulate::import_from_path("inst", delay_load = T)
+  x <- dir_or_files_to_files(dir, "raw$")
 
-  x <- list.files(dir, full.names = T, pattern = "raw$", all.files = T)
   if (length(x) < 1) {
     cli::cli_alert_danger("No raw files found in directory {dir}")
     stop("No raw files found in directory")
@@ -118,6 +136,9 @@
         sample_transitions = sample_transitions
       )
     })
+
+    
+  stopifnot(length(df_list) == length(x))
 
   df_list
 }

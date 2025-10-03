@@ -184,8 +184,6 @@ setValidity("ChromRes", function(object) {
 #' path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
 #' main <- read_chrom(path)
 read_chrom <- function(dir, format = "waters_raw", method) {
-  checkmate::assertString(dir)
-  checkmate::assertDirectory(dir)
   checkmate::assertChoice(format, choices = c("waters_raw", "mzML"))
   checkmate::assertNumber(method, lower = 1, null.ok = FALSE)
 
@@ -201,7 +199,6 @@ read_chrom <- function(dir, format = "waters_raw", method) {
   }
 
   chroms_list <- .sort_chromatograms(chroms_list)
-  stopifnot(length(chroms_list) == length(list.files(dir)))
 
   metadata_df <- .construct_file_meta(chroms_list) # make unique ID
 

@@ -7,9 +7,10 @@ chrom_data_load_ui <- function(id) {
         fileInput(
           ns("chrom_file"),
           "Upload Chromatography Data File",
-          multiple = TRUE,
-          accept = c(".rds", ".RDS", ".raw", ".mzML", ".mzml", "mzXML", ".mzxml")
-        )
+          multiple = TRUE#,
+          # accept = c(".rds", ".RDS", ".raw", ".mzML", ".mzml", "mzXML", ".mzxml")
+        ),
+        textInput(ns("chrom_path"), "or provide path to folder", value = "")
       ),
       column(
         width = 4,
@@ -19,10 +20,36 @@ chrom_data_load_ui <- function(id) {
   )
 }
 
-chrom_data_load_server <- function(id, original_dat) {
+chrom_data_load_server <- function(id, peaksobj) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    observeEvent(input$load_chrom_data, {
+      tryCatch({
+        # progress bar 
+        progress <- Progress$new(session, min = 1, max = 2)
+        progress$set(
+          message = "Loading Data",
+          detail = "This may take a while..."
+        )
+        on.exit(progress$close())
+
+        if (!is.null(input$chrom_file)) {
+          path <- input$chrom_file
+        } else {
+          path <- input$chrom_path
+          checkmate::assert_directory_exists(path)
+        }
+
+        res <- read_chrom(path, method = 1)
+        peaksobj(res)
+        showNotification("Chromatography data loaded", type = "message")
+      }, 
+      error = function(e) {
+        showNotification(paste("Error: ", e$message), type = "error")
+      }
+      )
+    })
   })
 }
 
@@ -251,7 +278,7 @@ chromapp_ui <- function() {
 }
 
 
-chromapp_server <- function(input, output, session, original_dat) {
+chromapp_server <- function(input, output, session) {
   js <- "
     function(el, x, inputName){
       var id = el.getAttribute('id');
@@ -275,34 +302,35 @@ chromapp_server <- function(input, output, session, original_dat) {
   "
 
   output$run_summary <- renderPrint({
-    print(original_dat)
+    print(peaksobj())
   })
 
   ###
 
-  peaksobj <- reactiveVal(original_dat)
-  samples_df <- reactiveVal(get_sample_names(original_dat))
+  peaksobj <- reactiveVal(NULL)
+  chrom_data_load_server("chrom_data_load", peaksobj)
+  
+  samples_df <- reactiveVal(NULL)
+  current_cmpds_df <- reactiveVal(NULL)
 
-
-  current_trans_id <- reactiveVal(1) # transition i
-
-  # sync filter compd_id with current selected transition
-  current_cmpds_df <- reactiveVal(.compound_trans_df(original_dat))
-  selected_peak_range <- reactiveVal(NULL)
-
-  reactive({
+  observeEvent(peaksobj(), {
+    req(peaksobj())
     sample_names <- get_sample_names(peaksobj())
     samples_df(sample_names)
-  })
-
-  reactive({
     current_cmpds_df(.compound_trans_df(peaksobj()))
   })
+
+  current_trans_id <- reactiveVal(1) # transition i
+  # sync filter compd_id with current selected transition
+  selected_peak_range <- reactiveVal(NULL)
+
 
   # Overview  ####
   ##  table for overview ####
   output$sample_table_overview <- rhandsontable::renderRHandsontable({
-    original_dat@metadata |>
+    validate(need(peaksobj(), "No peaks object available"))
+    req(peaksobj())
+    peaksobj()@metadata |>
       rhandsontable::rhandsontable() |>
       rhandsontable::hot_col(
         c(
@@ -345,6 +373,8 @@ chromapp_server <- function(input, output, session, original_dat) {
 
   ##  Transition table ####
   output$trans_table_overview <- renderDT({
+    validate(need(peaksobj(), "No peaks object available"))
+    req(peaksobj())
     peaksobj()@transitions |>
       DT::datatable(
         selection = "none",
@@ -374,6 +404,9 @@ chromapp_server <- function(input, output, session, original_dat) {
 
   ### Dynamic UI for compound modification ####
   output$cmpd_overview_ui <- renderUI({
+    validate(need(peaksobj(), "No peaks object available"))
+    req(peaksobj())
+
     fluidRow(
       selectizeInput(
         "cmpd_id_overview",
@@ -504,6 +537,7 @@ chromapp_server <- function(input, output, session, original_dat) {
     shinyalert('update the compound in method database', type = "info")
   })
   observeEvent(input$check_cmpd_db_btn, {
+    req(peaksobj())
     req(peaksobj()@compounds)
     tryCatch(
       {
@@ -517,6 +551,8 @@ chromapp_server <- function(input, output, session, original_dat) {
   })
 
   output$cmpd_table_overview <- renderDT({
+    validate(need(peaksobj(), "No peaks object available"))
+    
     DT::datatable(
       peaksobj()@compounds,
       selection = "single",
@@ -723,8 +759,8 @@ chromapp_server <- function(input, output, session, original_dat) {
   })
 
   ## renderUI: update compound list when new compound is added ####
-  observeEvent(peaksobj()@compounds, {
-    # set current_cmpds_list
+  reactive({
+    req(peaksobj())
     .compound_trans_df(peaksobj()) |> current_cmpds_df()
   })
 
@@ -745,6 +781,8 @@ chromapp_server <- function(input, output, session, original_dat) {
 
   ## chromatogram plotly output ####
   output$chrom_plots <- renderPlotly({
+    validate(need(peaksobj(), "No peaks object available"))
+    
     req(class(peaksobj()) == "ChromRes")
     req(input$sample_file_input)
     req(input$compound_trans_input)
@@ -1136,6 +1174,7 @@ chromapp_server <- function(input, output, session, original_dat) {
   })
 
   output$integeration_table <- renderDT({
+    validate(need(peaksobj(), "No peaks object available"))
     DT::datatable(
       peaksobj()@peaks,
       selection = "single",
@@ -1248,19 +1287,8 @@ chromapp_server <- function(input, output, session, original_dat) {
 
 #' @title chrom_apps
 #' @description This function creates a shiny app for peak integration.
-#' @param chrom_res A ChromRes object
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @import checkmate
 #' @export
-chrom_app <- function(chrom_res) {
-  # user input
-  original_dat <- chrom_res
-  app <- shinyApp(
-    ui = chromapp_ui(),
-    server = function(input, output, session) {
-      chromapp_server(input, output, session, original_dat)
-    }
-  )
-  x <- runApp(app)
-  return(x)
+chrom_app <- function() {
+  shiny::runApp(list(ui = chromapp_ui(), server = chromapp_server), launch.browser = TRUE)
 }
