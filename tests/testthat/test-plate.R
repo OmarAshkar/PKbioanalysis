@@ -284,6 +284,7 @@ test_that("add_from_db2", {
   )
 
   df <- retrieve_sample_log(study_id = new_study$id)
+  df <- retrieve_full_study_log(study_id = new_study$id)
   suppressWarnings({
     x <- generate_96() |> 
       add_blank() |>
@@ -301,4 +302,9 @@ test_that("add_from_db2", {
   x@plate[["E", 7]] |> expect_equal("DQC_500_10X")
   x@plate[["F", 1]] |> expect_equal(NA_character_)
 
+
+  # alter samples names
+  x |> samples_naming_style() |> plot() |> expect_no_error()
+  x |> samples_naming_style(study_name = FALSE) |> plot() |> expect_no_error()
+  x |> samples_naming_style(study_name = FALSE, use_subject_id = FALSE)  |> expect_error("group_replicate has NA values.")
 })

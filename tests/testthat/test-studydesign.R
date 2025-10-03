@@ -222,3 +222,21 @@ test_that("invitro metabolic study", {
 
   plot_study_design(newstudy$id) |> expect_no_error()
 })
+
+test_that("cell stability study", {
+  cmpds <- c("C1", "C2", "C3")
+  time_points <- c(0, 1, 6)
+  arms <- c("No Cell", "DMSO", "Saline")
+  conditions <- c("Condition1", "Condition2")
+
+  newstudy <- make_cell_stability_study(
+    study_title = "Cell Stability Study",
+    cmpds = cmpds,
+    time_points = time_points,
+    arms = arms,
+    conditions = conditions,
+    n_replicates = 2
+  ) |> expect_no_error()
+
+  plot_study_design(newstudy$id) |> expect_no_error()
+})

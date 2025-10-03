@@ -135,7 +135,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   PlateObj(
     m = m,
     df = df,
-    samples_metadata = data.frame(), 
+    samples_metadata = data.frame(),
     plate_id = plate_id,
     empty_rows = empty_rows,
     descr = descr,
@@ -170,7 +170,7 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
   samples_df <- samples_df |>
     dplyr::arrange(
       .data$group,
-      .data$samples, 
+      .data$samples,
       .data$dil
     )
 
@@ -190,15 +190,14 @@ generate_96 <- function(descr = "", start_row = "A", start_col = 1) {
         .data$samples
       )
     ) |>
-    
+
     dplyr::mutate(
       value = ifelse(
         !is.na(.data$dil),
         paste0(.data$value, "_", .data$dil, "X"),
         .data$value
       )
-    ) 
-
+    )
 
   empty_spots <- .spot_mask(plate_obj)
 
@@ -359,7 +358,13 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   stopifnot(length(dil) == length(logIds))
 
   samplesdf <- retrieve_full_log_by_id(logIds) |>
-    dplyr::mutate(nominal_time = ifelse(!is.na(.data$nominal_time), paste0("T", .data$nominal_time), .data$nominal_time)) |>
+    dplyr::mutate(
+      nominal_time = ifelse(
+        !is.na(.data$nominal_time),
+        paste0("T", .data$nominal_time),
+        .data$nominal_time
+      )
+    ) |>
     dplyr::mutate(
       dose_amount = ifelse(
         !is.na(.data$dose_amount),
@@ -393,7 +398,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
     order <- c(
       "group_label",
       "subject_id",
-      "sex", 
+      "sex",
       "extra_factors",
       "nominal_time",
       "dose_amount",
@@ -402,7 +407,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   } else {
     stop("namestyle must be either 1 or 2")
   }
-  
+
   samplesdf$values <- apply(samplesdf[, order], 1, function(row) {
     paste(na.omit(row), collapse = "_")
   })
@@ -1266,8 +1271,6 @@ plot.PlateObj <- function(
 #   NULL
 # }
 
-
-
 #' Print PlateObj
 #' @param x PlateObj
 #' @param ... additional arguments passed to print
@@ -1617,7 +1620,6 @@ fill_scheme <- function(
 }
 
 
-
 # copied from https://stackoverflow.com/questions/43803949/create-and-print-a-product-hierarchy-tree-without-na-from-data-frame-in-r-with
 paste5 <- function(..., sep = " ", collapse = NULL, na.rm = TRUE) {
   if (na.rm == F) {
@@ -1717,3 +1719,96 @@ gen_plate_positions <- function() {
   gtools::mixedsort(levels(interaction(LETTERS[1:8], 1:12, sep = "")))
 }
 
+
+#' Naming style for samples
+#' @param plate PlateObj object
+#' @param style numeric. Naming style from 1 to 4. Default is 1. See details.
+#' @param use_subject_id logical. If TRUE, use subject_id instead of subject replicate. Default is FALSE
+#' @details
+#' There are 4 naming styles:
+#' 1. arm_subject_time
+#' 2. study_Arm_subject_time
+#' 3. study_arm_subject_time_dose
+#' 4. study_arm_subject_time_dose_Route
+#' @returns plate with samples renamed
+#' @noRd
+samples_naming_style <- function(
+  plate,
+  study_name = TRUE,
+  arm = TRUE,
+  time = TRUE,
+  factor = TRUE,
+  sex = FALSE,
+  dose = FALSE,
+  use_subject_id = TRUE
+) {
+  checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertLogical(study_name)
+  checkmate::assertLogical(arm)
+  checkmate::assertLogical(time)
+  checkmate::assertLogical(factor)
+  checkmate::assertLogical(sex)
+  checkmate::assertLogical(dose)
+  checkmate::assertLogical(use_subject_id)
+  
+  df <- plate@df
+  # reconstruct the df$value in the plate for only TYPE == "Analyte". Do this by matching with samples_metadata
+
+  samplesmetadata <- plate@samples_metadata 
+  if (nrow(samplesmetadata) == 0) {
+    stop("No samples metadata found. Cannot rename samples")
+  }
+  if(study_name){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = .data$title)
+  } else{
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = "")
+  }
+
+  if(arm){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$group_label, sep = "_", na.rm = TRUE))
+  }
+
+  if(use_subject_id){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$subject_id, sep = "_", na.rm = TRUE))
+  } else {
+    if(anyNA(samplesmetadata$group_replicate)){
+      stop("group_replicate has NA values. Try subject_id = TRUE")
+    }
+
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$group_replicate, sep = "_", na.rm = TRUE))
+  }
+  if(time){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$nominal_time, sep = "_", na.rm = TRUE))
+  }
+  if(factor){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$extra_factors, sep = "_", na.rm = TRUE))
+  }
+  if(sex){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$sex, sep = "_", na.rm = TRUE))
+  }
+  if(dose){
+    samplesmetadata <- samplesmetadata |>
+      mutate(new_value = paste5(.data$new_value, .data$dose_amount, sep = "_", na.rm = TRUE)) |>
+      mutate(new_value = paste5(.data$new_value, .data$route, sep = "_", na.rm = TRUE))
+  }
+
+  df <- df |>
+    dplyr::left_join(
+      samplesmetadata |> select(.data$log_id, .data$study_id, .data$new_value),
+      by = c("log_id", "study_id")
+    ) |>
+    dplyr::mutate(value = ifelse(TYPE == "Analyte", .data$new_value, .data$value)) |>
+    dplyr::select(-.data$new_value)
+
+  plate@df <- df
+  validObject(plate)
+  plate
+}

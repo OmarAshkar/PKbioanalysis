@@ -1,3 +1,10 @@
+add_column_if_missing <- function(df, colname, default = NA_character_) {
+  if (!colname %in% names(df)) {
+    df[[colname]] <- default
+  }
+  df
+}
+
 create_new_study <- function(df) {
   checkmate::assertNames(
     names(df),
@@ -101,13 +108,8 @@ add_dosing_db <- function(study_id, df) {
     stop("Group label cannot be empty")
   }
 
-  if (!"arm_id" %in% names(df)) {
-    df$arm_id <- uuid::UUIDgenerate(n = nrow(df))
-  } else {
-    df[is.na(df$arm_id), "arm_id"] <- uuid::UUIDgenerate(
-      n = sum(is.na(df$arm_id))
-    )
-  }
+  df <- add_column_if_missing(df, "arm_id")
+  df$arm_id[is.na(df$arm_id)] <- uuid::UUIDgenerate(n = sum(is.na(df$arm_id)))
 
   df$study_id <- study_id
   .check_sample_db()
@@ -180,6 +182,39 @@ add_subjects_db <- function(study_id, df) {
   if (any(df$group_label == "") | any(is.na(df$group_label))) {
     stop("Group label cannot be empty")
   }
+
+  df <- add_column_if_missing(df, "sex")
+  df <- add_column_if_missing(df, "age", default = NA_integer_)
+  df <- add_column_if_missing(df, "race")
+  df <- add_column_if_missing(df, "extra_factors")
+
+  ##### check group_replicate #####
+  df$group_replicate <- NULL
+  if(!"group_replicate" %in% names(df)){
+    df <- df |> 
+      dplyr::group_by(.data$group_label, .data$sex, .data$age, .data$race, .data$extra_factors) |>
+      dplyr::mutate(group_replicate = dplyr::row_number()) |> 
+      dplyr::ungroup()
+  } 
+
+  # assert group_replicate is numeric, starts from 1 till n without missing
+  checkmate::assertNumeric(df$group_replicate, lower = 1)
+  grp_reps <- df |> 
+    dplyr::group_by(.data$group_label, .data$sex, .data$age, .data$race, .data$extra_factors) |>
+    dplyr::summarise(
+      n = dplyr::n(),
+      min_rep = min(.data$group_replicate),
+      max_rep = max(.data$group_replicate),
+      unique_reps = length(unique(.data$group_replicate))
+    ) |> 
+    dplyr::mutate(expected_n = .data$max_rep - .data$min_rep + 1)
+  if (any(grp_reps$n != grp_reps$expected_n) | any(grp_reps$n != grp_reps$unique_reps)) {
+    stop("group_replicate must start from 1 and be continuous without missing values for each group_label
+          and combination of sex, age, race, and extra_factors")
+  }
+
+  ################################
+  
 
   df$study_id <- study_id
   .check_sample_db()
@@ -314,44 +349,27 @@ list_all_studies <- function() {
   studies
 }
 
+get_study_arms <- function(study_id) {
+  retrieve_dosing_db(study_id)$group_label
+}
+
+get_study_subjects <- function(study_id) {
+  retrieve_subjects_db(study_id)$subject_id
+}
+
+
+
 get_n_arms <- function(study_id) {
-  db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
-  n_arms <- DBI::dbGetQuery(
-    db,
-    paste0("SELECT COUNT(*) FROM arm WHERE study_id = '", study_id, "'")
-  )
-  n_arms
+  retrieve_dosing_db(study_id) |> nrow() 
 }
 
 get_n_subjects <- function(study_id) {
-  db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
-  n_subjects <- DBI::dbGetQuery(
-    db,
-    paste0("SELECT COUNT(*) FROM subject WHERE study_id = '", study_id, "'")
-  )
-  n_subjects
+  retrieve_subjects_db(study_id) |> nrow()
 }
 
-get_n_subjects <- function(study_id) {
-  db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
-  n_subjects <- DBI::dbGetQuery(
-    db,
-    paste0("SELECT COUNT(*) FROM subject WHERE study_id = '", study_id, "'")
-  )
-  n_subjects
-}
 
 get_n_samples <- function(study_id) {
-  db <- .connect_to_db()
-  on.exit(.close_db(db), add = TRUE)
-  n_samples <- DBI::dbGetQuery(
-    db,
-    paste0("SELECT COUNT(*) FROM sample WHERE study_id = '", study_id, "'")
-  )
-  n_samples
+  retrieve_sample_log(study_id) |> nrow()
 }
 
 
@@ -697,3 +715,81 @@ get_study_subject_type <- function(study_id) {
   study <- retrieve_study(study_id)
   study$subject_type
 }
+
+make_cell_stability_study <- function(
+  study_title = "Cell Stability Study",
+  time_points = c(0, 1, 6),
+  cmpds = "A",
+  arms = c("No Cell", "DMSO", "Saline"),
+  conditions = c("-80C", "4C", "-20C", "RT"),
+  n_replicates = 3){
+
+  nsubjects <- length(cmpds) * length(arms) * length(conditions) * n_replicates
+  subject_ids <- seq_len(nsubjects)
+
+  res <- expand.grid(
+      time_points = time_points,
+      cmpds = cmpds,
+      arms = arms,
+      conditions = conditions, 
+      replicates = seq_len(n_replicates)
+    )
+  subject_ids <- rep(subject_ids, each = nrow(res)/nsubjects)
+  res$subject_id <- subject_ids
+
+  subjectsdf <- res |> dplyr::select(-"time_points") |> 
+    dplyr::distinct() |> 
+    dplyr::mutate(
+      study_id = "test_study",
+      group_label = paste0(arms, "_", cmpds),
+      group_replicate = replicates,
+      extra_factors = conditions,
+      subject_id = subject_id
+  ) |> 
+  dplyr::select(subject_id, study_id, group_label, group_replicate, extra_factors)
+  
+  samplelogdf <- res |> dplyr::select("subject_id", "time_points")  |>
+    dplyr::mutate(
+      nominal_time = as.character(time_points),
+      status = "Planned"
+    ) |> 
+    dplyr::select(-"time_points") 
+
+  new_study <- create_new_study(
+      data.frame(
+        type = "SD",
+        title = study_title,
+        description = paste("Cell stability study with", length(cmpds), "compounds",
+          length(arms), "arms and", length(conditions), "conditions", 
+          "Compounds:", paste(cmpds, collapse = ", "),
+          n_replicates, "replicates each"),
+        pkstudy = FALSE, 
+        subject_type = "InVitro"
+      ))
+  cli::cli_alert_info("Created study with ID: {new_study$id}")
+  add_dosing_db( 
+      study_id = new_study$id,
+      df = data.frame(
+        group_label = unique(subjectsdf$group_label),
+        period_number = 1,
+        dose_freq = NA_real_,
+        dose_addl = NA_integer_,
+        dose_amount = NA_real_,
+        dose_unit = NA_character_,
+        route = NA_character_,
+        formulation = NA_character_
+      )
+    )
+  cli::cli_alert_success("Dosing information added.")
+  cli::cli_alert_info("Adding subjects information...")
+  add_subjects_db(study_id = new_study$id, df = subjectsdf)
+
+  cli::cli_alert_success("Subjects information added.")
+  cli::cli_alert_info("Adding sample log information...")
+  add_sample_log(study_id = new_study$id, df = samplelogdf)
+
+  cli::cli_alert_success("Sample log information added.")
+  new_study
+  }
+
+# make_cell_stability_study() 

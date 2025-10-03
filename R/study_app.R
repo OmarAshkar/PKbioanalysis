@@ -52,15 +52,21 @@ injec_seq_block_protocol_ui <- function(id, number) {
       "Analytical Group",
       choices = c("A", "B", "C", "D"),
       multiple = TRUE
-    ) |> bslib::tooltip("Not supported. All groups will be included"),
+    ) |>
+      bslib::tooltip("Not supported. All groups will be included"),
     selectInput(
       ns(paste0("inlet_method_select_prot", number)),
       "Inlet Method",
       choices = NA
     ),
-    numericInput(ns(paste0("exploratory_samples_alg_prot", number)),
-                 "Exploratory Samples", value = 0) |>
-      bslib::tooltip("Exploratory samples are samples that are not part of the sample list. They are used to check the system"),
+    numericInput(
+      ns(paste0("exploratory_samples_alg_prot", number)),
+      "Exploratory Samples",
+      value = 0
+    ) |>
+      bslib::tooltip(
+        "Exploratory samples are samples that are not part of the sample list. They are used to check the system"
+      ),
     p("Repeats"),
     fluidRow(
       column(
@@ -132,7 +138,11 @@ injec_seq_block_protocol_ui <- function(id, number) {
       ),
       column(
         width = 12,
-        textInput(ns(paste0("descr_prot", number)), "Description", value = "") |>
+        textInput(
+          ns(paste0("descr_prot", number)),
+          "Description",
+          value = ""
+        ) |>
           bslib::tooltip(
             "Description of each injection. You can modify individually from the table"
           )
@@ -145,66 +155,71 @@ injec_seq_block_protocol_ui <- function(id, number) {
   )
 }
 
-injec_seq_block_server <- function(id, number, methodsdb, currplate, current_cmpd_df, lock_export) {
+injec_seq_block_server <- function(
+  id,
+  number,
+  methodsdb,
+  currplate,
+  current_cmpd_df,
+  lock_export
+) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    observeEvent(methodsdb(),{
+    observeEvent(methodsdb(), {
       updateSelectInput(
         session = getDefaultReactiveDomain(),
         inputId = paste0("inlet_method_select_prot", number),
-        choices = methodsdb()$method)
+        choices = methodsdb()$method
+      )
     })
 
     observeEvent(currplate(), {
       updateSelectInput(
         session = getDefaultReactiveDomain(),
         inputId = paste0("a_group", number),
-        choices = get_plate_a_groups(currplate()), 
+        choices = get_plate_a_groups(currplate()),
         selected = get_plate_a_groups(currplate())
       )
     })
 
-  
-  # for each protcol add, extra protocol accordion panel
-  #### methods
-  observeEvent(methodsdb(), {
-    updateSelectInput(
-      session,
-      inputId = paste0("inlet_method_select_prot", number),
-      choices = methodsdb()$method
-    )
-  })
+    # for each protcol add, extra protocol accordion panel
+    #### methods
+    observeEvent(methodsdb(), {
+      updateSelectInput(
+        session,
+        inputId = paste0("inlet_method_select_prot", number),
+        choices = methodsdb()$method
+      )
+    })
 
+    observeEvent(input$inlet_method_select_prot1, {
+      req(input$inlet_method_select_prot1)
+      method_id <- .get_method_id(input$inlet_method_select_prot1)
+      req(method_id)
+      .get_method_cmpds(method_id) |>
+        dplyr::mutate(method = input$inlet_method_select_prot1, ratio = 1) |>
+        dplyr::select("method", "compound", "ratio") |>
+        distinct() |>
+        current_cmpd_df()
+    })
 
-  observeEvent(input$inlet_method_select_prot1, {
-    req(input$inlet_method_select_prot1)
-    method_id <- .get_method_id(input$inlet_method_select_prot1)
-    req(method_id)
-    .get_method_cmpds(method_id) |>
-      dplyr::mutate(method = input$inlet_method_select_prot1, ratio = 1) |>
-      dplyr::select("method", "compound", "ratio") |>
-      distinct() |>
-      current_cmpd_df()
-  })
-  
-
-  # nav_hide("sample_list_nav", "Export")
-  # disable and clear export sample list on any change till click regenerate again.
+    # nav_hide("sample_list_nav", "Export")
+    # disable and clear export sample list on any change till click regenerate again.
     observeEvent(
       c(
-          input[[paste0("repeat_std_prot", number)]],
-          input[[paste0("repeat_qc_prot", number)]],
-          input[[paste0("repeat_sample_prot", number)]],
-          input[[paste0( "rep_suitability_number_prot", number)]],
-          input[[paste0( "blank_after_top_conc_prot", number)]],
-          input[[paste0("blank_at_end_prot", number)]],
-          input[[paste0("blank_every_n_prot", number)]],
-          input[[paste0("injec_vol_prot", number)]],
-          input[[paste0("descr_prot", number)]],
-          input[[paste0("suffix_prot", number)]],
-          input[[paste0("tray_prot", number)]],
-          input[[paste0( "exploratory_samples_alg_prot", number)]],
-          current_cmpd_df()
+        input[[paste0("repeat_std_prot", number)]],
+        input[[paste0("repeat_qc_prot", number)]],
+        input[[paste0("repeat_sample_prot", number)]],
+        input[[paste0("rep_suitability_number_prot", number)]],
+        input[[paste0("blank_after_top_conc_prot", number)]],
+        input[[paste0("blank_at_end_prot", number)]],
+        input[[paste0("blank_every_n_prot", number)]],
+        input[[paste0("injec_vol_prot", number)]],
+        input[[paste0("descr_prot", number)]],
+        input[[paste0("suffix_prot", number)]],
+        input[[paste0("tray_prot", number)]],
+        input[[paste0("exploratory_samples_alg_prot", number)]],
+        current_cmpd_df()
       ),
       {
         req(number >= 1)
@@ -214,7 +229,7 @@ injec_seq_block_server <- function(id, number, methodsdb, currplate, current_cmp
         lock_export(TRUE) # FIXME introduce a loop bug, but without it the tables will not clear
       }
     )
-    })
+  })
 }
 
 
@@ -233,7 +248,11 @@ ui <- bslib::page_navbar(
         # divider
         tags$hr(),
         h4("Predefined Designs"),
-        actionButton("metabolic_study_gen_btn", "Metabolic Study")
+        actionButton("metabolic_study_gen_btn", "Metabolic Study"),
+        actionButton(
+          "cells_metabolic_stability_btn",
+          "Cells Metabolic Stability"
+        ),
       ),
       bslib::navset_card_pill(
         nav_panel(
@@ -242,20 +261,41 @@ ui <- bslib::page_navbar(
         ),
         nav_panel(
           "Arms",
-          actionButton("download_arms_btn", "Download"),
-          uiOutput("update_arms_db_btn_ui"),
+          bslib::layout_columns(
+            col_widths = c(4, 4),
+            uiOutput("update_arms_db_btn_ui"),
+            actionButton("download_arms_btn", "Download")
+          ),
           rhandsontable::rHandsontableOutput("studyarms_RT")
         ),
         nav_panel(
           "Subjects",
-          actionButton("download_subjects_btn", "Download Current"),
-          actionButton("update_subjects_btn", "Update"),
+          bslib::layout_columns(
+            col_widths = c(4, 4, 4),
+            actionButton(
+              "update_subjects_btn",
+              "Save",
+              width = "50%",
+              icon = icon("save")
+            ),
+            actionButton("download_subjects_btn", "Download"),
+            actionButton("autofill_subjects_btn", "Autofill")
+          ),
           rhandsontable::rHandsontableOutput("subjects_RT")
         ),
         nav_panel(
           "Sample Log",
-          actionButton("download_sample_log_btn", "Download Current"),
-          actionButton("update_sample_log_btn", "Update"),
+          bslib::layout_columns(
+            col_widths = c(4, 4, 4),
+            actionButton(
+              "update_sample_log_btn",
+              "Save",
+              width = "50%",
+              icon = icon("save")
+            ),
+            actionButton("download_sample_log_btn", "Download"),
+            actionButton("autofill_sample_log_btn", "Autofill")
+          ),
           rhandsontable::rHandsontableOutput("sample_log_RT")
         ),
         nav_panel(
@@ -441,6 +481,16 @@ ui <- bslib::page_navbar(
               bslib::layout_columns(
                 col_widths = c(4, 4, 4),
                 selectInput(
+                  "sortby_samples_input",
+                  "Sort By",
+                  choices = c(
+                    "Time" = "nominal_time",
+                    "Arm" = "arm",
+                    "Subject" = "subject_id"
+                  ),
+                  selected = "nominal_time"
+                ),
+                selectInput(
                   "dropdown_naming_samples_input",
                   "Naming Style",
                   choices = c(1, 2)
@@ -555,7 +605,12 @@ ui <- bslib::page_navbar(
             sidebar = sidebar(
               width = 500,
               textOutput("plate_ids_for_sample_list"),
-              selectInput("tray_prot1", "Tray", choices = as.character(1:12), multiple = TRUE),
+              selectInput(
+                "tray_prot1",
+                "Tray",
+                choices = as.character(1:12),
+                multiple = TRUE
+              ),
               actionButton("add_protocols", "Add Protocol"),
               bslib::accordion(
                 id = "protocols_accordion",
@@ -782,7 +837,11 @@ study_app_server <- function(input, output, session) {
       textInput("new_study_title", "Study Title", value = ""),
       textInput("new_study_descr", "Description", value = ""),
       selectInput("new_study_type", "Type", choices = c("SD", "MD", "FA")),
-      selectInput("new_study_subject_type", "Subject Type", choices = c("Human", "Animal", "InVitro", "Other")),
+      selectInput(
+        "new_study_subject_type",
+        "Subject Type",
+        choices = c("Human", "Animal", "InVitro", "Other")
+      ),
       bslib::input_switch("new_study_pkstudy", "PK Study", value = FALSE),
       actionButton("create_study_btn", "Create")
     ))
@@ -957,23 +1016,30 @@ study_app_server <- function(input, output, session) {
         overflow = "visible",
         stretchH = "all",
         width = "100%",
-        fillHandle = list(direction = "vertical", autoInsertRow = TRUE)
+        fillHandle = list(direction = "vertical", autoInsertRow = TRUE),
+        columnSorting = TRUE
       ) |>
       rhandsontable::hot_col(col = 1, readOnly = TRUE) |> # uuid_subject
       rhandsontable::hot_col(col = 2, type = "text") |>
-      rhandsontable::hot_col(col = 3, readOnly = TRUE) |>
-      rhandsontable::hot_col(col = 4, type = "text") |>
+      rhandsontable::hot_col(col = 3, readOnly = TRUE) |> # study id
       rhandsontable::hot_col(
         col = 4,
         type = "dropdown",
+        source = curr_dosing_db()$group_label
+      ) |> # group label
+      rhandsontable::hot_col(col = 5, type = "numeric", readOnly = TRUE) |> # gp rep
+      rhandsontable::hot_col(
+        col = 6,
+        type = "dropdown",
         source = c("M", "F")
       ) |>
-      rhandsontable::hot_col(col = 5, type = "numeric")
+      rhandsontable::hot_col(col = 7, type = "numeric") |> # age
+      rhandsontable::hot_col(col = 8, type = "text") |> # rage
+      rhandsontable::hot_col(col = 9, type = "text") # extra factors
   })
 
   observeEvent(input$update_subjects_btn, {
     req(currStudyid())
-
     df <- clean_rht_to_df(input$subjects_RT$data)
     df <- remove_all_empty_row(df) |> empty_string_to_na()
 
@@ -982,6 +1048,7 @@ study_app_server <- function(input, output, session) {
       "subject_id",
       "study_id",
       "group_label",
+      "group_replicate",
       "sex",
       "age",
       "race",
@@ -1003,6 +1070,36 @@ study_app_server <- function(input, output, session) {
           type = "error"
         )
       }
+    )
+  })
+
+  observeEvent(input$autofill_subjects_btn, {
+    req(currStudyid())
+    showModal(
+      modalDialog(
+        title = "Autofill Subjects",
+        easyClose = TRUE,
+        selectInput(
+          "autofill_subjects_arm",
+          "Select Arm",
+          choices = curr_dosing_db()$group_label,
+          multiple = TRUE
+        ),
+        selectInput(
+          "autofill_subjects_sex",
+          "Select Sex",
+          choices = c("M", "F"),
+          multiple = TRUE
+        ),
+        numericInput(
+          "n_subjects_autofill",
+          "Number of Subjects",
+          value = 10,
+          min = 1,
+          step = 1
+        ),
+        actionButton("autofill_subjects_final_btn", "Autofill")
+      )
     )
   })
 
@@ -1046,6 +1143,7 @@ study_app_server <- function(input, output, session) {
           'Depot',
           'CSF',
           'Tissue',
+          "Saliva",
           'Other'
         )
       ) |>
@@ -1179,6 +1277,96 @@ study_app_server <- function(input, output, session) {
       error = function(e) {
         showNotification(
           paste("Error generating metabolic study:", e$message),
+          type = "error"
+        )
+      }
+    )
+  })
+
+  observeEvent(input$cells_metabolic_stability_btn, {
+    showModal(modalDialog(
+      easyClose = TRUE,
+      title = "Generate Cell Metabolic Stability Study",
+      textInput(
+        "cells_metabolic_stability_title",
+        "Study Title",
+        value = "Cell Metabolic Stability Study"
+      ),
+      textInput(
+        "cells_metabolic_stability_cmpds_input",
+        "Compounds (comma separated)",
+        value = "Cmpd1, Cmpd2"
+      ),
+      textInput(
+        "cells_metabolic_stability_timepoints_input",
+        "Time Points (comma separated)",
+        value = "0,1,4,6"
+      ),
+      textInput(
+        "cells_metabolic_stability_arms_input",
+        "Arms (comma separated)",
+        value = "Ctrl, DMSO, Saline"
+      ),
+      textInput(
+        "cells_metabolic_stability_conditions_input",
+        "Conditions (comma separated)",
+        value = "-80C, -20C, 4C, RT",
+      ),
+      numericInput(
+        "cells_metabolic_stability_n_replicates",
+        "Number of Replicates",
+        value = 3,
+        min = 1,
+        step = 1
+      ),
+      actionButton(
+        "generate_cells_metabolic_stability_final_btn",
+        "Generate Study"
+      )
+    ))
+  })
+
+  observeEvent(input$generate_cells_metabolic_stability_final_btn, {
+    tryCatch(
+      {
+        progress <- shiny::Progress$new(
+          session,
+          min = 0,
+          max = 1
+        )
+        progress$set(message = "Generating cell stability study...", value = 0)
+        on.exit(progress$close())
+        make_cell_stability_study(
+          study_title = input$cells_metabolic_stability_title,
+          cmpds = trimws(unlist(strsplit(
+            input$cells_metabolic_stability_cmpds_input,
+            ","
+          ))),
+          time_points = trimws(unlist(strsplit(
+            input$cells_metabolic_stability_timepoints_input,
+            ","
+          ))),
+          arms = trimws(unlist(strsplit(
+            input$cells_metabolic_stability_arms_input,
+            ","
+          ))),
+          conditions = trimws(unlist(strsplit(
+            input$cells_metabolic_stability_conditions_input,
+            ","
+          ))),
+          n_replicates = input$cells_metabolic_stability_n_replicates
+        )
+        showNotification(
+          "Cell metabolic stability study generated successfully!",
+          type = "message"
+        )
+        progress$set(value = 1)
+        all_studies_db(list_all_studies())
+        removeModal()
+      },
+      error = function(e) {
+        showNotification(
+          paste("Error generating cell metabolic stability study:", e$message),
           type = "error"
         )
       }
@@ -1774,21 +1962,41 @@ study_app_server <- function(input, output, session) {
       "sorted"
     )
 
+    if (is.null(selected_rows)) {
+      showNotification("No samples selected", type = "error")
+      req(FALSE)
+    }
+
     tryCatch(
       {
-        if (is.null(selected_rows)) {
-          stop("No Samples selected")
+        sortedsampleid <- curr_plate_sample_log_dil() |>
+          dplyr::slice(selected_rows) |>
+          dplyr::arrange(input$sortby_samples_input) |>
+          dplyr::pull(log_id)
+
+        if (is.null(captured_dil())) {
+          sorted_dil <- 1
+        } else {
+          sorted_dil <- curr_plate_sample_log_dil() |>
+            dplyr::slice(selected_rows) |>
+            dplyr::arrange(input$sortby_samples_input) |>
+            dplyr::pull(dil)
         }
+      },
+      error = function(e) {
+        showNotification(paste("Error:", e$message), type = "error")
+        req(FALSE)
+      }
+    )
+
+    tryCatch(
+      {
         curr_gen_plate_expr(
           bquote(
             .(curr_gen_plate_expr()) |>
               add_samples_db(
-                logIds = .(curr_plate_sample_log_dil()$log_id[selected_rows]),
-                dil = .(ifelse(
-                  rep(is.null(captured_dil()), length(selected_rows)),
-                  1,
-                  captured_dil()$dil[selected_rows]
-                )),
+                logIds = sortedsampleid,
+                dil = .(sorted_dil),
                 group = .(input$samplesdb_group_input),
                 namestyle = .(input$dropdown_naming_samples_input)
               )
@@ -1803,10 +2011,10 @@ study_app_server <- function(input, output, session) {
         )
 
         curr_gen_plate_starter(eval(curr_gen_plate_expr()))
-
         showNotification("Samples added to plate", type = "message")
       },
       error = function(e) {
+        undo_last_call(curr_gen_plate_expr()) |> curr_gen_plate_expr()
         showNotification(paste("Error:", e$message), type = "error")
       }
     )
@@ -1886,8 +2094,14 @@ study_app_server <- function(input, output, session) {
   # })
 
   ##
-  injec_seq_block_server("prot1", 1, methodsdb, current_plate, current_cmpd_df, lock_export)
-  
+  injec_seq_block_server(
+    "prot1",
+    1,
+    methodsdb,
+    current_plate,
+    current_cmpd_df,
+    lock_export
+  )
 
   observeEvent(
     input$add_protocols,
@@ -1918,8 +2132,14 @@ study_app_server <- function(input, output, session) {
       # )
 
       current_injec_protcols(current_injec_protcols() + 1)
-      injec_seq_block_server(paste0("prot", protocol_last), protocol_last, methodsdb, current_plate, current_cmpd_df, lock_export)
-
+      injec_seq_block_server(
+        paste0("prot", protocol_last),
+        protocol_last,
+        methodsdb,
+        current_plate,
+        current_cmpd_df,
+        lock_export
+      )
     },
     priority = 1
   )
@@ -2024,7 +2244,6 @@ study_app_server <- function(input, output, session) {
       current_cmpd_df()
   })
 
-
   current_cmpd_df <- reactiveVal(NULL)
   lock_export <- reactiveVal(TRUE)
 
@@ -2067,8 +2286,9 @@ study_app_server <- function(input, output, session) {
           if (!is.null(current_cmpd_df())) {
             # filter only correct method
             cmpd_df <- current_cmpd_df() |>
-                filter(
-                .data$method == input[[paste0("prot", i ,"-inlet_method_select_prot", i)]]
+              filter(
+                .data$method ==
+                  input[[paste0("prot", i, "-inlet_method_select_prot", i)]]
               ) |> # filter only correct method
               dplyr::select("compound", "ratio")
           } else {
@@ -2076,20 +2296,55 @@ study_app_server <- function(input, output, session) {
           }
           injseq_list[[i]] <- plates_list |>
             build_injec_seq(
-                descr = input[[paste0("prot", i, "-descr_prot", i)]],
-                method = input[[paste0("prot", i, "-inlet_method_select_prot", i)]],
-                suffix = input[[paste0("prot", i, "-suffix_prot", i)]],
-                tray = input[[paste0("tray_prot", i)]],
-                blank_after_top_conc = input[[paste0("prot", i, "-blank_after_top_conc_prot", i)]],
-                blank_at_end = input[[paste0("prot", i, "-blank_at_end_prot", i)]],
-                blank_every_n = input[[paste0("prot", i, "-blank_every_n_prot", i)]],
-                rep_suitability = input[[paste0("prot", i, "-rep_suitability_number_prot", i)]],
-                repeat_std = input[[paste0("prot", i, "-repeat_std_prot", i)]],
-                repeat_analyte = input[[paste0("prot", i, "-repeat_sample_prot", i)]],
-                repeat_qc = input[[paste0("prot", i, "-repeat_qc_prot", i)]],
-                n_explore = input[[paste0("prot", i, "-exploratory_samples_alg_prot", i)]],
-                conc_df = cmpd_df,
-                injec_vol = input[[paste0("prot", i, "-injec_vol_prot", i)]]
+              descr = input[[paste0("prot", i, "-descr_prot", i)]],
+              method = input[[paste0(
+                "prot",
+                i,
+                "-inlet_method_select_prot",
+                i
+              )]],
+              suffix = input[[paste0("prot", i, "-suffix_prot", i)]],
+              tray = input[[paste0("tray_prot", i)]],
+              blank_after_top_conc = input[[paste0(
+                "prot",
+                i,
+                "-blank_after_top_conc_prot",
+                i
+              )]],
+              blank_at_end = input[[paste0(
+                "prot",
+                i,
+                "-blank_at_end_prot",
+                i
+              )]],
+              blank_every_n = input[[paste0(
+                "prot",
+                i,
+                "-blank_every_n_prot",
+                i
+              )]],
+              rep_suitability = input[[paste0(
+                "prot",
+                i,
+                "-rep_suitability_number_prot",
+                i
+              )]],
+              repeat_std = input[[paste0("prot", i, "-repeat_std_prot", i)]],
+              repeat_analyte = input[[paste0(
+                "prot",
+                i,
+                "-repeat_sample_prot",
+                i
+              )]],
+              repeat_qc = input[[paste0("prot", i, "-repeat_qc_prot", i)]],
+              n_explore = input[[paste0(
+                "prot",
+                i,
+                "-exploratory_samples_alg_prot",
+                i
+              )]],
+              conc_df = cmpd_df,
+              injec_vol = input[[paste0("prot", i, "-injec_vol_prot", i)]]
             )
         } # filter only correct method
 
@@ -2672,7 +2927,6 @@ study_app_server <- function(input, output, session) {
     methodsdb(.get_methodsdb())
   })
 
-  
   output$methods_dt <- DT::renderDT({
     validate(
       need(

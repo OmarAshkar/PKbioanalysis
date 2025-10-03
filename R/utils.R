@@ -311,6 +311,7 @@ studydesign_db <- function(con) {
     subject_id          TEXT NOT NULL, 
     study_id            TEXT REFERENCES study(id),
     group_label         TEXT NOT NULL, -- soft key not enforced
+    group_replicate     INTEGER DEFAULT NULL,
     sex                 TEXT CHECK (sex IN ('M', 'F')) DEFAULT NULL,
     age                 INTEGER CHECK (age >= 0) DEFAULT NULL,
     race                TEXT DEFAULT NULL,
@@ -352,7 +353,7 @@ studydesign_db <- function(con) {
     nominal_time  TEXT, -- in hours
     actual_time  TEXT, -- in hours
     status       TEXT CHECK (status IN ('Planned', 'Collected', 'Processed')),
-    sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Depot', 'CSF', 'Tissue', 'Other')),
+    sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Depot', 'CSF', 'Tissue', 'Saliva', 'Other')),
     notes         TEXT
   );
   "
