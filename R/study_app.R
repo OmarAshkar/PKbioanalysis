@@ -17,6 +17,78 @@ remove_old_ui <- function() {
 }
 
 
+plate_plot_module_ui <- function(id, str) {
+  popover(
+    bs_icon("gear"),
+    selectInput(
+      paste0(str, "_color_toggle"),
+      "Color By",
+      choices = c(
+        "conc",
+        "group",
+        "study",
+        "time",
+        "factor",
+        "samples",
+        "arm",
+        "sex",
+        "dose",
+        "route",
+        "matrix"
+      )
+    ),
+    selectInput(
+      paste0(str, "_transform_dilution"),
+      "Transform Dilution",
+      choices = c(TRUE, FALSE),
+      selected = FALSE
+    ),
+    numericInput(
+      paste0(str, "_font_size"),
+      "Font Size",
+      value = 1,
+      step = 0.2
+    ),
+    bslib::input_switch(
+      paste0(str, "_study_name_switch"),
+      "Show Study Name",
+      value = TRUE
+    ),
+    bslib::input_switch(
+      paste0(str, "_arm_switch"),
+      "Show Arm",
+      value = TRUE
+    ),
+    bslib::input_switch(
+      paste0(str, "_time_switch"),
+      "Show time",
+      value = TRUE
+    ),
+    bslib::input_switch(
+      paste0(str, "_factor_switch"),
+      "Show Factor",
+      value = FALSE
+    ),
+    bslib::input_switch(
+      paste0(str, "_sex_switch"),
+      "Show Sex",
+      value = FALSE
+    ),
+    bslib::input_switch(
+      paste0(str, "_dose_switch"),
+      "Show Dose",
+      value = FALSE
+    ),
+    bslib::input_switch(
+      paste0(str, "_use_subject_id_switch"),
+      "Use Subject ID",
+      value = FALSE
+    ),
+    title = "Plate Display Config"
+  )
+}
+
+
 injec_seq_block_protocol_ui <- function(id, number) {
   ns <- NS(id)
 
@@ -367,6 +439,13 @@ ui <- bslib::page_navbar(
     bslib::layout_sidebar(
       sidebar = bslib::sidebar(
         width = 450,
+        bslib::layout_columns(
+          col_widths = c(4, 4, 4),
+          actionButton("undo_plate_design_btn", "Undo"),
+          actionButton("save_plate_design_btn", "Save"),
+          actionButton("new_plate_design_btn", "New")
+        ),
+        ai_chat_module_ui(id = "plate_ai", title = "Plate Design Assistant"),
         h6("Layout Options"),
         shinyWidgets::switchInput(
           "layout_horizontal",
@@ -417,39 +496,7 @@ ui <- bslib::page_navbar(
                 min_height = 800,
                 card_header(
                   "Plate Map",
-                  popover(
-                    bs_icon("gear"),
-                    selectInput(
-                      "plate_design_color_toggle",
-                      "Color By",
-                      choices = c(
-                        "conc",
-                        "group",
-                        "study",
-                        "time",
-                        "factor",
-                        "samples",
-                        "arm",
-                        "sex",
-                        "dose",
-                        "route",
-                        "matrix"
-                      )
-                    ),
-                    selectInput(
-                      "plate_design_transform_dilution",
-                      "Transform Dilution",
-                      choices = c(TRUE, FALSE),
-                      selected = FALSE
-                    ),
-                    numericInput(
-                      "plate_design_font_size",
-                      "Font Size",
-                      value = 1,
-                      step = 0.2
-                    ),
-                    title = "Color By"
-                  )
+                  plate_plot_module_ui("plate_design", "plate_design")
                 ),
                 plotOutput(
                   "plate_design_plotOutput",
@@ -478,40 +525,8 @@ ui <- bslib::page_navbar(
                 " $(document).on('blur', '.text-extra', function() { Shiny.setInputValue('text_blur', 'focusOut', {priority: 'event'}); }); "
               )),
               reactable::reactableOutput("plate_design_samples_selector_RT"),
-              bslib::layout_columns(
-                col_widths = c(4, 4, 4),
-                selectInput(
-                  "sortby_samples_input",
-                  "Sort By",
-                  choices = c(
-                    "Time" = "nominal_time",
-                    "Arm" = "arm",
-                    "Subject" = "subject_id"
-                  ),
-                  selected = "nominal_time"
-                ),
-                selectInput(
-                  "dropdown_naming_samples_input",
-                  "Naming Style",
-                  choices = c(1, 2)
-                ),
-                selectizeInput(
-                  "samplesdb_group_input",
-                  "Group",
-                  options = list(create = TRUE),
-                  choices = "No Group"
-                ),
-                actionButton("add_samples_db_btn", "Add Samples")
-              )
             )
           )
-        ),
-        div(
-          style = "margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;",
-          ai_chat_module_ui(id = "plate_ai", title = "Plate Design Assistant"),
-          actionButton("undo_plate_design_btn", "Undo"),
-          actionButton("save_plate_design_btn", "Save"),
-          actionButton("new_plate_design_btn", "New")
         )
       )
     )
@@ -532,27 +547,7 @@ ui <- bslib::page_navbar(
               full_screen = TRUE,
               card_header(
                 "Plate Map",
-                popover(
-                  bs_icon("gear"),
-                  selectInput(
-                    "plate_map_color_toggle",
-                    "Color By",
-                    choices = c("conc", "factor", "dose", "time", "samples")
-                  ),
-                  selectInput(
-                    "transform_dilution",
-                    "Transform Dilution",
-                    choices = c(TRUE, FALSE),
-                    selected = FALSE
-                  ),
-                  numericInput(
-                    "plate_map_font_size",
-                    "Font Size",
-                    value = 1,
-                    step = 0.2
-                  ),
-                  title = "Color By"
-                )
+                plate_plot_module_ui("plate_map", "plate_map"),
               ),
               plotOutput("plate_map_plot1", width = "100%", height = "100%")
             )
@@ -1407,14 +1402,22 @@ study_app_server <- function(input, output, session) {
     validate(
       need(curr_gen_plate_starter(), "Create new plate")
     )
-
-    plot(
-      curr_gen_plate_starter(),
-      color = input$plate_design_color_toggle,
-      transform_dil = input$plate_design_transform_dilution,
-      label_size = input$plate_design_font_size,
-      layoutOverlay = TRUE
-    )
+    curr_gen_plate_starter() |>
+      samples_naming_style(
+        study_name = input$plate_design_study_name_switch,
+        arm = input$plate_design_arm_switch,
+        time = input$plate_design_time_switch,
+        factor = input$plate_design_factor_switch,
+        sex = input$plate_design_sex_switch,
+        dose = input$plate_design_dose_switch,
+        use_subject_id = input$plate_design_use_subject_id_switch
+      ) |>
+      plot(
+        color = input$plate_design_color_toggle,
+        transform_dil = input$plate_design_transform_dilution,
+        label_size = input$plate_design_font_size,
+        layoutOverlay = TRUE
+      )
   })
 
   observeEvent(input$plate_design_brush, {
@@ -1921,6 +1924,7 @@ study_app_server <- function(input, output, session) {
     curr_plate_sample_log_dil() |>
       reactable::reactable(
         resizable = TRUE,
+        filterable = TRUE,
         selection = "multiple",
         onClick = "select",
         highlight = TRUE,
@@ -1948,7 +1952,34 @@ study_app_server <- function(input, output, session) {
     captured_dil(df)
   })
 
-  observeEvent(input$add_samples_db_btn, {
+  observeEvent(input$plate_design_nav, {
+    req(curr_gen_plate_starter())
+    selectedtab <- input$plate_design_nav
+
+    if (selectedtab == "Add Samples") {
+      remove_old_ui()
+      insertUI(
+        selector = "#gen_plate_ui",
+        ui = div(
+          id = "dynamic_ui",
+          wellPanel(
+            textOutput("num_samples_selected_plate_design_txt"),
+            textOutput("samplesdb_sorting_vars_txt"),
+            selectizeInput(
+              "samplesdb_group_input",
+              "Group",
+              options = list(create = TRUE),
+              choices = "No Group"
+            ),
+            actionButton("add_samples_db_btn_final", "Add Samples")
+          )
+        )
+      )
+    }
+  })
+
+  samplesdb_sorting_cols <- reactiveVal(NULL)
+  observeEvent(input$add_samples_db_btn_final, {
     req(curr_gen_plate_starter())
     req(curr_gen_plate_expr())
     req(currStudyid())
@@ -1957,30 +1988,25 @@ study_app_server <- function(input, output, session) {
       "plate_design_samples_selector_RT",
       "selected"
     )
-    sorting_col <- reactable::getReactableState(
-      "plate_design_samples_selector_RT",
-      "sorted"
-    )
 
     if (is.null(selected_rows)) {
       showNotification("No samples selected", type = "error")
       req(FALSE)
     }
-
     tryCatch(
       {
         sortedsampleid <- curr_plate_sample_log_dil() |>
           dplyr::slice(selected_rows) |>
-          dplyr::arrange(input$sortby_samples_input) |>
-          dplyr::pull(log_id)
+          dplyr::arrange(across(names(samplesdb_sorting_cols()))) |>
+          dplyr::pull("log_id")
 
         if (is.null(captured_dil())) {
           sorted_dil <- 1
         } else {
           sorted_dil <- curr_plate_sample_log_dil() |>
             dplyr::slice(selected_rows) |>
-            dplyr::arrange(input$sortby_samples_input) |>
-            dplyr::pull(dil)
+            dplyr::arrange(across(names(samplesdb_sorting_cols()))) |>
+            dplyr::pull("dil")
         }
       },
       error = function(e) {
@@ -1997,8 +2023,7 @@ study_app_server <- function(input, output, session) {
               add_samples_db(
                 logIds = sortedsampleid,
                 dil = .(sorted_dil),
-                group = .(input$samplesdb_group_input),
-                namestyle = .(input$dropdown_naming_samples_input)
+                group = .(input$samplesdb_group_input)
               )
           )
         )
@@ -2018,6 +2043,27 @@ study_app_server <- function(input, output, session) {
         showNotification(paste("Error:", e$message), type = "error")
       }
     )
+  })
+  output$num_samples_selected_plate_design_txt <- renderText({
+    selected_rows <- reactable::getReactableState(
+      "plate_design_samples_selector_RT",
+      "selected"
+    )
+    if (is.null(selected_rows)) {
+      "No samples selected"
+    } else {
+      paste(length(selected_rows), "samples selected")
+    }
+  })
+
+  output$samplesdb_sorting_vars_txt <- renderText({
+    reactable::getReactableState(
+      "plate_design_samples_selector_RT",
+      "sorted"
+    ) |>
+      samplesdb_sorting_cols()
+
+    names(samplesdb_sorting_cols())
   })
 
   ai_chat_module_server(
@@ -2170,12 +2216,21 @@ study_app_server <- function(input, output, session) {
 
     # select last id for current plate list
     .retrieve_plate(rev(selected_ids())[[1]]) |> current_plate()
-    plot(
-      current_plate(),
-      color = input$plate_map_color_toggle,
-      label_size = input$plate_map_font_size,
-      transform_dil = input$transform_dilution
-    )
+    current_plate() |>
+      samples_naming_style(
+        study_name = input$plate_design_study_name_switch,
+        arm = input$plate_design_arm_switch,
+        time = input$plate_design_time_switch,
+        factor = input$plate_design_factor_switch,
+        sex = input$plate_design_sex_switch,
+        dose = input$plate_design_dose_switch,
+        use_subject_id = input$plate_design_use_subject_id_switch
+      ) |>
+      plot(
+        color = input$plate_map_color_toggle,
+        label_size = input$plate_map_font_size,
+        transform_dil = input$transform_dilution
+      )
   })
 
   output$plate_tree_grviz_out <- DiagrammeR::renderGrViz({
@@ -2765,12 +2820,21 @@ study_app_server <- function(input, output, session) {
 
   output$export_plate_image <- downloadHandler(
     filename = function() {
-      paste0(current_plate()@plate_id, ".png")
+      paste0(current_plate()@plate_id, ".jpeg")
     },
     content = function(file) {
       ggsave(
         file,
         current_plate() |>
+          samples_naming_style(
+            study_name = input$plate_map_study_name_switch,
+            arm = input$plate_map_arm_switch,
+            time = input$plate_map_time_switch,
+            factor = input$plate_map_factor_switch,
+            sex = input$plate_map_sex_switch,
+            dose = input$plate_map_dose_switch,
+            use_subject_id = input$plate_map_use_subject_id_switch
+          ) |>
           plot(
             color = input$plate_map_color_toggle,
             label_size = input$plate_map_font_size,

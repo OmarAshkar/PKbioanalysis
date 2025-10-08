@@ -1756,7 +1756,8 @@ samples_naming_style <- function(
 
   samplesmetadata <- plate@samples_metadata 
   if (nrow(samplesmetadata) == 0) {
-    stop("No samples metadata found. Cannot rename samples")
+    message("No samples metadata found. Cannot rename samples")
+    return(plate)
   }
   if(study_name){
     samplesmetadata <- samplesmetadata |>

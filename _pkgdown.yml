@@ -40,7 +40,6 @@ reference:
   - add_QC
   - add_DQC
   - add_samples
-  - add_samples_c
   - add_suitability
 - subtitle: Plate Filling Orientation
   contents: fill_scheme
