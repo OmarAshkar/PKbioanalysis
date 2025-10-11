@@ -31,7 +31,9 @@ orderdf <- function(df, cols, dirs = "asc") {
     SIMPLIFY = FALSE
   )
 
-  df[do.call(order, ordering_list), ]
+  df <- df[do.call(order, ordering_list), ]
+  rownames(df) <- NULL
+  df
 }
 
 
@@ -1322,20 +1324,27 @@ study_app_server <- function(input, output, session) {
         "Compounds (comma separated)",
         value = "Cmpd1, Cmpd2"
       ),
+      shinyWidgets::switchInput(
+        "cells_metabolic_stability_include_control_switch",
+        "Include Standard Compound",
+        value = TRUE, 
+        size = "small"
+      ),
       textInput(
         "cells_metabolic_stability_timepoints_input",
         "Time Points (comma separated)",
-        value = "0,1,4,6"
+        value = "0,1,6"
       ),
+      textInput("cell_metabolic_stability_time_unit", "Time Unit", value = "hr"),
       textInput(
         "cells_metabolic_stability_arms_input",
         "Arms (comma separated)",
-        value = "Ctrl, DMSO, Saline"
+        value = "1.DMSO, 2.Saline"
       ),
       textInput(
         "cells_metabolic_stability_conditions_input",
         "Conditions (comma separated)",
-        value = "-80C, -20C, 4C, RT",
+        value = "4.neg80C, 3.neg20C, 2.neg4C, 1.RT",
       ),
       numericInput(
         "cells_metabolic_stability_n_replicates",
@@ -1425,7 +1434,7 @@ study_app_server <- function(input, output, session) {
     plate_db(.get_plates_db())
     curr_gen_plate_starter(NULL)
     curr_gen_plate_expr(NULL)
-    showNotification("Plate design saved successfully!", type = "message")
+    # showNotification("Plate design saved successfully!", type = "message")
   })
 
   output$plate_design_plotOutput <- renderPlot({
@@ -1941,7 +1950,7 @@ study_app_server <- function(input, output, session) {
     retrieve_full_log_by_id(logIds) |>
       dplyr::mutate(dil = 1) |>
       dplyr::mutate(select = FALSE) |>
-      dplyr::relocate("dil", after = "subject_id") |>
+      dplyr::relocate("dil") |>
       dplyr::relocate("select", .before = "dil") |>
       curr_plate_sample_log_dil()
   })
@@ -1957,9 +1966,9 @@ study_app_server <- function(input, output, session) {
         need(
           nrow(curr_plate_sample_log_dil()) > 0,
           "No samples in sample log to add to plate."
-        ),
-        need(input$rank_list_logtable_asc, "No sorting method selected")
+        )
       )
+      req(input$rank_list_logtable_asc)
       curr_plate_sample_log_dil() |>
         orderdf(input$rank_list_logtable_asc) |>
         rhandsontable::rhandsontable(search = TRUE, multiColumnSort = TRUE) |>
@@ -1973,7 +1982,21 @@ study_app_server <- function(input, output, session) {
   )
 
   observeEvent(input$plate_design_nav, {
-    req(curr_gen_plate_starter())
+    validate(
+      need(
+        curr_gen_plate_starter(),
+        "Create new plate"
+      ),
+      need(
+        currStudyid(),
+        "Select a study to be able to add samples to current plate."
+      ),
+      need(
+        nrow(curr_plate_sample_log_dil()) > 0,
+        "No samples in sample log to add to plate."
+      )
+    )
+
     selectedtab <- input$plate_design_nav
 
     if (selectedtab == "Add Samples") {
@@ -1984,6 +2007,14 @@ study_app_server <- function(input, output, session) {
           id = "dynamic_ui",
           wellPanel(
             textOutput("num_samples_selected_plate_design_txt"),
+            sliderInput(
+              "plate_design_add_samples_slider",
+              "Samples",
+              min = 1,
+              max = nrow(curr_plate_sample_log_dil()),
+              value = c(1, 12),
+              step = 1
+            ),
             sortable::rank_list(
               text = "Sorting",
               labels = list(
@@ -2008,6 +2039,15 @@ study_app_server <- function(input, output, session) {
     }
   })
 
+  observeEvent(input$rank_list_logtable_asc, {
+    req(curr_plate_sample_log_dil())
+    # reorder curr_plate_sample_log_dil()
+    curr_plate_sample_log_dil() |>
+      orderdf(input$rank_list_logtable_asc) |> 
+      
+      curr_plate_sample_log_dil()
+  })
+
   observeEvent(input$add_samples_db_btn_final, {
     req(curr_gen_plate_starter())
     req(curr_gen_plate_expr())
@@ -2017,7 +2057,6 @@ study_app_server <- function(input, output, session) {
       clean_rht_to_df()
     colnames(selected_rows) <- colnames(curr_plate_sample_log_dil())
     selected_rows <- selected_rows |>
-      orderdf(input$rank_list_logtable_asc) |>
       dplyr::filter(select == TRUE)
 
     req(nrow(selected_rows) > 0)
@@ -2069,6 +2108,7 @@ study_app_server <- function(input, output, session) {
       }
     )
   })
+
   output$num_samples_selected_plate_design_txt <- renderText({
     req(curr_plate_sample_log_dil())
     selected_rows <- input$plate_design_samples_selector_RT$data |>
@@ -2084,6 +2124,22 @@ study_app_server <- function(input, output, session) {
       paste(length(selected_rows), "samples selected")
     }
   })
+
+  observeEvent(input$plate_design_add_samples_slider, {
+    req(curr_plate_sample_log_dil())
+    slider_range <- input$plate_design_add_samples_slider
+    # change curr_plate_sample_log_dil()
+    curr_plate_sample_log_dil(
+      curr_plate_sample_log_dil() |>
+        dplyr::mutate(select = FALSE) |>
+        dplyr::mutate(
+          select = dplyr::row_number() >= slider_range[1] &
+            dplyr::row_number() <= slider_range[2]
+        )
+    )
+  })
+
+  
 
   ai_chat_module_server(
     id = "plate_ai",
