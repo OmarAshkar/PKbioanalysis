@@ -370,7 +370,7 @@ download_sample_list <- function(sample_list, vendor) {
         starts_with("COMPOUND")
       ) |>
       dplyr::mutate(FILE_NAME = make.unique(.data$FILE_NAME)) |>
-      dplyr::mutate(FILE_NAME = gsub("\\.", "_", .data$FILE_NAME)) |> # replace dots with underscores
+      # dplyr::mutate(FILE_NAME = gsub("\\.", "_", .data$FILE_NAME)) |> # replace dots with underscores
       dplyr::mutate(Index = dplyr::row_number()) |>
       dplyr::mutate(
         TYPE = dplyr::case_when(
