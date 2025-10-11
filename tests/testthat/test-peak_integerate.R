@@ -29,18 +29,31 @@ test_that("filter_peak", {
     expect_error(
       "Chromatogram not smoothed. Please smooth the chromatogram first."
     )
-
 })
 
 test_that("test integration status", {
-  x <- update_peak_area(main, compound_id = 6, sample_id = 20, 
-    area = 1234, observed_rt = 1,  observed_peak_start = 0.1, 
-    observed_peak_end = 0.2, observed_peak_height = 100) |> 
-      expect_error("Sample ID does not exist")
+  x <- update_peak_area(
+    main,
+    compound_id = 6,
+    sample_id = 20,
+    area = 1234,
+    observed_rt = 1,
+    observed_peak_start = 0.1,
+    observed_peak_end = 0.2,
+    observed_peak_height = 100
+  ) |>
+    expect_error("Sample ID does not exist")
 
-  x <- update_peak_area(main, compound_id = 6, sample_id = 5, 
-    area = 1234, observed_rt = 1,  observed_peak_start = 0.1, 
-    observed_peak_end = 0.2, observed_peak_height = 100) 
+  x <- update_peak_area(
+    main,
+    compound_id = 6,
+    sample_id = 5,
+    area = 1234,
+    observed_rt = 1,
+    observed_peak_start = 0.1,
+    observed_peak_end = 0.2,
+    observed_peak_height = 100
+  )
 
   is_integrated(x, sample_id = 5, compound_id = 6) |> expect_true()
 })
@@ -61,7 +74,6 @@ test_that("integerate_all", {
   plot_chrom(x, sample_id = 4) |> expect_no_error()
   plot_chrom(x, sample_id = 4, integrated = T, show_RT = T) |> expect_no_error()
 })
-
 
 
 test_that("set_expected_bounds", {})

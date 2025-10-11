@@ -1,50 +1,17 @@
-mape <- function(actual, predicted) {
-  mean(abs((actual - predicted) / actual)) * 100
+#' Reverse predict concentration from response
+#' @param fit lm object
+#' @param newdata vector or data frame with response values
+#' @param intercept logical. Whether the model has intercept or not
+#' @return numeric. Estimated concentration
+#' @author Omar I. Elashkar
+#' @export
+reverse_predict <- function(fit, newdata, intercept) {
+  slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
+  intercept <- ifelse(intercept, unname(coef(fit)[1]), 0)
+
+  # calculate estimated response
+  (newdata - intercept) / slope
 }
-
-mae <- function(actual, predicted) {
-  mean(abs(actual - predicted))
-}
-
-mse <- function(actual, predicted) {
-  mean((actual - predicted)^2)
-}
-
-rmse <- function(actual, predicted) {
-  sqrt(mse(actual, predicted))
-}
-
-#' Calculate residual sum of squares
-#' @param actual numeric
-#' @param predicted numeric
-#' @return numeric
-#' @author Omar Elashkar
-#' @noRd
-rss <- function(actual, predicted) {
-  sum((actual - predicted)^2)
-}
-
-#' Calculate residual standard error
-#' @param residuals numeric
-#' @return numeric
-#' @author Omar Elashkar
-#' @noRd
-# https://stackoverflow.com/questions/71545329/inconsistence-with-rs-residual-standard-error-in-lm-in-case-of-wls
-rse <- function(residuals) {
-  SSE <- sum(residuals)
-}
-
-
-#' Calculate relative error (deviation) between actual and predicted concentration
-#' @param actual numeric
-#' @param predicted numeric
-#' @return numeric
-#' @author Omar Elashkar
-#' @noRd
-relative_error <- function(actual, predicted) {
-  (predicted - actual) / actual
-}
-
 
 #' Update linearity response, type and stdconc columns
 #' response from peaktab
@@ -141,6 +108,7 @@ setGeneric(
     model = "linear",
     intercept = TRUE,
     normalize = FALSE,
+    response = "abs_response",
     avg_rep = FALSE
   ) {
     standardGeneric("run_linearity")
@@ -175,8 +143,15 @@ setMethod(
 setMethod(
   "run_linearity",
   signature(quantres = "list"),
-  function(quantres, compound_id, weight = "1/x^2", model = "linear",
-          intercept = TRUE, normalize = FALSE, avg_rep = FALSE) {
+  function(
+    quantres,
+    compound_id,
+    weight = "1/x^2",
+    model = "linear",
+    intercept = TRUE,
+    normalize = FALSE,
+    avg_rep = FALSE
+  ) {
     run_linearity_list(
       quantres,
       compound_id,
@@ -189,6 +164,28 @@ setMethod(
   }
 )
 
+setMethod(
+  "run_linearity",
+  signature(quantres = "data.frame"),
+  function(
+    quantres,
+    compound_id = "compound1",
+    weight = "1/x^2",
+    model = "linear",
+    intercept = TRUE,
+    response = "abs_response",
+    avg_rep = FALSE
+  ) {
+    run_linearity_df(
+      quantres,
+      weight,
+      model,
+      intercept,
+      response,
+      avg_rep
+    )
+  }
+)
 
 run_linearity_list <- function(
   quantres,
@@ -203,48 +200,19 @@ run_linearity_list <- function(
     dplyr::filter(include == TRUE & type == "Standard")
 }
 
-#' Run linearity check
-#' @param quantres QuantRes object
-#' @param compound_id character. Compound ID to run linearity for.
-#' @param weight character. Choices are "non", "1/x", "1/x^2", "1/y", "1/y^2"
-#' @param model character
-#' @param intercept logical
-#' @param avg_rep logical
-#' @param normalize logical. If TRUE, relative response will be used instead of absolute response.
-#' The function will run linearity on all included standards. The residuals will be calculated on all standards,
-#' QCs, blanks, double blanks and suitability vials.
-#' @return QuantRes object
-#' @author Omar Elashkar
-#' @noRd
-run_linearity_quantres <- function(
-  quantres,
-  compound_id,
+run_linearity_df <- function(
+  df,
   weight = "1/x^2",
   model = "linear",
   intercept = TRUE,
-  normalize = FALSE,
+  response = "abs_response",
   avg_rep = FALSE
 ) {
-  checkmate::assertChoice(
-    weight,
-    c("non", "1/x", "1/x^2", "1/y", "1/y^2", "1/x^0.5", "1/y^0.5")
-  )
-  checkmate::assertChoice(model, c("linear", "quadratic"))
-  checkmate::assertLogical(intercept)
-  checkmate::assertLogical(avg_rep)
-  checkmate::assertString(compound_id)
+  stopifnot(all(c("filename", "type", response, "stdconc", "include") %in% colnames(df)))
 
-  # check if there is pkmeta
-
-  target_df <- quantres@linearity[[compound_id]]$linearitytab |>
+  target_df <- df |>
     dplyr::filter(.data$include == TRUE & .data$type == "Standard")
 
-  # if(!is_integrated(quantres, compound_id= compound_id)){
-  #     stop("Compound has not been integrated")
-  # }
-
-  # target_df_qc <- quantres@linearity[[compound_id]]$linearitytab |>
-  #     dplyr::filter(type != "QC" || (type == "Standard" & include == FALSE))
   if (nrow(target_df) == 0) {
     stop("No standards available to run linearity")
   }
@@ -252,20 +220,11 @@ run_linearity_quantres <- function(
     stop("Nominal concentration is missing")
   }
 
-  if (normalize) {
-    # use rel_response instead of abs_response
-    response <- "rel_response"
-    if (all(is.na(target_df$rel_response))) {
-      stop(compound_id,  ": ",
-        "Relative response is missing. Ensure there is IS associated with the compound"
-      )
-    }
-  } else {
-    response <- "abs_response"
-    if (all(is.na(target_df$abs_response))) {
-      stop(compound_id, ": Absolute response is missing.")
-    }
+  
+  if (all(is.na(target_df[[response]]))) {
+      stop(paste0("All ", response, " values are missing"))
   }
+
 
   # check if set_linearity
 
@@ -330,14 +289,6 @@ run_linearity_quantres <- function(
     }
   }
 
-  reverse_predict <- function(fit, newdata) {
-    slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
-    intercept <- ifelse(intercept, unname(coef(fit)[1]), 0)
-
-    # calculate estimated response
-    (newdata[[response]] - intercept) / slope
-  }
-
   # https://stackoverflow.com/questions/38109501/how-does-predict-lm-compute-confidence-interval-and-prediction-interval
   fitted_res <- predict(fit, interval = "confidence") |> as.data.frame()
   fitted_res_pred <- predict(fit, interval = "prediction") |> as.data.frame()
@@ -353,10 +304,8 @@ run_linearity_quantres <- function(
     dplyr::mutate(residual_response = residuals(fit)) |>
     dplyr::mutate(rstandard_response = rstandard(fit))
 
-  # update the linearitytab
-  quantres@linearity[[compound_id]]$linearitytab <- quantres@linearity[[
-    compound_id
-  ]]$linearitytab |>
+
+  resdf <- df |> 
     dplyr::mutate(estimated_response = NA_real_) |>
     dplyr::mutate(estimate_CI_lwr = NA_real_) |>
     dplyr::mutate(estimate_CI_upr = NA_real_) |>
@@ -368,23 +317,23 @@ run_linearity_quantres <- function(
     dplyr::mutate(residual_conc = as.numeric(NA)) |>
     dplyr::mutate(dev_conc = as.numeric(NA)) |>
     dplyr::mutate(passed = as.logical(NA)) |>
-    dplyr::rows_update(target_df, by = c("filename", "stdconc")) |>
-    dplyr::mutate(
+    dplyr::rows_update(target_df, by = c("filename", "stdconc")) |> # update only the rows that were used in fitting
+    dplyr::mutate( # predict estimated_conc for all rows
       estimated_conc = reverse_predict(
         fit,
-        newdata = quantres@linearity[[compound_id]]$linearitytab
+        newdata = df[[response]],
+        intercept = intercept
       )
     ) |>
     dplyr::mutate(residual_conc = .data$estimated_conc - .data$stdconc) |>
-    dplyr::mutate(
-      dev_conc = relative_error(.data$stdconc, .data$estimated_conc)
-    ) |>
-    dplyr::mutate(
-      passed = dplyr::case_when(
-        abs(dev_conc) <= 0.20 ~ TRUE,
-        TRUE ~ FALSE
-      )
-    )
+    dplyr::mutate(dev_conc = rel_deviation(.data$stdconc, .data$estimated_conc)) |>
+    dplyr::mutate(passed = dplyr::case_when(abs(dev_conc) <= 0.20 ~ TRUE, TRUE ~ FALSE))
+
+  resdfqc <- resdf |> 
+    dplyr::filter(type == "QC")
+  resdfstd <- resdf |>
+    dplyr::filter(type == "Standard")
+
 
   slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
 
@@ -404,74 +353,116 @@ run_linearity_quantres <- function(
 
   sd_residuals <- sd(residuals(fit))
 
-  quantres@linearity[[compound_id]]$results <- list(
+  
+  reslist <- list(
     modelobj = fit,
     model = model,
     weight = weight,
     avg_rep = avg_rep,
-    normalized = normalize,
-    IS = ifelse(normalize, "NA", "NA"),
+    normalized = ifelse(response == "rel_response", TRUE, FALSE),
+    IS = NA,
     r_squared = summary(fit)$r.squared,
     adj_r_squared = summary(fit)$adj.r.squared,
-    mape_cs = mean(
-      abs(
-        quantres@linearity[[compound_id]]$linearitytab$residual_response
-      ),
-      na.rm = TRUE
-    ), # FIXME
-    mape_qc = mean(
-      abs(
-        quantres@linearity[[compound_id]]$linearitytab$residual_response
-      ),
-      na.rm = TRUE
-    ), # FIXME
-    rsme_cs = sqrt(mean(
-      quantres@linearity[[compound_id]]$linearitytab$residual_response^2,
-      na.rm = TRUE
-    )), # FIXME
-    rsme_qc = sqrt(mean(
-      quantres@linearity[[compound_id]]$linearitytab$residual_response^2,
-      na.rm = TRUE
-    )), # FIXME
+    mape_cs = mape(resdfstd$stdconc, resdfstd$estimated_conc, percent = TRUE),
+    mape_qc = mape(resdfqc$stdconc, resdfqc$estimated_conc, percent = TRUE),
+    rmse_cs = rmse(resdfstd$stdconc, resdfstd$estimated_conc),
+    rmse_qc = rmse(resdfqc$stdconc, resdfqc$estimated_conc),
     intercept = intercept,
     slope = slope,
     see_weighted = sum((1 / weight_vec) * (fit$residuals**2)), # sum of squared residuals
     rse_weighted = summary(fit)$sigma, # weighted residual standard error
-    lloq_assumed = min(
-      quantres@linearity[[compound_id]]$linearitytab$stdconc
-    ),
-    uloq_assumed = max(
-      quantres@linearity[[compound_id]]$linearitytab$stdconc
-    ),
-    lloq_passed = .find_passed_lloq(quantres, compound_id),
-    uloq_passed = .find_passed_uloq(quantres, compound_id),
-    # loq2 = chemCal::loq(fit, w.loq = 1)$stdconc,
+    lloq_assumed = min(resdfstd$stdconc),
+    uloq_assumed = max(resdfstd$stdconc),
+    lloq_passed = .find_passed_lloq(resdf),
+    uloq_passed = .find_passed_uloq(resdf),
     loq = 10 * sd_residuals / slope, # FIXME. Study how weighted close to the standard deviation of lloq
-
-    cs_total_passed = .find_passed_cs(quantres, compound_id),
-    qc_total_passed = .find_passed_qc_total(quantres, compound_id),
-    qc_level_passed = .find_passed_qc_level(quantres, compound_id),
+    cs_total_passed = .find_passed(resdfstd),
+    qc_total_passed = .find_passed(resdfqc),
+    qc_level_passed = .find_passed_qc_level(resdfqc),
+    n_standards = nrow(resdfstd),
+    n_qcs = nrow(resdfqc),
     aic = AIC(fit)
   )
+  
+    list(resdf = resdf, summary = reslist)
+}
 
+#' Run linearity check
+#' @param quantres QuantRes object
+#' @param compound_id character. Compound ID to run linearity for.
+#' @param weight character. Choices are "non", "1/x", "1/x^2", "1/y", "1/y^2"
+#' @param model character
+#' @param intercept logical
+#' @param avg_rep logical
+#' @param normalize logical. If TRUE, relative response will be used instead of absolute response.
+#' The function will run linearity on all included standards. The residuals will be calculated on all standards,
+#' QCs, blanks, double blanks and suitability vials.
+#' @return QuantRes object
+#' @author Omar Elashkar
+#' @noRd
+run_linearity_quantres <- function(
+  quantres,
+  compound_id,
+  weight = "1/x^2",
+  model = "linear",
+  intercept = TRUE,
+  normalize = FALSE,
+  avg_rep = FALSE
+) {
+  checkmate::assertChoice(
+    weight,
+    c("non", "1/x", "1/x^2", "1/y", "1/y^2", "1/x^0.5", "1/y^0.5")
+  )
+  checkmate::assertChoice(model, c("linear", "quadratic"))
+  checkmate::assertLogical(intercept)
+  checkmate::assertLogical(avg_rep)
+  checkmate::assertString(compound_id)
+  checkmate::assertLogical(normalize)
+
+
+  # check if there is pkmeta
+  target_df <- quantres@linearity[[compound_id]]$linearitytab 
+  checkmate::assertDataFrame(target_df)
+  checkmate::assertNames(
+    names(target_df),
+    must.include = c("type", "stdconc", "include")
+  )
+
+  if(normalize){
+      response <- "rel_response"
+  } else {
+      response <- "abs_response"
+  }
+
+  target_list <- run_linearity(
+    quantres = target_df, 
+    weight = weight, 
+    model = model, 
+    intercept = intercept, 
+    response = response, 
+    avg_rep = avg_rep)
+
+  # if(!is_integrated(quantres, compound_id= compound_id)){
+  #     stop("Compound has not been integrated")
+  # }
+
+  # target_df_qc <- quantres@linearity[[compound_id]]$linearitytab |>
+  #     dplyr::filter(type != "QC" || (type == "Standard" & include == FALSE))
+
+
+
+  # update the linearitytab
+  quantres@linearity[[compound_id]]$linearitytab <- target_list$resdf
+  quantres@linearity[[compound_id]]$results <- target_list$summary
+  
   quantres
 }
 
-#' @author Omar Elashkar
-#' @noRd
-.linearity_results_summary <- function(
-  x,
-  modelfit,
-  weight,
-  avg_rep,
-  normalize
-) {}
-
 
 #' @author Omar Elashkar
 #' @noRd
-.find_passed_lloq <- function(quantres, compound_id) {
-  quantres@linearity[[compound_id]]$linearitytab |>
+.find_passed_lloq <- function(df) {
+  df |>
     dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.20, TRUE, FALSE)) |>
     dplyr::filter(passed) |>
     dplyr::mutate(stdconc = as.numeric(stdconc)) |>
@@ -482,8 +473,8 @@ run_linearity_quantres <- function(
 
 #' @author Omar Elashkar
 #' @noRd
-.find_passed_uloq <- function(quantres, compound_id) {
-  quantres@linearity[[compound_id]]$linearitytab |>
+.find_passed_uloq <- function(df) {
+  df |>
     dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.15, TRUE, FALSE)) |>
     dplyr::filter(passed) |>
     dplyr::mutate(stdconc = as.numeric(stdconc)) |>
@@ -492,14 +483,21 @@ run_linearity_quantres <- function(
 }
 
 
+#' Calculate passed calibrartion points 
+#' @param df data frame with dev_conc and passed columns
+#' 
+#' This function count passed variables in totality based on bias (relative deviation), so one need to filter for standards or QCs if specific result is expected.
 #' @author Omar Elashkar
 #' @noRd
-.find_passed_cs <- function(quantres, compound_id) {
-  standards_passed <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type == "Standard") |>
+.find_passed <- function(df, criteria = "reldev") {
+  if (!"passed" %in% colnames(df)) {
+    stop("df must contain a column named 'passed'")
+  }
+
+  passed <- df |>
     dplyr::summarise(passed = sum(passed), total = n()) |>
     dplyr::mutate(
-      standards_passed = paste0(
+      passed = paste0(
         passed,
         "/",
         total,
@@ -508,37 +506,18 @@ run_linearity_quantres <- function(
         "%)"
       )
     ) |>
-    pull("standards_passed")
+    pull("passed")
 
-  standards_passed
+  passed
 }
+
 
 
 #' @author Omar Elashkar
 #' @noRd
-.find_passed_qc_total <- function(quantres, compound_id) {
-  QCs_passed <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type == "QC") |>
-    dplyr::summarise(passed = sum(passed), total = n()) |>
-    dplyr::mutate(
-      QCs_passed = paste0(
-        passed,
-        "/",
-        total,
-        " (",
-        round(passed / total * 100, 2),
-        "%)"
-      )
-    ) |>
-    pull("QCs_passed")
-  QCs_passed
-}
-
-#' @author Omar Elashkar
-#' @noRd
-.find_passed_qc_level <- function(quantres, compound_id) {
-  QCs_passed_level <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type == "QC") |>
+.find_passed_qc_level <- function(df) {
+  QCs_passed_level <- df |>
+    # dplyr::filter(type == "QC") |>
     dplyr::group_by(stdconc) |>
     dplyr::summarise(passed = sum(passed), total = n()) |>
     dplyr::mutate(
@@ -783,56 +762,88 @@ plot_standard_deviation <- function(quantres, compound_id) {
 
 #' @author Omar Elashkar
 #' @noRd
-tabulate_summary_linearity <- function(quantres, compound_id = NULL) {
-  if (is.null(compound_id)) {
-    compound_id <- names(quantres@linearity)
+setGeneric(
+  "tabulate_summary_linearity",
+  function(object, compound_id = NULL) standardGeneric("tabulate_summary_linearity")
+)
+
+#' Tabulate linearity summary for QuantRes object
+#' @author Omar Elashkar
+#' @noRd
+setMethod(
+  "tabulate_summary_linearity",
+  signature(object = "QuantRes"),
+  function(object, compound_id = NULL) {
+    if (is.null(compound_id)) {
+      compound_id <- names(object@linearity)
+    }
+    # filter compound_id to those with linearity
+    compound_id <- compound_id[sapply(compound_id, function(cmpd) {
+      has_linearity(object, cmpd)
+    })]
+
+    res <- lapply(compound_id, function(cmpd) {
+      tabulate_summary_linearity_list(object@linearity[[cmpd]])
+    })
+
+    do.call(rbind, res)
   }
+)
 
-  linearitytab <- data.frame()
-  for (cmpd in compound_id) {
-    # from list to data.frame
-    if (has_linearity(quantres, cmpd)) {
+#' Tabulate linearity summary for a list (single compound)
+#' @author Omar Elashkar
+#' @noRd
+setGeneric(
+  "tabulate_summary_linearity_list",
+  function(object) standardGeneric("tabulate_summary_linearity_list")
+)
+
+setMethod(
+  "tabulate_summary_linearity_list",
+  signature(object = "list"),
+  function(object) {
+    if (!is.null(object$results)) {
       x <- data.frame(
-        compound_id = cmpd,
-        # model = quantres@linearity[[cmpd]]$results$model,
-        weight = quantres@linearity[[cmpd]]$results$weight,
-        normalized = quantres@linearity[[cmpd]]$results$normalized,
-        avg_rep = quantres@linearity[[cmpd]]$results$avg_rep,
-        slope = quantres@linearity[[cmpd]]$results$slope,
-        intercept = quantres@linearity[[cmpd]]$results$intercept,
-        r_squared = quantres@linearity[[cmpd]]$results$r_squared,
-        adj_r_squared = quantres@linearity[[
-          cmpd
-        ]]$results$adj_r_squared,
-        mape_cs = quantres@linearity[[cmpd]]$results$mape_cs,
-        mape_qc = quantres@linearity[[cmpd]]$results$mape_qc,
-        rsme_cs = quantres@linearity[[cmpd]]$results$rsme_cs,
-        rsme_qc = quantres@linearity[[cmpd]]$results$rsme_qc,
-        aic = quantres@linearity[[cmpd]]$results$aic,
-        lloq_assumed = quantres@linearity[[cmpd]]$results$lloq_assumed,
-        uloq_assumed = quantres@linearity[[cmpd]]$results$uloq_assumed,
-        lloq_passed = quantres@linearity[[cmpd]]$results$lloq_passed,
-        uloq_passed = quantres@linearity[[cmpd]]$results$uloq_passed,
-        # loq = quantres@linearity[[cmpd]]$results$loq,
-        rse = quantres@linearity[[cmpd]]$results$rse_weighted,
-        see = quantres@linearity[[cmpd]]$results$see_weighted,
-        # fraction over total for standards
-        standards_passed = quantres@linearity[[
-          cmpd
-        ]]$results$cs_total_passed,
-        QCs_passed_level = quantres@linearity[[
-          cmpd
-        ]]$results$qc_level_passed,
-        QCs_passed_total = quantres@linearity[[
-          cmpd
-        ]]$results$qc_total_passed
+        compound_id = if (!is.null(object$compound_id)) object$compound_id else NA,
+        weight = object$results$weight,
+        normalized = object$results$normalized,
+        avg_rep = object$results$avg_rep,
+        slope = object$results$slope,
+        intercept = object$results$intercept,
+        r_squared = object$results$r_squared,
+        adj_r_squared = object$results$adj_r_squared,
+        mape_cs = object$results$mape_cs,
+        mape_qc = object$results$mape_qc,
+        rmse_cs = object$results$rmse_cs,
+        rmse_qc = object$results$rmse_qc,
+        aic = object$results$aic,
+        lloq_assumed = object$results$lloq_assumed,
+        uloq_assumed = object$results$uloq_assumed,
+        lloq_passed = object$results$lloq_passed,
+        uloq_passed = object$results$uloq_passed,
+        rse = object$results$rse_weighted,
+        see = object$results$see_weighted,
+        standards_passed = object$results$cs_total_passed,
+        QCs_passed_level = object$results$qc_level_passed,
+        QCs_passed_total = object$results$qc_total_passed,
+        stringsAsFactors = FALSE
       )
-
-      linearitytab <- rbind(linearitytab, x)
+      x
+    } else {
+      NULL
     }
   }
-  linearitytab
-}
+)
+
+#' @author Omar Elashkar
+#' @noRd
+setMethod(
+  "tabulate_summary_linearity",
+  signature(object = "list"),
+  function(object) {
+    tabulate_summary_linearity_list(object)
+  }
+)
 
 #' Exclude file from linearity run
 #' This excludes only standards if found

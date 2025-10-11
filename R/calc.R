@@ -23,7 +23,7 @@ RRF <- function(RF1, RF2) {
 }
 
 
-#' Calculate precision (Coefficient of variation)
+#' Calculate Coefficient of variation
 #' @param x vector
 #' @param percent To return the value as percentage
 #'
@@ -31,15 +31,65 @@ RRF <- function(RF1, RF2) {
 #' as the standard deviation divided by the mean. By default, the result is in percentage.
 #' @return numeric
 #' @export
-#'
-precision <- function(x, percent = TRUE) {
+cv <- function(x, percent = TRUE) {
   p <- sd(x) / mean(x)
-  if (percent) {
-    p <- p * 100
-  }
+  p * ifelse(percent, 100, 1)
+}
+
+accuracy <- function(x, y, percent = TRUE) {
+  p <- x / y 
+  p * ifelse(percent, 100, 1)
+}
+
+
+
+#' Calculate relative error (deviation) between actual and predicted concentration
+#' @param actual numeric
+#' @param predicted numeric
+#' @return numeric
+#' @author Omar Elashkar
+#' @noRd
+rel_deviation <- function(x, y, percent = TRUE) {
+  p <- (x - y) / y
+  p * ifelse(percent, 100, 1)
+}
+
+mape <- function(x, y, percent = TRUE) {
+  p <- mean(abs(rel_deviation(x, y, percent = FALSE)), na.rm = TRUE) 
+  p * ifelse(percent, 100, 1)
+}
+
+mae <- function(x, y) {
+  p <- mean(abs(x - y))
   p
 }
 
-accuracy <- function(x, y) {
-  return(x / y * 100)
+mse <- function(x, y) {
+  p <- mean((x - y)^2)
+  p 
+}
+
+rmse <- function(x, y) {
+  p <- sqrt(mse(x, y))
+  p
+}
+
+#' Calculate residual sum of squares
+#' @param actual numeric
+#' @param predicted numeric
+#' @return numeric
+#' @author Omar I. Elashkar
+#' @noRd
+rss <- function(x, y) {
+  sum((x - y)^2)
+}
+
+#' Calculate residual standard error
+#' @param residuals numeric
+#' @return numeric
+#' @author Omar I. Elashkar
+#' @noRd
+# https://stackoverflow.com/questions/71545329/inconsistence-with-rs-residual-standard-error-in-lm-in-case-of-wls
+rse <- function(residuals) {
+  SSE <- sum(residuals)
 }

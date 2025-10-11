@@ -86,7 +86,7 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
             input$accuracy_threshold,
             input$compound_id
           )
-          x <- calc_var_pattern(x)
+          x <- calc_var_summary(x)
           plot_var_pattern(x, title = input$compound_id)
         },
         error = function(e) {
@@ -114,7 +114,7 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
             input$accuracy_threshold,
             input$compound_id
           )
-          calc_var_pattern(x) |>
+          calc_var_summary(x) |>
             reactable::reactable()
         },
         error = function(e) {
@@ -283,7 +283,6 @@ linearity_ui <- function(id) {
             checkboxInput(ns("avg_rep"), "Average Replicates", value = FALSE),
             actionButton(ns("run_linearity_btn"), "Run Linearity"),
             ai_chat_module_ui(ns("linearity_ai"))
-            
           ),
           bslib::card(
             bslib::layout_columns(
@@ -689,18 +688,18 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
       )
     })
 
-    ai_chat_module_server("linearity_ai",
+    ai_chat_module_server(
+      "linearity_ai",
       chatfunc = chatfunc,
-      response_function = linearity_ai, 
+      response_function = linearity_ai,
       response_args = reactive({
         list(
-          quantres(), 
+          quantres(),
           cmpd_id()
         )
       }),
       botname = "Linearity Reviewer"
     )
-
   })
 }
 
@@ -905,10 +904,15 @@ quantapp_server <- function(input, output, session) {
   })
 
   observeEvent(reactable::getReactableState("suitability_table", "selected"), {
-    selected_row <- reactable::getReactableState("suitability_table", "selected")
-    config_suitability(quantobj(), 
+    selected_row <- reactable::getReactableState(
+      "suitability_table",
+      "selected"
+    )
+    config_suitability(
+      quantobj(),
       vial_pos = input$select_vial_suitability,
-      start = selected_row) |>
+      start = selected_row
+    ) |>
       quantobj()
   })
 
@@ -938,11 +942,15 @@ quantapp_server <- function(input, output, session) {
   })
 
   ## AI suitability report ####
-  ai_chat_module_server("suitability_ai", 
-  chatfunc =  chatfunc(), 
-  response_function = suitability_ai, 
-  response_args = reactive({list(quantobj())}),
-  botname = "suitability reviewer")
+  ai_chat_module_server(
+    "suitability_ai",
+    chatfunc = chatfunc(),
+    response_function = suitability_ai,
+    response_args = reactive({
+      list(quantobj())
+    }),
+    botname = "suitability reviewer"
+  )
 
   ########################################################################################
   #### Linearity tab

@@ -322,7 +322,8 @@ setMethod(
         # CONC_A = conc,
         FILE_TEXT = descr,
         INLET_METHOD = method
-      )
+      ) |> 
+      make_sequence_names()
 
     x <- .injecList(df, current_plate_id)
     print(x)
@@ -385,7 +386,7 @@ setMethod(
         x
       })
 
-      df <- do.call(rbind, df)
+      df <- dplyr::bind_rows(df)
 
       plate_id <- sapply(plate, function(x) x@plate_id)
 
@@ -530,7 +531,9 @@ setMethod("register_plate", "MultiPlate", function(plate) {
   lapply(plate@plates, .register_plate_logic)
 })
 
-setGeneric("get_plate_a_groups", function(plate) standardGeneric("get_plate_a_groups"))
+setGeneric("get_plate_a_groups", function(plate) {
+  standardGeneric("get_plate_a_groups")
+})
 
 setMethod("get_plate_a_groups", "PlateObj", function(plate) {
   unique(plate@df$a_group)

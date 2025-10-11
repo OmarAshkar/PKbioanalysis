@@ -12,6 +12,29 @@ clean_rht_to_df <- function(mylist) {
 }
 
 
+orderdf <- function(df, cols, dirs = "asc") {
+  # cols <- names(sortlist)
+  # dirs <- sapply(sortlist, \(x) x)
+  dirs <- rep(dirs, length(cols)) # for now only
+
+  ordering_list <- mapply(
+    function(col, dir) {
+      vec <- df[[col]]
+      if (dir == "desc") {
+        return(-xtfrm(vec)) # use -xtfrm for general (e.g., strings, factors)
+      } else {
+        return(xtfrm(vec))
+      }
+    },
+    cols,
+    dirs,
+    SIMPLIFY = FALSE
+  )
+
+  df[do.call(order, ordering_list), ]
+}
+
+
 remove_old_ui <- function() {
   removeUI(selector = "#dynamic_ui", immediate = TRUE)
 }
@@ -52,7 +75,7 @@ plate_plot_module_ui <- function(id, str) {
     bslib::input_switch(
       paste0(str, "_study_name_switch"),
       "Show Study Name",
-      value = TRUE
+      value = FALSE
     ),
     bslib::input_switch(
       paste0(str, "_arm_switch"),
@@ -67,7 +90,7 @@ plate_plot_module_ui <- function(id, str) {
     bslib::input_switch(
       paste0(str, "_factor_switch"),
       "Show Factor",
-      value = FALSE
+      value = TRUE
     ),
     bslib::input_switch(
       paste0(str, "_sex_switch"),
@@ -83,6 +106,11 @@ plate_plot_module_ui <- function(id, str) {
       paste0(str, "_use_subject_id_switch"),
       "Use Subject ID",
       value = FALSE
+    ),
+    bslib::input_switch(
+      paste0(str, "_dil_label_switch"),
+      "Use Dilution Label",
+      value = TRUE
     ),
     title = "Plate Display Config"
   )
@@ -524,7 +552,9 @@ ui <- bslib::page_navbar(
               tags$script(HTML(
                 " $(document).on('blur', '.text-extra', function() { Shiny.setInputValue('text_blur', 'focusOut', {priority: 'event'}); }); "
               )),
-              reactable::reactableOutput("plate_design_samples_selector_RT"),
+              rhandsontable::rHandsontableOutput(
+                "plate_design_samples_selector_RT"
+              ),
             )
           )
         )
@@ -1410,7 +1440,8 @@ study_app_server <- function(input, output, session) {
         factor = input$plate_design_factor_switch,
         sex = input$plate_design_sex_switch,
         dose = input$plate_design_dose_switch,
-        use_subject_id = input$plate_design_use_subject_id_switch
+        use_subject_id = input$plate_design_use_subject_id_switch,
+        dilution = input$plate_design_dil_label_switch
       ) |>
       plot(
         color = input$plate_design_color_toggle,
@@ -1905,52 +1936,41 @@ study_app_server <- function(input, output, session) {
     logIds <- currSampleLogTable()$log_id
     req(!all(is.na(logIds)))
 
-    captured_dil(NULL)
+    # captured_dil(NULL)
 
     retrieve_full_log_by_id(logIds) |>
       dplyr::mutate(dil = 1) |>
+      dplyr::mutate(select = FALSE) |>
       dplyr::relocate("dil", after = "subject_id") |>
+      dplyr::relocate("select", .before = "dil") |>
       curr_plate_sample_log_dil()
   })
 
-  output$plate_design_samples_selector_RT <- reactable::renderReactable({
-    req(curr_gen_plate_starter())
-    validate(
-      need(
-        currStudyid(),
-        "Select a study to be able to add samples to current plate."
+  output$plate_design_samples_selector_RT <- rhandsontable::renderRHandsontable(
+    {
+      req(curr_gen_plate_starter())
+      validate(
+        need(
+          currStudyid(),
+          "Select a study to be able to add samples to current plate."
+        ),
+        need(
+          nrow(curr_plate_sample_log_dil()) > 0,
+          "No samples in sample log to add to plate."
+        ),
+        need(input$rank_list_logtable_asc, "No sorting method selected")
       )
-    )
-    curr_plate_sample_log_dil() |>
-      reactable::reactable(
-        resizable = TRUE,
-        filterable = TRUE,
-        selection = "multiple",
-        onClick = "select",
-        highlight = TRUE,
-        columns = list(
-          dil = reactable::colDef(
-            name = "Dilution",
-            cell = reactable.extras::text_extra("dil_input")
-          )
+      curr_plate_sample_log_dil() |>
+        orderdf(input$rank_list_logtable_asc) |>
+        rhandsontable::rhandsontable(search = TRUE, multiColumnSort = TRUE) |>
+        rhandsontable::hot_col(col = 1, type = "checkbox") |>
+        rhandsontable::hot_col(col = 2, type = "numeric") |>
+        rhandsontable::hot_col(
+          col = seq(3, ncol(curr_plate_sample_log_dil())),
+          readOnly = TRUE
         )
-      )
-  })
-
-  captured_dil <- reactiveVal(NULL)
-
-  observeEvent(input$dil_input, {
-    req(curr_plate_sample_log_dil())
-    if (!is.null(captured_dil())) {
-      df <- as.data.frame(captured_dil())
-    } else {
-      df <- as.data.frame(curr_plate_sample_log_dil())
     }
-    df[input$dil_input$row, input$dil_input$column] <- as.numeric(
-      input$dil_input$value
-    )
-    captured_dil(df)
-  })
+  )
 
   observeEvent(input$plate_design_nav, {
     req(curr_gen_plate_starter())
@@ -1964,7 +1984,17 @@ study_app_server <- function(input, output, session) {
           id = "dynamic_ui",
           wellPanel(
             textOutput("num_samples_selected_plate_design_txt"),
-            textOutput("samplesdb_sorting_vars_txt"),
+            sortable::rank_list(
+              text = "Sorting",
+              labels = list(
+                "nominal_time",
+                "group_label",
+                "extra_factors",
+                "group_replicate",
+                "dose_amount"
+              ),
+              input_id = "rank_list_logtable_asc"
+            ),
             selectizeInput(
               "samplesdb_group_input",
               "Group",
@@ -1978,16 +2008,19 @@ study_app_server <- function(input, output, session) {
     }
   })
 
-  samplesdb_sorting_cols <- reactiveVal(NULL)
   observeEvent(input$add_samples_db_btn_final, {
     req(curr_gen_plate_starter())
     req(curr_gen_plate_expr())
     req(currStudyid())
-    input$plate_design_samples_selector_RT
-    selected_rows <- reactable::getReactableState(
-      "plate_design_samples_selector_RT",
-      "selected"
-    )
+
+    selected_rows <- input$plate_design_samples_selector_RT$data |>
+      clean_rht_to_df()
+    colnames(selected_rows) <- colnames(curr_plate_sample_log_dil())
+    selected_rows <- selected_rows |>
+      orderdf(input$rank_list_logtable_asc) |>
+      dplyr::filter(select == TRUE)
+
+    req(nrow(selected_rows) > 0)
 
     if (is.null(selected_rows)) {
       showNotification("No samples selected", type = "error")
@@ -1995,19 +2028,11 @@ study_app_server <- function(input, output, session) {
     }
     tryCatch(
       {
-        sortedsampleid <- curr_plate_sample_log_dil() |>
-          dplyr::slice(selected_rows) |>
-          dplyr::arrange(across(names(samplesdb_sorting_cols()))) |>
+        sortedsampleid <- selected_rows |>
           dplyr::pull("log_id")
 
-        if (is.null(captured_dil())) {
-          sorted_dil <- 1
-        } else {
-          sorted_dil <- curr_plate_sample_log_dil() |>
-            dplyr::slice(selected_rows) |>
-            dplyr::arrange(across(names(samplesdb_sorting_cols()))) |>
-            dplyr::pull("dil")
-        }
+        sorted_dil <- selected_rows |>
+          dplyr::pull("dil")
       },
       error = function(e) {
         showNotification(paste("Error:", e$message), type = "error")
@@ -2021,7 +2046,7 @@ study_app_server <- function(input, output, session) {
           bquote(
             .(curr_gen_plate_expr()) |>
               add_samples_db(
-                logIds = sortedsampleid,
+                logIds = .(sortedsampleid),
                 dil = .(sorted_dil),
                 group = .(input$samplesdb_group_input)
               )
@@ -2045,25 +2070,19 @@ study_app_server <- function(input, output, session) {
     )
   })
   output$num_samples_selected_plate_design_txt <- renderText({
-    selected_rows <- reactable::getReactableState(
-      "plate_design_samples_selector_RT",
-      "selected"
-    )
+    req(curr_plate_sample_log_dil())
+    selected_rows <- input$plate_design_samples_selector_RT$data |>
+      clean_rht_to_df()
+    colnames(selected_rows) <- colnames(curr_plate_sample_log_dil())
+
+    selected_rows <- selected_rows |>
+      dplyr::filter(select == TRUE) |>
+      rownames()
     if (is.null(selected_rows)) {
       "No samples selected"
     } else {
       paste(length(selected_rows), "samples selected")
     }
-  })
-
-  output$samplesdb_sorting_vars_txt <- renderText({
-    reactable::getReactableState(
-      "plate_design_samples_selector_RT",
-      "sorted"
-    ) |>
-      samplesdb_sorting_cols()
-
-    names(samplesdb_sorting_cols())
   })
 
   ai_chat_module_server(
@@ -2202,11 +2221,19 @@ study_app_server <- function(input, output, session) {
       reactable::reactable(selection = "multiple", onClick = "select")
   })
 
-  current_plate_row <- reactive({
-    reactable::getReactableState("plate_db_RT", "selected")
-  })
+  selected_ids <- reactiveVal(NULL) # actuall plates ids
 
-  selected_ids <- reactiveVal(NULL)
+  current_plate_row <- reactive({
+    # get selected plates ids
+    selected <- reactable::getReactableState("plate_db_RT", "selected")
+    if (length(selected) == 0) {
+      selected_ids(plate_db()[1, ]$id)
+    } else {
+      selected_ids(plate_db()[selected, ]$id)
+    }
+
+    selected # row/plates indices
+  })
 
   output$plate_map_plot1 <- renderPlot({
     validate(
@@ -2224,17 +2251,17 @@ study_app_server <- function(input, output, session) {
         factor = input$plate_design_factor_switch,
         sex = input$plate_design_sex_switch,
         dose = input$plate_design_dose_switch,
-        use_subject_id = input$plate_design_use_subject_id_switch
+        use_subject_id = input$plate_design_use_subject_id_switch,
+        dilution = input$plate_map_dil_label_switch
       ) |>
       plot(
         color = input$plate_map_color_toggle,
         label_size = input$plate_map_font_size,
-        transform_dil = input$transform_dilution
+        transform_dil = input$plate_map_transform_dilution
       )
   })
 
   output$plate_tree_grviz_out <- DiagrammeR::renderGrViz({
-    # FIXME not very reactive
     req(current_plate())
     plate_tree(current_plate())
   })
@@ -2324,7 +2351,17 @@ study_app_server <- function(input, output, session) {
         }
 
         for (i in index_plates) {
-          plates_list[[i]] <- .retrieve_plate(selected_ids()[[i]])
+          plates_list[[i]] <- .retrieve_plate(selected_ids()[[i]]) |>
+            samples_naming_style(
+              study_name = input$plate_map_study_name_switch,
+              arm = input$plate_map_arm_switch,
+              time = input$plate_map_time_switch,
+              factor = input$plate_map_factor_switch,
+              sex = input$plate_map_sex_switch,
+              dose = input$plate_map_dose_switch,
+              use_subject_id = input$plate_map_use_subject_id_switch,
+              dilution = input$plate_map_dil_label_switch
+            )
         }
 
         plates_list <- combine_plates(plates_list) # one big plate
@@ -2519,7 +2556,6 @@ study_app_server <- function(input, output, session) {
           "Sample Location" = .data$SAMPLE_LOCATION,
           Description = .data$FILE_TEXT
         ) |>
-        mutate(FILE_NAME = paste0(.data$FILE_NAME, "_R", row_number())) |> # only visual reflection for actual result
         DT::datatable(
           selection = list(mode = "single", target = "cell"),
           options = list(
@@ -2833,15 +2869,16 @@ study_app_server <- function(input, output, session) {
             factor = input$plate_map_factor_switch,
             sex = input$plate_map_sex_switch,
             dose = input$plate_map_dose_switch,
-            use_subject_id = input$plate_map_use_subject_id_switch
+            use_subject_id = input$plate_map_use_subject_id_switch,
+            dilution = input$plate_map_dil_label_switch
           ) |>
           plot(
             color = input$plate_map_color_toggle,
             label_size = input$plate_map_font_size,
-            transform_dil = input$transform_dilution
+            transform_dil = input$plate_map_transform_dilution
           ),
-        width = 12,
-        height = 8
+        width = 20,
+        height = 10
       )
     }
   )

@@ -3,7 +3,7 @@ test_that("pkstudy test", {
     type = "SD",
     pkstudy = TRUE,
     title = "New Study",
-    description = "Description of the new study", 
+    description = "Description of the new study",
     subject_type = "Human"
   )
   new_study <- create_new_study(newstudy)
@@ -215,10 +215,11 @@ test_that("invitro metabolic study", {
     study = "In Vitro Metabolic Study",
     cmpds = cmpds,
     time_points = time_points,
-    dose = 100, 
+    dose = 100,
     n_NAD = 3,
     n_noNAD = 2
-  ) |> expect_no_error()
+  ) |>
+    expect_no_error()
 
   plot_study_design(newstudy$id) |> expect_no_error()
 })
@@ -226,7 +227,7 @@ test_that("invitro metabolic study", {
 test_that("cell stability study", {
   cmpds <- c("C1", "C2", "C3")
   time_points <- c(0, 1, 6)
-  arms <- c("No Cell", "DMSO", "Saline")
+  arms <- c("DMSO", "Saline")
   conditions <- c("Condition1", "Condition2")
 
   newstudy <- make_cell_stability_study(
@@ -236,7 +237,32 @@ test_that("cell stability study", {
     arms = arms,
     conditions = conditions,
     n_replicates = 2
-  ) |> expect_no_error()
+  ) |>
+    expect_no_error()
 
   plot_study_design(newstudy$id) |> expect_no_error()
+
+  
+  cmpds <- "C1"
+  time_points <- c(0, 1, 6)
+  arms <- c("DMSO", "Saline")
+  conditions <- c("A", "B", "C", "D")
+  n_replicates <- 3
+  newstudy <- make_cell_stability_study(
+    study_title = "Cell Stability Study",
+    time_points = time_points,
+    cmpds = cmpds,
+    arms = arms,
+    conditions = conditions,
+    n_replicates = n_replicates,
+    ctrl = "Standard"
+  ) |>
+    expect_no_error()
+
+  df <- retrieve_full_study_log(newstudy$id)
+  nrow(df) |> expect_equal(96)
+
+
+
+
 })

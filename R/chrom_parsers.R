@@ -1,11 +1,20 @@
-dir_or_files_to_files <- function(dir, file_pattern){
-  if(checkmate::checkDirectory(dir) & length(dir) == 1 & !all(grepl(dir, pattern = file_pattern))){
+dir_or_files_to_files <- function(dir, file_pattern) {
+  if (
+    checkmate::checkDirectory(dir) &
+      length(dir) == 1 &
+      !all(grepl(dir, pattern = file_pattern))
+  ) {
     checkmate::assertDirectoryExists(dir)
-    x <- list.files(dir, full.names = T, pattern = file_pattern, all.files = TRUE)
-  } else if(checkmate::checkCharacter(dir)){
+    x <- list.files(
+      dir,
+      full.names = T,
+      pattern = file_pattern,
+      all.files = TRUE
+    )
+  } else if (checkmate::checkCharacter(dir)) {
     lapply(dir, checkmate::assertDirectoryExists)
     x <- dir
-  } else if(checkmate::checkFile(dir)){
+  } else if (checkmate::checkFile(dir)) {
     lapply(dir, checkmate::assertFileExists)
     x <- dir
   } else {
@@ -137,7 +146,6 @@ dir_or_files_to_files <- function(dir, file_pattern){
       )
     })
 
-    
   stopifnot(length(df_list) == length(x))
 
   df_list

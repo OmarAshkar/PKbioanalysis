@@ -3,8 +3,13 @@
 #' @param samples_ids Sample IDs
 #' @param chrom_res ChromRes object
 #' @noRd
-sample_ids_handler <- function(samples_ids = NULL, chrom_res){
-  checkmate::assertVector(samples_ids, strict = TRUE, any.missing = FALSE, null.ok = TRUE)
+sample_ids_handler <- function(samples_ids = NULL, chrom_res) {
+  checkmate::assertVector(
+    samples_ids,
+    strict = TRUE,
+    any.missing = FALSE,
+    null.ok = TRUE
+  )
   if (is.null(samples_ids)) {
     samples_ids <- names(chrom_res@runs$files)
   } else {
@@ -13,7 +18,7 @@ sample_ids_handler <- function(samples_ids = NULL, chrom_res){
   as.character(samples_ids)
 }
 
-#' @title Update Peak Area, Observed RT, Peak Start, Peak End, Peak Height 
+#' @title Update Peak Area, Observed RT, Peak Start, Peak End, Peak Height
 #' @description Update Peak Area, Observed RT, Peak Start, Peak End, Peak Height for a specific compound and sample
 #' Function is not vectorized and needs to be preceeded by `integerate()`
 #' @param chrom_res ChromRes object
@@ -26,8 +31,16 @@ sample_ids_handler <- function(samples_ids = NULL, chrom_res){
 #' @param observed_peak_height Observed Peak Height
 #' @return Updated ChromRes object
 #' @noRd
-update_peak_area <- function(chrom_res, compound_id, sample_id, 
-    area, observed_rt, observed_peak_start, observed_peak_end, observed_peak_height) {
+update_peak_area <- function(
+  chrom_res,
+  compound_id,
+  sample_id,
+  area,
+  observed_rt,
+  observed_peak_start,
+  observed_peak_end,
+  observed_peak_height
+) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertCount(compound_id, positive = TRUE)
   checkmate::assertNumber(sample_id, lower = 1)
@@ -36,7 +49,6 @@ update_peak_area <- function(chrom_res, compound_id, sample_id,
   checkmate::assertNumber(observed_peak_start, lower = 0)
   checkmate::assertNumber(observed_peak_end, lower = observed_peak_start)
   checkmate::assertNumber(observed_peak_height, lower = 0)
-
 
   peaktab <- chrom_res@peaks
   if (!all(sample_id %in% as.numeric(peaktab$sample_id))) {
@@ -63,7 +75,6 @@ update_peak_area <- function(chrom_res, compound_id, sample_id,
   validObject(chrom_res)
 
   chrom_res
-
 }
 
 update_peak_area_from_df <- function(chrom_res, df) {
@@ -90,7 +101,6 @@ update_peak_area_from_df <- function(chrom_res, df) {
   validObject(chrom_res)
 
   chrom_res
-
 }
 
 #' @title Integerate Peak with trapzoid method given start and end
@@ -114,7 +124,6 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
   min_bound <- bounds$min
   max_bound <- bounds$max
 
-
   # this first filter for performance using empirical cutoffs
   filtered_peaks <- .filter_peak(
     chrom_res = chrom_res,
@@ -126,9 +135,11 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
   )
 
   checkmate::assertDataFrame(filtered_peaks, min.rows = 1, ncols = 3)
-  checkmate::assertNames(colnames(filtered_peaks), must.include = c("RT", paste0("T", transition_id), "sample_id"))
-  stopifnot(all(sort(unique(filtered_peaks$sample_id))  == sort(samples_ids)))
-
+  checkmate::assertNames(
+    colnames(filtered_peaks),
+    must.include = c("RT", paste0("T", transition_id), "sample_id")
+  )
+  stopifnot(all(sort(unique(filtered_peaks$sample_id)) == sort(samples_ids)))
 
   # group intesities by sample_id and compound_id, then integerate
   # here I need to join to be able to find the peakstart and end at peaktab
@@ -162,9 +173,7 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
       area = pracma::trapz(.data$RT, .data[[paste0("T", transition_id)]])
     )
 
-
   update_peak_area_from_df(chrom_res, integrated_peaks)
-
 }
 
 #' @title Find the peak's RT given it's boundaries
@@ -477,22 +486,29 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   }
 
   i <- ifelse(smoothed, "smoothed", "sample_chrom")
-  intensities <- lapply(seq_along(samples_ids), function(i){
-      x <- chrom_res@runs$files[[samples_ids[i]]]$sample_chrom
-      x |> 
-        dplyr::select("RT", !!transition_id) |>
-        dplyr::mutate(sample_id = samples_ids[i])
+  intensities <- lapply(seq_along(samples_ids), function(i) {
+    x <- chrom_res@runs$files[[samples_ids[i]]]$sample_chrom
+    x |>
+      dplyr::select("RT", !!transition_id) |>
+      dplyr::mutate(sample_id = samples_ids[i])
   }) |>
     dplyr::bind_rows()
 
   stopifnot(nrow(intensities) > 0)
-  if(is.null(peak_end)){
+  if (is.null(peak_end)) {
     peak_end <- max(intensities$RT)
   }
   # ensure vectorization
   intensities <- intensities |>
-    dplyr::left_join(data.frame(sample_id = samples_ids, peak_start = peak_start, peak_end = peak_end), by = "sample_id") |>
-    dplyr::filter(RT >= .data$peak_start & RT <= .data$peak_end) |> 
+    dplyr::left_join(
+      data.frame(
+        sample_id = samples_ids,
+        peak_start = peak_start,
+        peak_end = peak_end
+      ),
+      by = "sample_id"
+    ) |>
+    dplyr::filter(RT >= .data$peak_start & RT <= .data$peak_end) |>
     dplyr::select(-c("peak_start", "peak_end"))
 
   if (!(transition_id %in% colnames(intensities))) {

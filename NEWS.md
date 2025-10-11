@@ -24,5 +24,6 @@
 - tree visualization for plate
 - Support for analytical blanks
 - Support for study registration
+- Injection sequence ending now has specific pattern of letter and number, for instance A2 means location A and repeated 2nd time.
 
  

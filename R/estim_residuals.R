@@ -265,14 +265,42 @@ plot_var_pattern <- function(df, title = "") {
 }
 
 
-# Must have 3 QCs sets at least
-calc_var_pattern <- function(df) {
+#' Calculate Summary Statistics for Each Concentration Level
+#' @param df Data frame with columns: stdconc (standardized concentration), conc (concentration), area (peak area), area_ratio (area ratio)
+#' @param col Column to calculate summary for ("conc", "area", or "area_ratio")
+#' @param acc_threshold Accuracy threshold (default is 20%)
+#' @param dev_threshold Deviation threshold (default is 20%)
+#' @author Omar I. Elashkar
+#' @export
+calc_var_summary <- function(df, col = "conc", acc_threshold = 20, dev_threshold = 20) {
+  checkmate::assertChoice(col, choices = c("conc", "area", "area_ratio"))
+  checkmate::assertDataFrame(df)
+  checkmate::assertNames(
+    names(df),
+    must.include = c("stdconc", col)
+  )
+
   df |>
-    # dplyr::filter(type == "QC") |>
     group_by(.data$stdconc) |>
+    mutate(rel_dev = rel_deviation(.data[[col]], .data$stdconc)) |>
+    mutate(accuracy = accuracy(.data[[col]], .data$stdconc)) |>
+    dplyr::filter(dplyr::between(
+      accuracy,
+      100 - acc_threshold,
+      100 + acc_threshold
+    )) |>
+    dplyr::filter(dplyr::between(
+      rel_deviation(.data[[col]], .data$stdconc), -dev_threshold, dev_threshold
+    )) |>
     dplyr::summarize(
-      sd = sd(conc),
-      cv = sd(conc) / mean(conc) * 100,
-      n = dplyr::n()
+      mean = mean(.data[[col]], na.rm = TRUE),
+      sd = sd(.data[[col]], na.rm = TRUE),
+      median = median(.data[[col]], na.rm = TRUE),
+      cv = cv(.data[[col]]),
+      mape  = mean(abs(.data$rel_dev), na.rm = TRUE),
+      n = dplyr::n(), 
+      acc_cutoff = acc_threshold,
+      dev_cutoff = dev_threshold,
+      .groups = "drop"
     )
 }

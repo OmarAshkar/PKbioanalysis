@@ -315,7 +315,7 @@ area_report.PeakRes <- function(
 cal_var_pattern_vec <- function(quantres, cmpd_vec) {
   res <- lapply(cmpd_vec, \(x) {
     prefilter_precision_data(quantres, "QC", 0.2, x) |>
-      calc_var_pattern(quantres, x)
+      calc_var_summary(quantres, x)
   })
 
   do.call(rbind, res)

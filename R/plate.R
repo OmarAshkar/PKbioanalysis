@@ -374,6 +374,9 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
     ) |>
     dplyr::mutate(dilStr = paste0(dil, "X"))
 
+  # reorder to original order
+  samplesdf <- samplesdf[match(logIds, samplesdf$log_id), ]
+
   plateobj <- plate
   df <- plate@df
   plate <- plate@plate
@@ -1722,14 +1725,7 @@ gen_plate_positions <- function() {
 
 #' Naming style for samples
 #' @param plate PlateObj object
-#' @param style numeric. Naming style from 1 to 4. Default is 1. See details.
 #' @param use_subject_id logical. If TRUE, use subject_id instead of subject replicate. Default is FALSE
-#' @details
-#' There are 4 naming styles:
-#' 1. arm_subject_time
-#' 2. study_Arm_subject_time
-#' 3. study_arm_subject_time_dose
-#' 4. study_arm_subject_time_dose_Route
 #' @returns plate with samples renamed
 #' @noRd
 samples_naming_style <- function(
@@ -1740,7 +1736,8 @@ samples_naming_style <- function(
   factor = TRUE,
   sex = FALSE,
   dose = FALSE,
-  use_subject_id = TRUE
+  use_subject_id = TRUE,
+  dilution = TRUE
 ) {
   checkmate::assertClass(plate, "PlateObj")
   checkmate::assertLogical(study_name)
@@ -1750,55 +1747,129 @@ samples_naming_style <- function(
   checkmate::assertLogical(sex)
   checkmate::assertLogical(dose)
   checkmate::assertLogical(use_subject_id)
-  
+
   df <- plate@df
   # reconstruct the df$value in the plate for only TYPE == "Analyte". Do this by matching with samples_metadata
 
-  samplesmetadata <- plate@samples_metadata 
+  if (nrow(df[!is.na(df$log_id),]) == 0) {
+    message("No samples metadata found. Cannot rename samples")
+    return(plate)
+  }
+  
+  samplesmetadata <- dplyr::left_join(
+      plate@df |> select("log_id", "study_id", "dil") |> dplyr::filter(!is.na(.data$log_id)),
+      plate@samples_metadata,
+      by = c("log_id", "study_id")
+    )
+
+    
   if (nrow(samplesmetadata) == 0) {
     message("No samples metadata found. Cannot rename samples")
     return(plate)
   }
-  if(study_name){
+
+  if (study_name) {
     samplesmetadata <- samplesmetadata |>
       mutate(new_value = .data$title)
-  } else{
+  } else {
     samplesmetadata <- samplesmetadata |>
       mutate(new_value = "")
   }
 
-  if(arm){
+  if (arm) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$group_label, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$group_label,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   }
 
-  if(use_subject_id){
+  if (use_subject_id) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$subject_id, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$subject_id,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   } else {
-    if(anyNA(samplesmetadata$group_replicate)){
+    if (anyNA(samplesmetadata$group_replicate)) {
       stop("group_replicate has NA values. Try subject_id = TRUE")
     }
 
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$group_replicate, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$group_replicate,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   }
-  if(time){
+  if (time) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$nominal_time, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$nominal_time,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   }
-  if(factor){
+  if (factor) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$extra_factors, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$extra_factors,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   }
-  if(sex){
+  if (sex) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$sex, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(.data$new_value, .data$sex, sep = "_", na.rm = TRUE)
+      )
   }
-  if(dose){
+  if (dose) {
     samplesmetadata <- samplesmetadata |>
-      mutate(new_value = paste5(.data$new_value, .data$dose_amount, sep = "_", na.rm = TRUE)) |>
-      mutate(new_value = paste5(.data$new_value, .data$route, sep = "_", na.rm = TRUE))
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$dose_amount,
+          sep = "_",
+          na.rm = TRUE
+        )
+      ) |>
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          .data$route,
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
+  }
+  if (dilution) {
+    samplesmetadata <- samplesmetadata |>
+      mutate(
+        new_value = paste5(
+          .data$new_value,
+          paste0(.data$dil, "X"),
+          sep = "_",
+          na.rm = TRUE
+        )
+      )
   }
 
   df <- df |>
@@ -1806,7 +1877,9 @@ samples_naming_style <- function(
       samplesmetadata |> select("log_id", "study_id", "new_value"),
       by = c("log_id", "study_id")
     ) |>
-    dplyr::mutate(value = ifelse(TYPE == "Analyte", .data$new_value, .data$value)) |>
+    dplyr::mutate(
+      value = ifelse(TYPE == "Analyte", .data$new_value, .data$value)
+    ) |>
     dplyr::select(-"new_value")
 
   plate@df <- df

@@ -112,7 +112,6 @@ test_that("Last position", {
 #   x |> plot(color = "time") |> expect_no_error()
 # })
 
-
 test_that("qc_ranges", {
   suppressWarnings({
     generate_96() |>
@@ -196,7 +195,6 @@ test_that("samples_vectorization", {
 #   expect_equal(length(unique(x$factor)), 2 + 1)
 # })
 
-
 test_that("plotPlateDesignTest", {
   generate_96() |>
     add_blank() |>
@@ -246,7 +244,7 @@ test_that("add samples from db", {
     type = "SD",
     pkstudy = FALSE,
     title = "New Study",
-    description = "Description of the new study", 
+    description = "Description of the new study",
     subject_type = "Human"
   ))
   add_sample_log(
@@ -258,20 +256,23 @@ test_that("add samples from db", {
     )
   )
   df <- retrieve_sample_log(study_id = new_study$id)
+  samples <- sample(df$log_id, size = length(df$log_id))
 
   x <- generate_96() |>
-    add_samples_db(df$log_id, namestyle = 1, group = "A")
+    add_samples_db(samples, namestyle = 1, group = "A")
+
+  # keep the order
+  expect_true(all(x@df$log_id[seq_along(samples)] == samples))
 
   plot(x) |> expect_no_error()
 })
 
 test_that("add_from_db2", {
-  
   new_study <- create_new_study(data.frame(
     type = "SD",
     pkstudy = FALSE,
     title = "New Study",
-    description = "Description of the new study", 
+    description = "Description of the new study",
     subject_type = "Human"
   ))
 
@@ -279,32 +280,34 @@ test_that("add_from_db2", {
     study_id = new_study$id,
     df = data.frame(
       subject_id = rep(1:3, each = 4),
-      nominal_time = rep(c(0, 5, 10 , 30), 3)
+      nominal_time = rep(c(0, 5, 10, 30), 3)
     )
   )
 
   df <- retrieve_sample_log(study_id = new_study$id)
   df <- retrieve_full_study_log(study_id = new_study$id)
   suppressWarnings({
-    x <- generate_96() |> 
+    x <- generate_96() |>
       add_blank() |>
       add_DB() |>
-      add_cs_curve(c(1, 3, 10, 50, 80, 100, 200, 300), rep = 2) |> 
-      add_QC(3, 90, 190, reg = FALSE, n_qc = 6) |>  
-      add_samples_db(df$log_id) |>
+      add_cs_curve(c(1, 3, 10, 50, 80, 100, 200, 300), rep = 2) |>
+      add_QC(3, 90, 190, reg = FALSE, n_qc = 6) |>
+      add_samples_db(df$log_id, 10) |>
       add_DQC(conc = 500, fac = 10, rep = 1)
   })
-  
-  x@df$value[x@df$row == 5 & x@df$col == 7] |> unname() |>
+
+  x@df$value[x@df$row == 5 & x@df$col == 7] |>
+    unname() |>
     expect_equal("DQC_500_10X")
 
-  # expect DQC str at E7.  
+  # expect DQC str at E7.
   x@plate[["E", 7]] |> expect_equal("DQC_500_10X")
   x@plate[["F", 1]] |> expect_equal(NA_character_)
-
 
   # alter samples names
   x |> samples_naming_style() |> plot() |> expect_no_error()
   x |> samples_naming_style(study_name = FALSE) |> plot() |> expect_no_error()
-  x |> samples_naming_style(study_name = FALSE, use_subject_id = FALSE)  |> expect_error("group_replicate has NA values.")
+  x |>
+    samples_naming_style(study_name = FALSE, use_subject_id = FALSE) |>
+    expect_error("group_replicate has NA values.")
 })

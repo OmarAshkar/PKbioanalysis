@@ -8,7 +8,7 @@
 
 #' Read experiment results
 #' @param x path to experiment results. See details
-#' @param vendor vendor name. Only "targetlynx"
+#' @param vendor vendor name. Currently only "targetlynx_xml" or "targetlynx_csv" are supported.
 #' @param drop_prefix logical. If TRUE, drop the prefix from the sample name
 #'
 #' @details
@@ -21,6 +21,10 @@ read_experiment_results <- function(
   vendor = "targetlynx_xml"
 ) {
   checkmate::assertFileExists(x)
+  checkmate::assertChoice(
+    vendor,
+    choices = c("targetlynx_xml", "targetlynx_csv", "generic")
+  )
 
   if (vendor == "targetlynx_xml") {
     stopifnot(grepl(".xml$", x))

@@ -7,7 +7,7 @@ chrom_data_load_ui <- function(id) {
         fileInput(
           ns("chrom_file"),
           "Upload Chromatography Data File",
-          multiple = TRUE#,
+          multiple = TRUE #,
           # accept = c(".rds", ".RDS", ".raw", ".mzML", ".mzml", "mzXML", ".mzxml")
         ),
         textInput(ns("chrom_path"), "or provide path to folder", value = "")
@@ -25,29 +25,30 @@ chrom_data_load_server <- function(id, peaksobj) {
     ns <- session$ns
 
     observeEvent(input$load_chrom_data, {
-      tryCatch({
-        # progress bar 
-        progress <- Progress$new(session, min = 1, max = 2)
-        progress$set(
-          message = "Loading Data",
-          detail = "This may take a while..."
-        )
-        on.exit(progress$close())
+      tryCatch(
+        {
+          # progress bar
+          progress <- Progress$new(session, min = 1, max = 2)
+          progress$set(
+            message = "Loading Data",
+            detail = "This may take a while..."
+          )
+          on.exit(progress$close())
 
-        if (!is.null(input$chrom_file)) {
-          path <- input$chrom_file
-        } else {
-          path <- input$chrom_path
-          checkmate::assert_directory_exists(path)
+          if (!is.null(input$chrom_file)) {
+            path <- input$chrom_file
+          } else {
+            path <- input$chrom_path
+            checkmate::assert_directory_exists(path)
+          }
+
+          res <- read_chrom(path, method = 1)
+          peaksobj(res)
+          showNotification("Chromatography data loaded", type = "message")
+        },
+        error = function(e) {
+          showNotification(paste("Error: ", e$message), type = "error")
         }
-
-        res <- read_chrom(path, method = 1)
-        peaksobj(res)
-        showNotification("Chromatography data loaded", type = "message")
-      }, 
-      error = function(e) {
-        showNotification(paste("Error: ", e$message), type = "error")
-      }
       )
     })
   })
@@ -309,7 +310,7 @@ chromapp_server <- function(input, output, session) {
 
   peaksobj <- reactiveVal(NULL)
   chrom_data_load_server("chrom_data_load", peaksobj)
-  
+
   samples_df <- reactiveVal(NULL)
   current_cmpds_df <- reactiveVal(NULL)
 
@@ -323,7 +324,6 @@ chromapp_server <- function(input, output, session) {
   current_trans_id <- reactiveVal(1) # transition i
   # sync filter compd_id with current selected transition
   selected_peak_range <- reactiveVal(NULL)
-
 
   # Overview  ####
   ##  table for overview ####
@@ -552,7 +552,7 @@ chromapp_server <- function(input, output, session) {
 
   output$cmpd_table_overview <- renderDT({
     validate(need(peaksobj(), "No peaks object available"))
-    
+
     DT::datatable(
       peaksobj()@compounds,
       selection = "single",
@@ -782,7 +782,7 @@ chromapp_server <- function(input, output, session) {
   ## chromatogram plotly output ####
   output$chrom_plots <- renderPlotly({
     validate(need(peaksobj(), "No peaks object available"))
-    
+
     req(class(peaksobj()) == "ChromRes")
     req(input$sample_file_input)
     req(input$compound_trans_input)
@@ -1290,5 +1290,8 @@ chromapp_server <- function(input, output, session) {
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @export
 chrom_app <- function() {
-  shiny::runApp(list(ui = chromapp_ui(), server = chromapp_server), launch.browser = TRUE)
+  shiny::runApp(
+    list(ui = chromapp_ui(), server = chromapp_server),
+    launch.browser = TRUE
+  )
 }

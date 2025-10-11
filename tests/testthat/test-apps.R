@@ -27,5 +27,3 @@ test_that("linearity server", {
     expect_true(is.environment(session))
   })
 })
-
-

@@ -342,4 +342,3 @@ update_metadata <- function(chrom_res, metadata, ignore_unmatched = TRUE) {
   validObject(chrom_res)
   chrom_res
 }
-

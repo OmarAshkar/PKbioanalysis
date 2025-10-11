@@ -1,3 +1,17 @@
+make_sequence_names <- function(df){
+
+  df <- df |>
+    dplyr::group_by(.data$SAMPLE_LOCATION) |>
+    dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, "_", LETTERS[dplyr::row_number()])) |>
+    dplyr::ungroup() |>
+    dplyr::group_by(.data$FILE_NAME) |>
+    dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, dplyr::row_number())) |>
+    dplyr::ungroup()
+
+  stopifnot(length(unique(df$FILE_NAME)) == nrow(df))
+  df
+}
+
 .get_item <- function(platedf, type, nrep, group) {
   res <- dplyr::filter(
     platedf,
@@ -277,10 +291,7 @@ write_injec_seq <- function(injec_seq) {
   checkmate::assertClass(injec_seq, "InjecListObj")
 
   # Modify sample list
-  sample_list <- dplyr::mutate(
-    injec_seq$injec_list,
-    FILE_NAME = paste0(.data$FILE_NAME, "_R", row_number())
-  ) |>
+  sample_list <- injec_seq$injec_list |> 
     dplyr::rename_all(tolower) |>
     select(-matches("index"))
 

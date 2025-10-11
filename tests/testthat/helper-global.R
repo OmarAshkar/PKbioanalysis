@@ -8,7 +8,7 @@
 # imported_peaks <- read.csv(imported_peaks_path)
 # main <- read_chrom(path, method = "3")
 
-.reset_samples_db()
+# .reset_samples_db()
 x <- system.file("cmpds.yaml", package = "PKbioanalysis") |>
   .parse_cmpds() |>
   suppressWarnings()
@@ -25,7 +25,6 @@ main <- smooth_chrom(main_nosmooth, filter = "savgol", window = 3)
 
 
 ## quant obj
-
 cmpyml <- system.file("cmpds_MTG.yaml", package = "PKbioanalysis")
 cmpyml <- .parse_cmpds(cmpyml) |> suppressWarnings()
 .save_cmpd_db(cmpyml)

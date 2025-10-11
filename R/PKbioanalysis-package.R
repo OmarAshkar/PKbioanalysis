@@ -32,6 +32,7 @@
 #' @importFrom DiagrammeR get_edge_df
 #' @importFrom dplyr across
 #' @importFrom dplyr as_tibble
+#' @importFrom dplyr bind_rows
 #' @importFrom dplyr case_when
 #' @importFrom dplyr desc
 #' @importFrom dplyr distinct

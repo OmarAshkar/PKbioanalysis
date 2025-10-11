@@ -33,7 +33,17 @@ test_that("build_injec_seq", {
     n_explore = 4
   )
   print(injseq)
+
+  
   expect_true("total_volume" %in% colnames(summary(injseq))) # generic summary test
+
+  # assert all file names are unique
+  length(unique(injseq$injec_list$FILE_NAME)) |>
+    expect_equal(nrow(injseq$injec_list))
+
+  # assert all file names has ending with upper alphabet 
+  all(grepl("[A-Z]\\d+$", injseq$injec_list$FILE_NAME)) |>
+    expect_true()
 })
 
 
@@ -194,5 +204,3 @@ test_that("export masslynx", {
   ) |>
     expect_true()
 })
-
-

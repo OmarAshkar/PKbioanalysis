@@ -1,6 +1,6 @@
 test_that("retreive database", {
   testthat::skip_on_cran()
-  .reset_samples_db()
+  # .reset_samples_db()
   # locate inst folder
   x <- system.file("cmpds.yaml", package = "PKbioanalysis") |>
     .parse_cmpds() |>

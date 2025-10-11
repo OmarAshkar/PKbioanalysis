@@ -1,9 +1,13 @@
 test_that("dir or files", {
   path <- system.file("extdata", "waters_raw_ex", package = "PKbioanalysis")
-  dir_or_files_to_files(path, "raw$") |> length() |>
-    expect_equal(7)
+  dir_or_files_to_files(path, "raw$") |> length() |> expect_equal(7)
 
-  path <- list.files(path, full.names = TRUE, pattern = "raw$", all.files = TRUE)
+  path <- list.files(
+    path,
+    full.names = TRUE,
+    pattern = "raw$",
+    all.files = TRUE
+  )
   dir_or_files_to_files(path, "raw$") |>
     expect_identical(dir_or_files_to_files(path, "raw$"))
 })

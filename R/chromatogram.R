@@ -525,7 +525,6 @@ filter_chrom <- function(
   # filter pk_metadata by sample_id
   pk_metadata <- chrom_res@pk_metadata[exp_compounds$compound_id]
 
-
   res <- new(
     "ChromRes",
     runs = dat,

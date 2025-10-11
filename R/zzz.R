@@ -33,7 +33,12 @@ refresh_config <- function() {
 }
 
 
-update_config <- function(base_url = NULL, api_key = NULL, model = NULL, temprature = NULL) {
+update_config <- function(
+  base_url = NULL,
+  api_key = NULL,
+  model = NULL,
+  temprature = NULL
+) {
   path <- config_path()
   configfile <- file.path(path, "config.yaml")
   if (!file.exists(configfile)) {
@@ -57,7 +62,6 @@ update_config <- function(base_url = NULL, api_key = NULL, model = NULL, temprat
   }
 
   yaml::write_yaml(config, configfile)
-
 }
 
 

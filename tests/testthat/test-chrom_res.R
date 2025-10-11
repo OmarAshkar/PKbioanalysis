@@ -8,7 +8,7 @@ test_that("correct_parsing", {
 })
 
 test_that("check chromres cmpds against db", {
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- system.file("cmpds.yaml", package = "PKbioanalysis") |>
     .parse_cmpds() |>
     suppressWarnings()
