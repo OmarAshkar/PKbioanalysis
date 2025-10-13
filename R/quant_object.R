@@ -404,7 +404,7 @@ update_rel_response <- function(quantres) {
 #' @export
 setGeneric(
   "prefilter_precision_data",
-  function(x, type, cutoff = 0.2, compound_id) {
+  function(x, type, acc_cutoff = 0.2, dev_cutoff = 0.2, compound_id = NULL) {
     standardGeneric("prefilter_precision_data")
   }
 )
@@ -413,7 +413,8 @@ setGeneric(
 prefilter_precision_data.QuantRes <- function(
   x,
   type,
-  cutoff = 0.2,
+  acc_cutoff = 0.2,
+  dev_cutoff = 0.2,
   compound_id
 ) {
   stopifnot(inherits(x, "QuantRes"))
@@ -425,7 +426,7 @@ prefilter_precision_data.QuantRes <- function(
     dplyr::rename(conc = estimated_conc) |>
     dplyr::select(conc, stdconc, type)
 
-  prefilter_precision_data(df, type, cutoff)
+  prefilter_precision_data(df, type = type, acc_cutoff = acc_cutoff, dev_cutoff = dev_cutoff)
 }
 
 setMethod(
@@ -434,18 +435,22 @@ setMethod(
   prefilter_precision_data.QuantRes
 )
 
-prefilter_precision_data.data.frame <- function(x, type, cutoff = 0.2) {
+prefilter_precision_data.data.frame <- function(x, type, acc_cutoff = 0.2, dev_cutoff = 0.2) {
   stopifnot(is.data.frame(x))
   stopifnot(type %in% c("QC", "DQC", "Standard"))
   checkmate::assertNames(
     colnames(x),
     must.include = c("conc", "stdconc", "type")
   )
+  checkmate::assertNumeric(acc_cutoff, lower = 0, upper = 1)
+  checkmate::assertNumeric(dev_cutoff, lower = 0, upper = 1)
+  checkmate::assertChoice(type, choices = c("Standard", "QC", "DQC"))
   x |>
-    mutate(accuracy = conc / stdconc) |>
-    dplyr::filter(.data$type == !!type) |>
-    dplyr::filter(dplyr::between(.data$accuracy, 1 - cutoff, 1 + cutoff))
+    dplyr::filter(.data$type == .env$type) |>
+    dplyr::filter(dplyr::between(accuracy(.data$conc, .data$stdconc, percent = FALSE), 1 - acc_cutoff, 1 + acc_cutoff)) |>
+    dplyr::filter(dplyr::between(rel_deviation(.data$conc, .data$stdconc, percent = FALSE), -dev_cutoff, dev_cutoff))
 }
+
 setMethod(
   "prefilter_precision_data",
   "data.frame",

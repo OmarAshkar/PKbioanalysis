@@ -1154,13 +1154,14 @@ study_app_server <- function(input, output, session) {
       rhandsontable::hot_col(col = 3, readOnly = TRUE) |>
       rhandsontable::hot_col(col = 4, type = "date", dateFormat = "HH:mm") |> # nominal time
       rhandsontable::hot_col(col = 5, type = "date", dateFormat = "HH:mm") |> # actual time
+      rhandsontable::hot_col(col = 6, type = "text") |> # time unit
       rhandsontable::hot_col(
-        col = 6,
+        col = 7,
         type = "dropdown",
         source = c("Collected", "Processed")
       ) |>
       rhandsontable::hot_col(
-        col = 7,
+        col = 8,
         type = "dropdown",
         source = c(
           "Plasma",
@@ -1174,7 +1175,7 @@ study_app_server <- function(input, output, session) {
           'Other'
         )
       ) |>
-      rhandsontable::hot_col(col = 8, type = "text") # notes
+      rhandsontable::hot_col(col = 9, type = "text") # notes
   })
 
   observeEvent(input$update_sample_log_btn, {
@@ -1189,6 +1190,7 @@ study_app_server <- function(input, output, session) {
       "study_id",
       "nominal_time",
       "actual_time",
+      "time_unit",
       "status",
       "sample_type",
       "notes"
@@ -1372,22 +1374,11 @@ study_app_server <- function(input, output, session) {
         on.exit(progress$close())
         make_cell_stability_study(
           study_title = input$cells_metabolic_stability_title,
-          cmpds = trimws(unlist(strsplit(
-            input$cells_metabolic_stability_cmpds_input,
-            ","
-          ))),
-          time_points = trimws(unlist(strsplit(
-            input$cells_metabolic_stability_timepoints_input,
-            ","
-          ))),
-          arms = trimws(unlist(strsplit(
-            input$cells_metabolic_stability_arms_input,
-            ","
-          ))),
-          conditions = trimws(unlist(strsplit(
-            input$cells_metabolic_stability_conditions_input,
-            ","
-          ))),
+          cmpds = str_to_vec(input$cells_metabolic_stability_cmpds_input),
+          time_points = str_to_vec(input$cells_metabolic_stability_timepoints_input),
+          time_unit = input$cell_metabolic_stability_time_unit,
+          arms = str_to_vec(input$cells_metabolic_stability_arms_input),
+          conditions = str_to_vec(input$cells_metabolic_stability_conditions_input),
           n_replicates = input$cells_metabolic_stability_n_replicates
         )
         showNotification(
@@ -2032,6 +2023,11 @@ study_app_server <- function(input, output, session) {
               options = list(create = TRUE),
               choices = "No Group"
             ),
+            textInput("samplesdb_dilution_input", "Dilution", value = "1,1") |> 
+              bslib::tooltip(
+                "Dilution factor(s), single value or comma separated for repeated addition with different dilutions. E.g. 1,10,100",
+                placement = "right"
+              ),
             actionButton("add_samples_db_btn_final", "Add Samples")
           )
         )
@@ -2044,7 +2040,7 @@ study_app_server <- function(input, output, session) {
     # reorder curr_plate_sample_log_dil()
     curr_plate_sample_log_dil() |>
       orderdf(input$rank_list_logtable_asc) |> 
-      
+
       curr_plate_sample_log_dil()
   })
 
@@ -2084,9 +2080,10 @@ study_app_server <- function(input, output, session) {
         curr_gen_plate_expr(
           bquote(
             .(curr_gen_plate_expr()) |>
-              add_samples_db(
+              add_samples_db2(
                 logIds = .(sortedsampleid),
-                dil = .(sorted_dil),
+                # dil = .(sorted_dil),
+                dil = .(str_to_vec(input$samplesdb_dilution_input, TRUE)),
                 group = .(input$samplesdb_group_input)
               )
           )
@@ -2111,6 +2108,7 @@ study_app_server <- function(input, output, session) {
 
   output$num_samples_selected_plate_design_txt <- renderText({
     req(curr_plate_sample_log_dil())
+    req(input$plate_design_samples_selector_RT)
     selected_rows <- input$plate_design_samples_selector_RT$data |>
       clean_rht_to_df()
     colnames(selected_rows) <- colnames(curr_plate_sample_log_dil())

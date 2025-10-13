@@ -352,6 +352,7 @@ studydesign_db <- function(con) {
     study_id     TEXT NOT NULL REFERENCES study(id),
     nominal_time  TEXT, -- in hours
     actual_time  TEXT, -- in hours
+    time_unit   TEXT,
     status       TEXT CHECK (status IN ('Planned', 'Collected', 'Processed')),
     sample_type   TEXT CHECK (sample_type IN ('Plasma', 'Serum', 'Whole Blood', 'Urine', 'Depot', 'CSF', 'Tissue', 'Saliva', 'Other')),
     notes         TEXT

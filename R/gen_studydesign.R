@@ -745,6 +745,7 @@ get_study_subject_type <- function(study_id) {
 make_cell_stability_study <- function(
   study_title = "Cell Stability Study",
   time_points = c(0, 1, 6),
+  time_unit = "hours",
   cmpds = "A",
   arms = c("DMSO", "Saline"),
   conditions = c("-80C", "4C", "-20C", "RT"),
@@ -801,6 +802,7 @@ make_cell_stability_study <- function(
     dplyr::select("subject_id", "time_points") |>
     dplyr::mutate(
       nominal_time = as.character(time_points),
+      time_unit = time_unit,
       status = "Planned"
     ) |>
     dplyr::select(-"time_points")

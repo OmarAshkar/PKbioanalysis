@@ -445,6 +445,29 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   plateobj
 }
 
+#' Add samples from the sample log to the plate with multiplication
+#' @param plate PlateObj
+#' @param logIds A vector of log IDs from the sample log.
+#' @param dil A vector with length corresponding number of repeats. See details.
+#' @param namestyle A numeric value indicating the naming style. 1 for long names, 2 for short names.
+#' @param group A string for bioanalytical group.
+#' @details This function is wrapper around `add_samples_db()` that allows for quick replication of samples by dilution factor vector. 
+#' For instance, it dil = c(1,10), the samples will repeated twice with one fold and 10 fold dilution factor each time.
+add_samples_db2 <- function(plate, logIds, dil = c(1,1), namestyle = 1, group = NA) {
+  checkmate::assertClass(plate, "PlateObj")
+  checkmate::assertVector(logIds, min.len = 1, any.missing = FALSE)
+  checkmate::assertNumeric(dil, lower = 1, finite = TRUE, any.missing = FALSE)
+  checkmate::assertString(group, na.ok = TRUE)
+  checkmate::assertChoice(namestyle, choices = c(1, 2))
+
+  for (i in seq_along(dil)) {
+    plate <- add_samples_db(plate, logIds, dil = dil[i], namestyle = namestyle, group = group)
+  }
+
+  plate
+
+}
+
 #' Add blank to the plate
 #' Can be either double blank (DB), CS0IS+ or CS+IS0
 #' @param plate PlateObj object
@@ -1170,6 +1193,7 @@ plot.PlateObj <- function(
         color = .data[["TYPE"]]
       ),
       linewidth = 1,
+      alpha = 0.8,
       linetype = "solid"
     ) +
     # make unique colors for fill vs color
@@ -1201,7 +1225,7 @@ plot.PlateObj <- function(
         label = .data$new_value,
       ),
       size = rel(label_size * 4),
-      color = "white"
+      color = "#f5f5f5" ##"1a1a1a" 
     ) +
     ggplot2::geom_text(
       aes(x = .data$col, y = .data$row, label = .data$SAMPLE_LOCATION),
@@ -1818,7 +1842,12 @@ samples_naming_style <- function(
       mutate(
         new_value = paste5(
           .data$new_value,
-          .data$nominal_time,
+          paste5(
+            .data$nominal_time,
+            .data$time_unit,
+            sep = "",
+            na.rm = TRUE
+          ),
           sep = "_",
           na.rm = TRUE
         )
@@ -1885,4 +1914,18 @@ samples_naming_style <- function(
   plate@df <- df
   validObject(plate)
   plate
+}
+
+
+
+#' Convert a comma-separated string to a vector
+#' @param x character. Comma-separated string
+#' @param numeric logical. If TRUE, convert to numeric vector
+str_to_vec <- function(x, numeric = FALSE) {
+  res <- unlist(strsplit(x, split = ","))
+  res <- trimws(res)
+  if (numeric) {
+    res <- as.numeric(res)
+  }
+  res
 }

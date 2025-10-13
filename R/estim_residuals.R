@@ -265,33 +265,27 @@ plot_var_pattern <- function(df, title = "") {
 }
 
 
-#' Calculate Summary Statistics for Each Concentration Level
+#' Calculate Summary Statistics for Each Concentration Level For Either Concentration, Area, or Area Ratio
 #' @param df Data frame with columns: stdconc (standardized concentration), conc (concentration), area (peak area), area_ratio (area ratio)
 #' @param col Column to calculate summary for ("conc", "area", or "area_ratio")
-#' @param acc_threshold Accuracy threshold (default is 20%)
-#' @param dev_threshold Deviation threshold (default is 20%)
+#' @param acc_cutoff Accuracy threshold (default is 20%) for concentration vs standard concentration
+#' @param dev_cutoff Deviation threshold (default is 20%) for concentration vs standard concentration
+#' @param type Type of samples to include ("Standard", "QC", "DQC")
 #' @author Omar I. Elashkar
 #' @export
-calc_var_summary <- function(df, col = "conc", acc_threshold = 20, dev_threshold = 20) {
+calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.2, type = "QC") {
   checkmate::assertChoice(col, choices = c("conc", "area", "area_ratio"))
   checkmate::assertDataFrame(df)
   checkmate::assertNames(
     names(df),
-    must.include = c("stdconc", col)
+    must.include = c("stdconc", col, "conc") # must have conc to calculate accuracy and rel_dev
   )
 
   df |>
+    mutate(rel_dev = rel_deviation(.data$conc, .data$stdconc)) |>
+    mutate(accuracy = accuracy(.data$conc, .data$stdconc)) |>
+    prefilter_precision_data(type = type, acc_cutoff = acc_cutoff, dev_cutoff = dev_cutoff) |>
     group_by(.data$stdconc) |>
-    mutate(rel_dev = rel_deviation(.data[[col]], .data$stdconc)) |>
-    mutate(accuracy = accuracy(.data[[col]], .data$stdconc)) |>
-    dplyr::filter(dplyr::between(
-      accuracy,
-      100 - acc_threshold,
-      100 + acc_threshold
-    )) |>
-    dplyr::filter(dplyr::between(
-      rel_deviation(.data[[col]], .data$stdconc), -dev_threshold, dev_threshold
-    )) |>
     dplyr::summarize(
       mean = mean(.data[[col]], na.rm = TRUE),
       sd = sd(.data[[col]], na.rm = TRUE),
@@ -299,8 +293,8 @@ calc_var_summary <- function(df, col = "conc", acc_threshold = 20, dev_threshold
       cv = cv(.data[[col]]),
       mape  = mean(abs(.data$rel_dev), na.rm = TRUE),
       n = dplyr::n(), 
-      acc_cutoff = acc_threshold,
-      dev_cutoff = dev_threshold,
+      acc_cutoff = acc_cutoff,
+      dev_cutoff = dev_cutoff,
       .groups = "drop"
     )
 }
