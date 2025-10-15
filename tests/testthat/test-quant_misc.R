@@ -5,7 +5,7 @@ test_that("residuals from quantres", {
     x <- run_linearity(quantobj, "MITRAGYNINE")
   )
 
-  x <- prefilter_precision_data(x, "QC", 0.2, "MITRAGYNINE")
+  x <- prefilter_precision_data(x, type = "QC", acc_cutoff = 0.3, dev_cutoff = 0.3, compound_id = "MITRAGYNINE")
   x$type |> unique() |> expect_equal("QC")
 
   y <- calc_var_summary(x)

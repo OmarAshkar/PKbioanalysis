@@ -280,7 +280,8 @@ test_that("add_from_db2", {
     study_id = new_study$id,
     df = data.frame(
       subject_id = rep(1:3, each = 4),
-      nominal_time = rep(c(0, 5, 10, 30), 3)
+      nominal_time = rep(c(0, 5, 10, 30), 3), 
+      time_unit = "minutes"
     )
   )
 
@@ -310,4 +311,14 @@ test_that("add_from_db2", {
   x |>
     samples_naming_style(study_name = FALSE, use_subject_id = FALSE) |>
     expect_error("group_replicate has NA values.")
+
+
+
+  suppressWarnings({
+    x <- generate_96() |>
+      add_samples_db2(df$log_id, dil = c(1,10, 100)) 
+  })
+
+  x@df$value |> na.omit() |> length() |> expect_equal(length(df$log_id)*3)
+
 })

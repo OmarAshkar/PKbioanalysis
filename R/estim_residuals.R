@@ -298,3 +298,50 @@ calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.
       .groups = "drop"
     )
 }
+
+
+#' Estimate Dilution Limit Based on Additive and Proportional Errors and LLOQ
+#' @param add_err Additive error (constant)
+#' @param prop_err Proportional error (CV)
+#' @param lloq Lower limit of quantification
+#' @author Omar I. Elashkar
+#' @export
+#' @examples
+#' estim_dil_limit(add_err=0.1, prop_err=0.1, lloq=1)
+#' estim_dil_limit(add_err=1, prop_err=0.1, lloq=55)
+
+estim_dil_limit <- function(add_err, prop_err, lloq){
+  checkmate::assert_number(add_err, lower = 0, finite = TRUE)
+  checkmate::assert_number(prop_err, lower = 0, finite = TRUE)
+  checkmate::assert_number(lloq, lower = 3*add_err, finite = TRUE) # Should be at least 10 to get CV 20%
+
+  # First criteria add/prop <= conc => add/err - conc >= 0
+  # second criteria: lloq - 3*sd*conc >= 0
+  # conc >= lloq ==> lloq - conc >= 0
+
+  criteria <- function(conc, add_err, prop_err, lloq) {
+    c(
+      lloq - conc,
+      (add_err / prop_err) - conc,
+      lloq - 3 * sqrt(add_err^2 + prop_err^2 * conc^2) * conc
+    )
+  }
+
+  # Objective: minimize conc (find the smallest dilution limit)
+  obj <- function(x) x
+
+  initConc <- 10 * lloq
+  opts <- list("algorithm" = "NLOPT_LN_COBYLA", "xtol_rel" = 1e-8)
+
+  res <- nloptr::nloptr(
+    x0 = initConc,
+    eval_f = obj,
+    eval_g_ineq = function(x) criteria(x, add_err, prop_err, lloq),
+    lb = 1e-6,
+    opts = opts
+  )
+
+  res$solution
+}
+
+

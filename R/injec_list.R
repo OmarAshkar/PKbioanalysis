@@ -1,11 +1,15 @@
+#' Create unique sequence names
+#' @param df dataframe
+#' Use numbers for technical replicates and letters for injection replicates
+#' Skip technical replicates for analytes as expected to be unique
+#' @noRd
 make_sequence_names <- function(df){
-
   df <- df |>
     dplyr::group_by(.data$SAMPLE_LOCATION) |>
-    dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, "_", LETTERS[dplyr::row_number()])) |>
+    dplyr::mutate(FILE_NAME = ifelse(TYPE != "Analyte", paste0(.data$FILE_NAME, "_", dplyr::row_number()), .data$FILE_NAME)) |>
     dplyr::ungroup() |>
     dplyr::group_by(.data$FILE_NAME) |>
-    dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, dplyr::row_number())) |>
+    dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, LETTERS[dplyr::row_number()])) |>
     dplyr::ungroup()
 
   stopifnot(length(unique(df$FILE_NAME)) == nrow(df))
@@ -358,6 +362,7 @@ download_sample_list <- function(sample_list, vendor) {
 
   if (vendor == "masslynx") {
     sample_list <- sample_list |>
+      dplyr::rename(ID = "log_id") |>
       dplyr::rename_all(toupper) |>
       dplyr::select(-"CONC") |>
       dplyr::select(
@@ -367,10 +372,11 @@ download_sample_list <- function(sample_list, vendor) {
         "TYPE",
         "INJ_VOL",
         starts_with("CONC"),
-        starts_with("COMPOUND")
+        starts_with("COMPOUND"),
+        "ID"
       ) |>
       dplyr::mutate(FILE_NAME = make.unique(.data$FILE_NAME)) |>
-      # dplyr::mutate(FILE_NAME = gsub("\\.", "_", .data$FILE_NAME)) |> # replace dots with underscores
+      dplyr::mutate(FILE_NAME = gsub("\\.", "-", .data$FILE_NAME)) |> # replace dots with dash
       dplyr::mutate(Index = dplyr::row_number()) |>
       dplyr::mutate(
         TYPE = dplyr::case_when(

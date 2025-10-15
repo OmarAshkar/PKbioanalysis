@@ -7,7 +7,7 @@ test_that("plate_registered_before_seq", {
 test_that("build_injec_seq", {
   skip_on_cran()
 
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_suitability("Suitability", conc = 2) |>
     add_blank(group = "GP1") |>
@@ -42,7 +42,7 @@ test_that("build_injec_seq", {
     expect_equal(nrow(injseq$injec_list))
 
   # assert all file names has ending with upper alphabet 
-  all(grepl("[A-Z]\\d+$", injseq$injec_list$FILE_NAME)) |>
+  all(grepl("\\d+[A-Z]$", injseq$injec_list$FILE_NAME)) |>
     expect_true()
 })
 
@@ -50,7 +50,7 @@ test_that("build_injec_seq", {
 test_that("save_injecseq_csv", {
   skip_on_cran()
 
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_samples(1:20) |>
     add_blank() |>
@@ -87,7 +87,7 @@ test_that("multiple_plates", {
   # expect 1 list
   skip_on_cran()
 
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_samples(1:20) |>
     add_blank() |>
@@ -117,7 +117,7 @@ test_that("multiple_plates", {
 test_that("exploratory_samples_added", {
   skip_on_cran()
 
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_cs_curve(c(1, 10, 30, 40, 100, 200)) |> # 1
     add_samples(1:20) |> # 2
@@ -141,7 +141,7 @@ test_that("writing_increment_id", {
   skip_on_ci()
 
   # The metadata table is accommodating for the list
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_cs_curve(c(1, 10, 30, 40, 100, 200)) |> # 1
     add_samples(1:20) |> # 2
@@ -177,7 +177,7 @@ test_that("writing_increment_id", {
 test_that("export masslynx", {
   skip_on_cran()
 
-  .reset_samples_db()
+  # .reset_samples_db()
   x <- generate_96() |>
     add_cs_curve(c(1, 10, 30, 40, 100, 200)) |> # 1
     add_samples(1:20) |> # 2

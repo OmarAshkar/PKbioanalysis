@@ -23,3 +23,27 @@ test_that("estimated lloq", {
     cv_lqc = 0.05
   )
 })
+
+
+test_that("estim_dil_limit test", {
+  # no add effect
+  estim_dil_limit(
+    add_err = 0.04,
+    prop_err = 0.05,
+    lloq = 10
+  ) |>
+    expect_equal(10)
+
+  expect_true(
+    estim_dil_limit(
+      add_err = 1,
+      prop_err = 0.05,
+      lloq = 11
+    ) >
+      11
+  )
+
+  
+  estim_dil_limit(add_err=1, prop_err=0.1, lloq=55) |> expect_equal(55)
+
+})
