@@ -1029,7 +1029,7 @@ make_calibration_study <-
 #' Plotting 96 well plate
 #'
 #' @param x PlateObj
-#' @param color character. Coloring variable. Choices: "conc", "group", "study", "time", "factor", "samples", "arm", "sex", "dose", "route", "matrix". Default is "conc"
+#' @param color character. Coloring variable. Choices: "conc", "group", "dil", "study", "time", "factor", "samples", "arm", "sex", "dose", "route", "matrix". Default is "conc"
 #' @param Instrument A string placed at subtitle
 #' @param caption A string place at plate caption
 #' @param label_size numeric. Size of the label. Default is 15
@@ -1073,6 +1073,7 @@ plot.PlateObj <- function(
     c(
       "conc",
       "group",
+      "dil",
       "study",
       "time",
       "factor",
@@ -1108,6 +1109,7 @@ plot.PlateObj <- function(
     color,
     "conc" = "conc",
     "group" = "a_group",
+    "dil" = "dil",
 
     "study" = "title",
     "time" = "nominal_time",
@@ -1139,7 +1141,9 @@ plot.PlateObj <- function(
       paste0(">", "\\1")
     )
   }
-  plate_df$new_value <- str_replace_all(plate_df$new_value, "_", "\n")
+  plate_df <- plate_df |> 
+    dplyr::mutate(new_value = str_replace_all(plate_df$new_value, "_", "\n")) |> 
+    dplyr::mutate(dil = factor(dil, levels = unique(dil[order(as.numeric(dil))])))
 
   currentLayout <- x@filling_scheme
   rbound <- currentLayout$rbound

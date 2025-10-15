@@ -319,6 +319,8 @@ test_that("add_from_db2", {
       add_samples_db2(df$log_id, dil = c(1,10, 100)) 
   })
 
+  plot(x, "dil") |> expect_no_error()
+
   x@df$value |> na.omit() |> length() |> expect_equal(length(df$log_id)*3)
 
 })

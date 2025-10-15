@@ -49,17 +49,18 @@ plate_plot_module_ui <- function(id, str) {
       paste0(str, "_color_toggle"),
       "Color By",
       choices = c(
-        "conc",
-        "group",
-        "study",
-        "time",
-        "factor",
-        "samples",
-        "arm",
-        "sex",
-        "dose",
-        "route",
-        "matrix"
+        "Spiked Concentration" = "conc",
+        "Analytical Group" = "group",
+        "Dilution" = "dil",
+        "Study" = "study",
+        "Nominal Time" = "time",
+        "Factor" = "factor",
+        "Samples" = "samples",
+        "Arm" = "arm",
+        "Sex" = "sex",
+        "Dose" = "dose",
+        "Route" = "route",
+        "Matrix" = "matrix"
       )
     ),
     selectInput(
