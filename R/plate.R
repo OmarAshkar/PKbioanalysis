@@ -805,7 +805,7 @@ add_suitability <- function(plate, conc, label = "suitability", group = NA) {
       ") of the calibration range"
     ))
   }
-  if (!(hqc_conc >= quantrange[3])) {
+  if (!(hqc_conc >= quantrange[3] & hqc_conc <= max_val)) {
     e_func(paste(
       "HQC should be equal or greater than 75% (>=",
       quantrange[3],
