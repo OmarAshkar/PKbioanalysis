@@ -136,8 +136,8 @@ dir_or_files_to_files <- function(dir, file_pattern) {
         !colnames(x) %in% c("RT", "transition", "transition_id", "Intensity")
       ] |>
         dplyr::distinct() |>
-        dplyr::rename(filename = sample) |>
-        dplyr::mutate(filename = tools::file_path_sans_ext(filename))
+        dplyr::rename(filename = "sample") |>
+        dplyr::mutate(filename = tools::file_path_sans_ext(.data$filename))
 
       list(
         sample_chrom = peakdf,
@@ -177,7 +177,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
       ) |>
       dplyr::mutate(q1 = as.numeric(.data$q1), q3 = as.numeric(.data$q3)) |>
       dplyr::select("chrom_index", "rt", "int", "filename", "q1", "q3") |>
-      dplyr::rename(transition_id = .data$chrom_index, RT = .data$rt, Intensity = .data$int) |>
+      dplyr::rename(transition_id = "chrom_index", RT = "rt", Intensity = "int") |>
       dplyr::mutate(transition_id = paste0("T", .data$transition_id))
 
     dat <- y |>
@@ -410,8 +410,8 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
   peaks <- peaks |>
     dplyr::rename(
-      "observed_peak_start" = peak_start,
-      "observed_peak_end" = peak_end
+      "observed_peak_start" = "peak_start",
+      "observed_peak_end" = "peak_end"
     ) |>
     dplyr::mutate(
       observed_peak_start = as.numeric(observed_peak_start),

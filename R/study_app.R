@@ -2608,8 +2608,8 @@ study_app_server <- function(input, output, session) {
           starts_with("CONC")
         ) |>
         dplyr::rename(
-          "Sample Location" = .data$SAMPLE_LOCATION,
-          Description = .data$FILE_TEXT
+          "Sample Location" = "SAMPLE_LOCATION",
+          Description = "FILE_TEXT"
         ) |>
         DT::datatable(
           selection = list(mode = "single", target = "cell"),

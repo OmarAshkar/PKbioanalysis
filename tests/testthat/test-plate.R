@@ -213,8 +213,8 @@ test_that("plotPlateDesignTest", {
 
 test_that("DQC", {
   x <- generate_96() |>
-    add_cs_curve(c(50, 20, 10, 5, 2, 1)) |>
-    add_QC(3, 20, 180, reg = T, n_qc = 6, qc_serial = F) |>
+    add_cs_curve(c(200, 50, 20, 10, 5, 2, 1)) |>
+    add_QC(3, 70, 180, reg = T, n_qc = 6, qc_serial = F) |>
     add_DQC(conc = 500, fac = 10, rep = 10)
 
   plot(x, transform_dil = T) |> expect_no_error()

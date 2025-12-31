@@ -422,10 +422,10 @@ peakres_to_chromres <- function(peakres, method = NA) {
   names(mylist) <- compound_names
   reslist <- lapply(mylist, function(x) {
     x |>
-      dplyr::rename(conc = .data$`Conc.`) |>
-      dplyr::rename(stdconc = .data$`Std. Conc`) |>
-      dplyr::rename(area = .data$`Area`) |>
-      dplyr::rename(area_ratio = .data$`Area Ratio`) |>
+      dplyr::rename(conc = "Conc.") |>
+      dplyr::rename(stdconc = "Std. Conc") |>
+      dplyr::rename(area = "Area") |>
+      dplyr::rename(area_ratio = "Area Ratio") |>
       dplyr::mutate(across(
         c("conc", "area_ratio", "stdconc", "area", "%Dev"),
         as.numeric

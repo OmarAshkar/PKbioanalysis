@@ -731,8 +731,8 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     obs_rt <- obs_rt |>
       .find_max_intensity() |>
       mutate(compound_id = compound_id_filter) |>
-      dplyr::rename(observed_peak_height = peak_height) |>
-      dplyr::rename(observed_rt = RT)
+      dplyr::rename(observed_peak_height = "peak_height") |>
+      dplyr::rename(observed_rt = "RT")
     # join by sample_id and compound_id
     peaktab <- dplyr::rows_patch(
       peaktab,

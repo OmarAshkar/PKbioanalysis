@@ -39,7 +39,7 @@ sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE) {
           quantres@peaks |>
           dplyr::filter(compound_id == is_id) |>
           dplyr::select("filename", "area", "compound_id") |>
-          dplyr::rename(IS_area = .data$area)
+          dplyr::rename(IS_area = "area")
       }
     }
     if (!exists("IS_area_df")) {
@@ -58,7 +58,7 @@ sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE) {
         by = c("filename" = "filename")
       ) |>
       # dplyr::filter(.data$type %in% c("Standard", "QC")) |>
-      dplyr::rename(abs_response = .data$area) |>
+      dplyr::rename(abs_response = "area") |>
       dplyr::left_join(IS_area_df, by = dplyr::join_by("filename")) |> # NOTE SAME cmpd, so no cmpd_id
       dplyr::mutate(rel_response = .data$abs_response / .data$IS_area) |>
       dplyr::select(

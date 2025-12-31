@@ -9,7 +9,7 @@ get_sample_names <- function(chrom_res) {
   sample_name <- chrom_res@peaks |>
     dplyr::select(filename, sample_id) |>
     dplyr::distinct() |>
-    dplyr::rename(sample = filename, sample_id = sample_id)
+    dplyr::rename(sample = "filename", sample_id = "sample_id")
   sample_name
 }
 
