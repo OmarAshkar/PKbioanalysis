@@ -809,7 +809,7 @@ add_suitability <- function(plate, conc, label = "suitability", group = NA) {
     e_func(paste(
       "HQC should be equal or greater than 75% (>=",
       quantrange[3],
-      ") of the calibration range"
+      ") of the calibration range. Max is ", max_val
     ))
   }
 }

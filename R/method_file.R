@@ -87,6 +87,13 @@
   cmpds_list
 }
 
+#' Save methods database
+#' @param cmpds_list List returned from .parse_cmpds()
+#' @param method_id If NULL, a new method ID will be created. If numeric, the existing method ID will be updated.
+#' @keywords internal
+#' @returns NULL
+#' @noRd
+#' @author Omar I. Elashkar
 .save_cmpd_db <- function(cmpds_list, method_id = NULL) {
   cmpds_list <- .check_cmpd_list(cmpds_list)
 

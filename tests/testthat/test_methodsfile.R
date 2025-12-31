@@ -1,10 +1,13 @@
+testthat::skip_on_cran()
+# testthat::skip_on_ci()
+
 test_that("retreive database", {
-  testthat::skip_on_cran()
   # .reset_samples_db()
   # locate inst folder
   x <- system.file("cmpds.yaml", package = "PKbioanalysis") |>
     .parse_cmpds() |>
     suppressWarnings()
+  x$method <- "test_method_2"
   .save_cmpd_db(x)
   .get_methodsdb() |> expect_no_error()
   .get_method_transitions(1) |> nrow() |> expect_equal(21)
@@ -14,15 +17,12 @@ test_that("retreive database", {
   # repeat the call on same everything. Error due to duplicated method name
   .save_cmpd_db(x) |> expect_error()
 
-  x$method <- "new_method"
+  x$method <- "test_method_3"
   .save_cmpd_db(x) |> expect_no_error()
 })
 
 
 test_that("update_method", {
-  testthat::skip_on_cran()
-  testthat::skip_on_ci()
-
   x <- system.file("cmpds.yaml", package = "PKbioanalysis") |>
     .parse_cmpds() |>
     suppressWarnings()

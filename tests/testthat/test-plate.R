@@ -198,11 +198,11 @@ test_that("samples_vectorization", {
 test_that("plotPlateDesignTest", {
   generate_96() |>
     add_blank() |>
-    add_cs_curve(c(50, 20, 10, 5, 2, 1), group = "A", rep = 2) |>
-    add_QC(3, 20, 180, reg = T, n_qc = 2, qc_serial = F, group = "A") |>
+    add_cs_curve(c(200, 50, 20, 10, 5, 2, 1), group = "A", rep = 2) |>
+    add_QC(3, 70, 180, reg = T, n_qc = 2, qc_serial = F, group = "A") |>
     add_blank() |>
-    add_cs_curve(c(50, 20, 10, 5, 2, 1), group = "B", rep = 2) |>
-    add_QC(3, 20, 180, reg = T, n_qc = 2, qc_serial = F, group = "B") |>
+    add_cs_curve(c(200, 50, 20, 10, 5, 2, 1), group = "B", rep = 2) |>
+    add_QC(3, 70, 180, reg = T, n_qc = 2, qc_serial = F, group = "B") |>
     add_samples(1:5) |>
     # add_samples(6:10, dose = "A", factor = "F", time = 1:5*30) |>
     add_samples(11:15) |>
