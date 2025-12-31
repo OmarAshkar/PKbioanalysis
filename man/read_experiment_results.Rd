@@ -11,7 +11,7 @@ read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx_xml")
 
 \item{drop_prefix}{logical. If TRUE, drop the prefix from the sample name}
 
-\item{vendor}{vendor name. Only "targetlynx"}
+\item{vendor}{vendor name. Currently only "targetlynx_xml" or "targetlynx_csv" are supported.}
 }
 \value{
 QuantRes object with the results of the experiment.

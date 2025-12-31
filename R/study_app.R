@@ -551,7 +551,6 @@ ui <- bslib::page_navbar(
             ),
             bslib::nav_panel(
               "Add Samples",
-              reactable.extras::reactable_extras_dependency(),
               tags$script(HTML(
                 " $(document).on('blur', '.text-extra', function() { Shiny.setInputValue('text_blur', 'focusOut', {priority: 'event'}); }); "
               )),

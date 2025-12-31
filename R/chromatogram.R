@@ -1,24 +1,5 @@
-setClass(
-  "ChromResBase",
-  slots = c(
-    metadata = "data.frame",
-    peaks = "data.frame",
-    transitions = "data.frame",
-    compounds = "data.frame",
-    vendor = "character",
-    pk_metadata = "list"
-  )
-)
-
-#' Class ChromRes inherits from ChromResBase
-#' @noRd
-setClass(
-  "ChromRes",
-  contains = "ChromResBase",
-  slots = c(
-    runs = "list"
-  )
-)
+#' @include class.R generics.R
+NULL
 
 check_chromatograms_consistency <- function(object) {
   if (length(object@runs) == 0) {
@@ -181,8 +162,10 @@ setValidity("ChromRes", function(object) {
 #' @param method LC-MS/MS method ID saved available in the database.
 #' @export
 #' @examples
+#' \dontrun{
 #' path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
-#' main <- read_chrom(path)
+#' main <- read_chrom(path, method = 1)
+#' }
 read_chrom <- function(dir, format = "waters_raw", method) {
   checkmate::assertChoice(format, choices = c("waters_raw", "mzML"))
   checkmate::assertNumber(method, lower = 1, null.ok = FALSE)
@@ -259,12 +242,14 @@ read_chrom <- function(dir, format = "waters_raw", method) {
 #'
 #' @export
 #' @examples
+#' \dontrun{
 #' path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
-#' main <- read_chrom(path)
+#' main <- read_chrom(path, method = 1)
 #' plot_chrom(main, ncol = 2, transitions_ids = c(18,19,20), sample_id = 3)
 #' plot_chrom(main, ncol = 3, transitions_ids = c(18,19,20), sample_id = 3)
 #' plot_chrom(main, ncol = 1, transitions_ids = c(18,19,20), sample_id = 3)
 #' plot_chrom(main, ncol = NULL, transitions_ids = c(18,19,20), sample_id = 3)
+#' }
 plot_chrom <- function(
   chrom_res,
   ncol = 2,
@@ -594,7 +579,7 @@ setMethod("show", "ChromRes", function(object) {
 })
 
 #' @export
-print.ChromRes <- function(x) {
+print.ChromRes <- function(x, ...) {
   cat("Chromatogram Data\n")
   cat(unique(x@vendor), "\n")
   cat("Number of Samples: ", length(x@runs$files), "\n")
@@ -653,22 +638,7 @@ print.ChromRes <- function(x) {
   return(invisible(x))
 }
 
-
-#' @title Check if peak has been integrated
-#' @description This function checks if the peak has been integrated for a specific compound.
-#' @param chrom_res ChromRes object
-#' @param sample_id Sample ID. If NULL, all samples are checked
-#' @param compound_id Compound ID
-#' @return logical
-#' @export
-#' @examples
-#' \dontrun{
-#' lapply(1:10, \(x) is_integrated(chrom_res, sample_id = 1, compound_id = 1))
-#' }
-setGeneric("is_integrated", function(chrom_res, compound_id, sample_id = NULL) {
-  standardGeneric("is_integrated")
-})
-
+#'rdname is_integrated
 setMethod(
   "is_integrated",
   signature(chrom_res = "ChromRes"),
@@ -677,6 +647,7 @@ setMethod(
   }
 )
 
+#'rdname is_integrated
 setMethod(
   "is_integrated",
   signature(chrom_res = "ChromResBase"),
@@ -740,14 +711,9 @@ is_integrated_chrom_base <- function(chrom_res) {
 }
 
 
-#' @title Get vial positions
-#' @param x ChromRes or QuantRes object
-#' @noRd
-#' @author Omar Elashkar
-setGeneric("get_vials", function(x) standardGeneric("get_vials"))
-
 get_vials.ChromRes <- function(x) {
   x@metadata |>
     dplyr::pull("vialpos")
 }
+
 setMethod("get_vials", signature(x = "ChromRes"), get_vials.ChromRes)

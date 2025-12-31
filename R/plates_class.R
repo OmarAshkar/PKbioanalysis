@@ -1,3 +1,7 @@
+#' @include class.R generics.R
+NULL
+
+
 #' @param plate a 96-well matrix
 #' @param df data.frame contains plate's metadata
 #' @param empty_rows a vector for current active rows
@@ -54,58 +58,6 @@ setMethod(
 setMethod("length", signature(x = "MultiPlate"), function(x) {
   length(x@plates)
 })
-
-#' Create Injection Sequence
-#'
-#' @param plate PlateObj object
-#' @param method choose method from database
-#' @param repeat_std number of re-injections for calibration standards. Default is 1.
-#' @param repeat_analyte number of re-injections for unknown samples. Default is 1
-#' @param repeat_qc number of re-injections for QC wells. Default is 1
-#' @param blank_after_top_conc If TRUE, adding blank after high concentrations of standards and QCS.
-#' @param blank_at_end If True, adding blank at the end of queue.
-#' @param rep_suitability Number of re-injections for suitability vial.
-#' @param blank_every_n If no QCs, frequency of injecting blanks between analytes.
-#' @param injec_vol volume of injection in micro liters.
-#' @param descr Run description.
-#' @param suffix string to be added to the end of the filename. Default is "1".
-#' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param n_explore. A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
-#' @param tray Location in sample manager.
-#' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
-#'
-#' @details
-#' n_explore controls if exploratory samples are to be injected. A random sample from each CS and QC group will be sampled along with 1 blank sample.
-#' @returns InjecListObj object
-#'@export
-setGeneric(
-  "build_injec_seq",
-  function(
-    plate,
-    method,
-    rep_DB = 2,
-    rep_ISblank = 1,
-    rep_suitability = 1,
-    rep_blank = 2,
-    repeat_std = 1,
-    repeat_qc = 1,
-    repeat_analyte = 1,
-    repeat_dqc = 1,
-    n_explore = 0,
-    blank_after_top_conc = TRUE,
-    blank_at_end = TRUE,
-    blank_every_n = NULL,
-    injec_vol,
-    descr = "",
-    prefix = Sys.Date(),
-    suffix = "1",
-    tray = 1,
-    conc_df = NULL,
-    grouped = TRUE
-  ) {
-    standardGeneric("build_injec_seq")
-  }
-)
 
 
 #' Create Injection Sequence from PlateObj (Single Plate)
@@ -503,15 +455,6 @@ setMethod(
   }
 )
 
-
-#' Register a plate
-#' This will save the plate to the database
-#' @param plate PlateObj object or MultiPlate object
-#' @returns PlateObj object or list of PlateObj objects
-#' @export
-setGeneric("register_plate", function(plate) standardGeneric("register_plate"))
-
-
 #' Register a plate
 #' This will save the plate to the database
 #' @param plate PlateObj object
@@ -529,10 +472,6 @@ setMethod("register_plate", "PlateObj", function(plate) {
 #' @return a list of RegisteredPlate objects
 setMethod("register_plate", "MultiPlate", function(plate) {
   lapply(plate@plates, .register_plate_logic)
-})
-
-setGeneric("get_plate_a_groups", function(plate) {
-  standardGeneric("get_plate_a_groups")
 })
 
 setMethod("get_plate_a_groups", "PlateObj", function(plate) {

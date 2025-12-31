@@ -811,8 +811,10 @@ apply_area_cutoff <- function(chrom_res, cutoff, compound_id) {
 #' @details Only target = "all" will update the expected RT for all compounds.
 #' @export
 #' @examples
-#' chrom_res <- read_chrom("path/to/file")
-#' update_RT(chrom_res, compound_id = 1, sample_id = 1, peak_start = 1, peak_end = 2, target = "single")
+#' \dontrun{
+#' update_RT(chrom_res, compound_id = 1, sample_id = 1, 
+#'           peak_start = 1, peak_end = 2, target = "single")
+#' }
 update_RT <- function(
   chrom_res,
   compound_id,

@@ -99,21 +99,6 @@ sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE) {
   quantres
 }
 
-setGeneric(
-  "run_linearity",
-  function(
-    quantres,
-    compound_id,
-    weight = "1/x^2",
-    model = "linear",
-    intercept = TRUE,
-    normalize = FALSE,
-    response = "abs_response",
-    avg_rep = FALSE
-  ) {
-    standardGeneric("run_linearity")
-  }
-)
 
 
 setMethod(
@@ -197,7 +182,7 @@ run_linearity_list <- function(
   avg_rep = FALSE
 ) {
   target_df <- quantres[[compound_id]]$linearitytab |>
-    dplyr::filter(include == TRUE & type == "Standard")
+    dplyr::filter(.data$include == TRUE & .data$type == "Standard")
 }
 
 run_linearity_df <- function(
@@ -330,9 +315,9 @@ run_linearity_df <- function(
     dplyr::mutate(passed = dplyr::case_when(abs(dev_conc) <= 0.20 ~ TRUE, TRUE ~ FALSE))
 
   resdfqc <- resdf |> 
-    dplyr::filter(type == "QC")
+    dplyr::filter(.data$type == "QC")
   resdfstd <- resdf |>
-    dplyr::filter(type == "Standard")
+    dplyr::filter(.data$type == "Standard")
 
 
   slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
@@ -548,15 +533,15 @@ plot_linearity <- function(quantres, compound_id) {
 
   ## extract the linearitytab
   linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type %in% c("Standard", "QC"))
+    dplyr::filter(.data$type %in% c("Standard", "QC"))
 
   ## extract the results
   results <- quantres@linearity[[compound_id]]$results
 
   linearityfig <- ggplot(
     linearitytab |>
-      arrange(stdconc) |>
-      mutate(include = ifelse(include, "Included", "Excluded"))
+      arrange(.data$stdconc) |>
+      mutate(include = ifelse(.data$include, "Included", "Excluded"))
   ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimated_response), ],
@@ -637,20 +622,20 @@ plot_linearity <- function(quantres, compound_id) {
 plot_residuals <- function(quantres, compound_id) {
   ## extract the linearitytab
   linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type %in% c("Standard", "QC", "Suitability"))
+    dplyr::filter(.data$type %in% c("Standard", "QC", "Suitability"))
 
   residualsfig <- ggplot(
     linearitytab |>
-      dplyr::mutate(include = ifelse(include, "Included", "Excluded"))
+      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded"))
   ) +
     ggiraph::geom_point_interactive(
       aes(
-        tooltip = paste0(filename, " \n", residual_response, "%"),
-        data_id = filename,
-        x = stdconc,
-        y = residual_response,
-        color = type,
-        shape = include
+        tooltip = paste0(.data$filename, " \n", .data$residual_response, "%"),
+        data_id = .data$filename,
+        x = .data$stdconc,
+        y = .data$residual_response,
+        color = .data$type,
+        shape = .data$include
       ),
       size = 3
     ) +
@@ -689,18 +674,18 @@ plot_residuals <- function(quantres, compound_id) {
 plot_deviations <- function(quantres, compound_id) {
   ## extract the linearitytab
   linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(type %in% c("Standard", "QC", "Suitability"))
+    dplyr::filter(.data$type %in% c("Standard", "QC", "Suitability"))
   deviationsfig <- ggplot(
     linearitytab |>
-      dplyr::mutate(include = ifelse(include, "Included", "Excluded"))
+      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded"))
   ) +
     ggiraph::geom_point_interactive(aes(
-      tooltip = paste0(filename, " \n", dev_conc * 100, "%"),
-      data_id = filename,
-      x = stdconc,
-      y = dev_conc * 100,
-      color = type,
-      shape = include
+      tooltip = paste0(.data$filename, " \n", .data$dev_conc * 100, "%"),
+      data_id = .data$filename,
+      x = .data$stdconc,
+      y = .data$dev_conc * 100,
+      color = .data$type,
+      shape = .data$include
     )) +
     ggplot2::scale_shape_manual(
       values = c("Included" = 16, "Excluded" = 13)
@@ -737,7 +722,7 @@ plot_deviations <- function(quantres, compound_id) {
 #' @author Omar Elashkar
 plot_standard_deviation <- function(quantres, compound_id) {
   linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
-    dplyr::filter(include == TRUE & type %in% c("Blank", "QC")) |>
+    dplyr::filter(.data$include == TRUE & .data$type %in% c("Blank", "QC")) |>
     dplyr::mutate(stdconc = as.numeric(stdconc)) |>
     dplyr::group_by("stdconc") |>
     dplyr::summarise(sd = sd(estimated_conc, na.rm = TRUE))
@@ -760,12 +745,6 @@ plot_standard_deviation <- function(quantres, compound_id) {
 }
 
 
-#' @author Omar Elashkar
-#' @noRd
-setGeneric(
-  "tabulate_summary_linearity",
-  function(object, compound_id = NULL) standardGeneric("tabulate_summary_linearity")
-)
 
 #' Tabulate linearity summary for QuantRes object
 #' @author Omar Elashkar
@@ -790,13 +769,6 @@ setMethod(
   }
 )
 
-#' Tabulate linearity summary for a list (single compound)
-#' @author Omar Elashkar
-#' @noRd
-setGeneric(
-  "tabulate_summary_linearity_list",
-  function(object) standardGeneric("tabulate_summary_linearity_list")
-)
 
 setMethod(
   "tabulate_summary_linearity_list",
@@ -858,9 +830,9 @@ exclude_linearity <- function(quantres, compound_id, filesnames) {
     quantres@linearity[[compound_id]]$linearitytab |>
     dplyr::mutate(
       include = ifelse(
-        filename %in% filesnames & type == "Standard",
+        .data$filename %in% filesnames & .data$type == "Standard",
         FALSE,
-        include
+        .data$include
       )
     )
 
@@ -881,9 +853,9 @@ include_linearity <- function(quantres, compound_id, filesnames) {
     quantres@linearity[[compound_id]]$linearitytab |>
     dplyr::mutate(
       include = ifelse(
-        filename %in% filesnames & type == "Standard",
+        .data$filename %in% filesnames & .data$type == "Standard",
         TRUE,
-        include
+        .data$include
       )
     )
 

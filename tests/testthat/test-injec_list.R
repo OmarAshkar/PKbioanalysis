@@ -141,7 +141,7 @@ test_that("writing_increment_id", {
   skip_on_ci()
 
   # The metadata table is accommodating for the list
-  # .reset_samples_db()
+  .reset_samples_db()
   x <- generate_96() |>
     add_cs_curve(c(1, 10, 30, 40, 100, 200)) |> # 1
     add_samples(1:20) |> # 2
@@ -177,7 +177,7 @@ test_that("writing_increment_id", {
 test_that("export masslynx", {
   skip_on_cran()
 
-  # .reset_samples_db()
+  .reset_samples_db()
   x <- generate_96() |>
     add_cs_curve(c(1, 10, 30, 40, 100, 200)) |> # 1
     add_samples(1:20) |> # 2

@@ -4,10 +4,7 @@
 \alias{chrom_app}
 \title{chrom_apps}
 \usage{
-chrom_app(chrom_res)
-}
-\arguments{
-\item{chrom_res}{A ChromRes object}
+chrom_app()
 }
 \description{
 This function creates a shiny app for peak integration.

@@ -264,12 +264,11 @@ plot_var_pattern <- function(df, title = "") {
     )
 }
 
-
 #' Calculate Summary Statistics for Each Concentration Level For Either Concentration, Area, or Area Ratio
 #' @param df Data frame with columns: stdconc (standardized concentration), conc (concentration), area (peak area), area_ratio (area ratio)
 #' @param col Column to calculate summary for ("conc", "area", or "area_ratio")
-#' @param acc_cutoff Accuracy threshold (default is 20%) for concentration vs standard concentration
-#' @param dev_cutoff Deviation threshold (default is 20%) for concentration vs standard concentration
+#' @param acc_cutoff Accuracy threshold (default is 20\%) for concentration vs standard concentration
+#' @param dev_cutoff Deviation threshold (default is 20\%) for concentration vs standard concentration
 #' @param type Type of samples to include ("Standard", "QC", "DQC")
 #' @author Omar I. Elashkar
 #' @export
@@ -288,7 +287,7 @@ calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.
     group_by(.data$stdconc) |>
     dplyr::summarize(
       mean = mean(.data[[col]], na.rm = TRUE),
-      sd = sd(.data[[col]], na.rm = TRUE),
+      sd = stats::sd(.data[[col]], na.rm = TRUE),
       median = median(.data[[col]], na.rm = TRUE),
       cv = cv(.data[[col]]),
       mape  = mean(abs(.data$rel_dev), na.rm = TRUE),
@@ -309,23 +308,24 @@ calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.
 #' @examples
 #' estim_dil_limit(add_err=0.1, prop_err=0.1, lloq=1)
 #' estim_dil_limit(add_err=1, prop_err=0.1, lloq=55)
-
 estim_dil_limit <- function(add_err, prop_err, lloq){
   checkmate::assert_number(add_err, lower = 0, finite = TRUE)
   checkmate::assert_number(prop_err, lower = 0, finite = TRUE)
   checkmate::assert_number(lloq, lower = 3*add_err, finite = TRUE) # Should be at least 10 to get CV 20%
 
   # First criteria add/prop <= conc => add/err - conc >= 0
-  # second criteria: lloq - 3*sd*conc >= 0
-  # conc >= lloq ==> lloq - conc >= 0
+  # second criteria: lloq + 3*sd - conc >= 0
 
-  criteria <- function(conc, add_err, prop_err, lloq) {
-    c(
-      lloq - conc,
-      (add_err / prop_err) - conc,
-      lloq - 3 * sqrt(add_err^2 + prop_err^2 * conc^2) * conc
-    )
+  criteria <- function(x, add_err, prop_err, lloq) {
+    conc <- x
+
+    c1 <- (add_err / prop_err) - conc
+    sd <- sqrt(add_err^2 + (prop_err * conc)^2)
+    c2 <- lloq + 3*sd - conc
+
+    c(c1, c2)
   }
+
 
   # Objective: minimize conc (find the smallest dilution limit)
   obj <- function(x) x

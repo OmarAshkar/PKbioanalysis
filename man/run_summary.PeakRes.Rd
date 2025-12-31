@@ -4,7 +4,7 @@
 \alias{run_summary.PeakRes}
 \title{Get Summary of PeakRes object}
 \usage{
-\method{run_summary}{PeakRes}(peaks_res)
+\method{run_summary}{PeakRes}(object)
 }
 \arguments{
 \item{peaks_res}{PeakRes object}

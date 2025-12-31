@@ -156,7 +156,7 @@
 
   df <- df |>
     dplyr::filter(
-      .data$TYPE == type,
+      .data$TYPE == !!type,
       .data$std_rep == 1,
       .data$e_rep == !!rep
     ) |>

@@ -59,7 +59,6 @@ Imports:
     plotly,
     pracma,
     reactable,
-    reactable.extras,
     gtools, 
     ellmer, 
     htmlwidgets, 
@@ -68,7 +67,8 @@ Imports:
     pmxTools,
     scales, 
     shinychat, 
-    uuid
+    uuid,
+    sortable
 Suggests: 
     knitr,
     patchwork,
@@ -79,3 +79,37 @@ SystemRequirements:
 URL: https://omarashkar.github.io/PKbioanalysis/
 BugReports: https://github.com/OmarAshkar/PKbioanalysis/issues
 Config/testthat/edition: 3
+Collate: 
+    'PKbioanalysis-package.R'
+    'calc.R'
+    'chrom_anomaly_plots.R'
+    'chrom_app.R'
+    'chrom_parsers.R'
+    'chrom_utils.R'
+    'generics.R'
+    'class.R'
+    'chromatogram.R'
+    'config.R'
+    'dil_map.R'
+    'estim_residuals.R'
+    'genAI.R'
+    'gen_studydesign.R'
+    'generate_test_set.R'
+    'injec_list.R'
+    'linearitycheck.R'
+    'method_file.R'
+    'peak_integerate.R'
+    'plate.R'
+    'plate_expr.R'
+    'plates_class.R'
+    'process_chroms.R'
+    'quant_app.R'
+    'quant_misc.R'
+    'quant_object.R'
+    'quant_parsers.R'
+    'samples_profiles.R'
+    'study_app.R'
+    'suitability_utils.R'
+    'utils.R'
+    'writers.R'
+    'zzz.R'

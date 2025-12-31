@@ -439,8 +439,8 @@ download_sample_list <- function(sample_list, vendor) {
 }
 
 #'@export
-summary.InjecListObj <- function(x, ...) {
-  x$injec_list |>
+summary.InjecListObj <- function(object, ...) {
+  object$injec_list |>
     summarise(
       total_volume = sum(.data$INJ_VOL),
       .by = c("SAMPLE_LOCATION", "value")

@@ -77,7 +77,7 @@ prepare_suitability <- function(quantres) {
   files <- unique(res$filename)[start_pos:end_pos]
 
   res <- res |>
-    dplyr::mutate(include = ifelse(filename %in% files, TRUE, FALSE)) |>
+    dplyr::mutate(include = ifelse(.data$filename %in% files, TRUE, FALSE)) |>
     dplyr::mutate(across(starts_with("spiked_"), as.numeric)) |>
     dplyr::select("filename", "include", everything())
 
@@ -92,10 +92,10 @@ run_suitability <- function(quantres) {
   quantres <- prepare_suitability(quantres)
 
   quantres@suitability$results <- quantres@suitability$suitabilitytab |>
-    dplyr::filter(include == TRUE) |>
+    dplyr::filter(.data$include == TRUE) |>
     dplyr::select(-"filename", -"include", -"vial", -"type") |>
-    dplyr::group_by(compound) |>
-    dplyr::summarize(RSD = precision(abs_response), n = dplyr::n())
+    dplyr::group_by(.data$compound) |>
+    dplyr::summarize(RSD = cv(.data$abs_response), n = dplyr::n())
 
   quantres
 }
@@ -125,7 +125,7 @@ plot_suitability_trend <- function(quantres) {
   rsd_list <- list()
   for (i in seq(nrow(df))) {
     # calulate RSD for each compound end at nrow(df), start at nrow(df) - i + 1
-    new_df <- apply(rsd_values[(nrow(df) - i + 1):nrow(df), ], 2, precision)
+    new_df <- apply(rsd_values[(nrow(df) - i + 1):nrow(df), ], 2, cv)
     new_df <- as.data.frame(t(new_df))
     new_df$n <- i
     rsd_list[[i]] <- new_df

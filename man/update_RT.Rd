@@ -41,6 +41,8 @@ Update RT for either all compounds, all next samples, or single compound and sam
 Only target = "all" will update the expected RT for all compounds.
 }
 \examples{
-chrom_res <- read_chrom("path/to/file")
-update_RT(chrom_res, compound_id = 1, sample_id = 1, peak_start = 1, peak_end = 2, target = "single")
+\dontrun{
+update_RT(chrom_res, compound_id = 1, sample_id = 1, 
+          peak_start = 1, peak_end = 2, target = "single")
+}
 }

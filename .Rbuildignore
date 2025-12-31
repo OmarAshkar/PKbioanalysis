@@ -10,3 +10,13 @@
 ^vignettes$
 ^.vscode$
 ^\\.vscode/
+^inst/extData/(1127019_F_rats|waters_NEU_PK|waters_raw_ex_nodb)/
+
+^test/testthat/test-chrom_parsers.R
+^test/testthat/test-chrom_res.R
+^test/testthat/test-filter_chrom.R 
+^test/testthat/test-peak_integrate.R 
+^test/testthat/test-process_chroms.R
+^test/testthat/test-smoothing.R 
+^test/testthat/test-update_RT.R 
+

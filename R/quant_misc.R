@@ -36,40 +36,40 @@ run_summary <- function(object) {
 #' @param peaks_res PeakRes object
 #' @import checkmate
 #' @export
-run_summary.PeakRes <- function(peaks_res) {
-  checkmate::assertClass(peaks_res, "PeakRes")
+run_summary.PeakRes <- function(object) {
+  checkmate::assertClass(object, "PeakRes")
 
   cat(
-    sprintf("vendor: %s", peaks_res$vendor),
+    sprintf("vendor: %s", object$vendor),
     sprintf(
       "Instrument: %s",
-      peaks_res$res$sample_instrument |> unique() |> paste(collapse = ", ")
+      object$res$sample_instrument |> unique() |> paste(collapse = ", ")
     ),
     sprintf(
       "first sample run time: %s %s",
-      peaks_res$res$sample_createdate[1],
-      peaks_res$res$sample_createtime[1]
+      object$res$sample_createdate[1],
+      object$res$sample_createtime[1]
     ),
     sprintf(
       "last sample run time: %s %s",
-      peaks_res$res$sample_createdate[nrow(peaks_res$res)],
-      peaks_res$res$sample_createtime[nrow(peaks_res$res)]
+      object$res$sample_createdate[nrow(object$res)],
+      object$res$sample_createtime[nrow(object$res)]
     ),
     sprintf(
       "Number of samples: %s",
-      length(peaks_res$res$sample_vial |> unique())
+      length(object$res$sample_vial |> unique())
     ),
     sprintf(
       "Number of injections: %s",
-      length(peaks_res$res$sample_name |> unique())
+      length(object$res$sample_name |> unique())
     ),
     sprintf(
       "Number of compounds: %s",
-      length(peaks_res$res$cmpd_name |> unique())
+      length(object$res$cmpd_name |> unique())
     ),
     sprintf(
       "Run injection volume(s): %s",
-      peaks_res$res$sample_injectvolume |> unique() |> paste(collapse = ", ")
+      object$res$sample_injectvolume |> unique() |> paste(collapse = ", ")
     ),
     sep = "\n"
   )
@@ -262,8 +262,13 @@ precision_per_vial <- function(peaks_res, suitability = FALSE) {
 
 
 #' @title gt table of areas
-#' @importFrom dplyr select filter
-#' @importFrom tidyr pivot_wider
+#' @param peaks_res PeakRes object
+#' @param normalize logical. If TRUE, normalize the peak area by the IS area.
+#' @param blanks logical. If TRUE, include blanks
+#' @param analytes logical. If TRUE, include analytes
+#' @param standards logical. If TRUE, include standards
+#' @param QCs logical. If TRUE, include QCs
+#' @param compounds numeric vector of compound numbers to include. If NULL, include all compounds
 #' @importFrom gt gt fmt_number data_color sub_missing
 #' @export
 area_report.PeakRes <- function(

@@ -20,7 +20,7 @@
 \arguments{
 \item{x}{PlateObj}
 
-\item{color}{character. Coloring variable. Choices: "conc", "group", "study", "time", "factor", "samples", "arm", "sex", "dose", "route", "matrix". Default is "conc"}
+\item{color}{character. Coloring variable. Choices: "conc", "group", "dil", "study", "time", "factor", "samples", "arm", "sex", "dose", "route", "matrix". Default is "conc"}
 
 \item{Instrument}{A string placed at subtitle}
 

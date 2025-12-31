@@ -15,6 +15,8 @@ read_chrom(dir, format = "waters_raw", method)
 This function reads chromatogram files from a directory and returns a data frame with the chromatogram data.
 }
 \examples{
+\dontrun{
 path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
-main <- read_chrom(path)
+main <- read_chrom(path, method = 1)
+}
 }

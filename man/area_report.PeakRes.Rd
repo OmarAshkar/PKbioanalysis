@@ -14,6 +14,21 @@ area_report.PeakRes(
   compounds = NULL
 )
 }
+\arguments{
+\item{peaks_res}{PeakRes object}
+
+\item{normalize}{logical. If TRUE, normalize the peak area by the IS area.}
+
+\item{blanks}{logical. If TRUE, include blanks}
+
+\item{analytes}{logical. If TRUE, include analytes}
+
+\item{standards}{logical. If TRUE, include standards}
+
+\item{QCs}{logical. If TRUE, include QCs}
+
+\item{compounds}{numeric vector of compound numbers to include. If NULL, include all compounds}
+}
 \description{
 gt table of areas
 }

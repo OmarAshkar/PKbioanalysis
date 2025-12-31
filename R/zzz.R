@@ -71,7 +71,11 @@ get_pkbioanalysis_option <- function(name) {
 }
 
 
-#' @import reticulate
+
+#' Install Python dependencies for PKbioanalysis
+#' @param ... Additional arguments passed to reticulate::py_install
+#' @param envname Name of the virtual environment to create/use. Default is "PKbioanalysis"
+#' @return None
 #' @export
 install_py_dep <- function(..., envname = "PKbioanalysis") {
   python_exec <- reticulate::py_discover_config()$python
