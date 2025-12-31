@@ -110,8 +110,8 @@ get_cmpd_IS <- function(chrom_res, compound_id) {
 #' @noRd
 get_trans_id_from_trans_label <- function(chrom_res, label) {
   chrom_res@transitions |>
-    dplyr::filter(transition_label == label) |>
-    dplyr::pull(transition_id)
+    dplyr::filter(.data$transition_label == label) |>
+    dplyr::pull("transition_id")
 }
 
 
@@ -170,8 +170,8 @@ get_trans_id_from_cmpd_id <- function(chrom_res, cmpd_id) {
     chrom_res@transitions,
     by = "transition_id"
   ) |>
-    dplyr::mutate(compound_trans = paste(compound, round(q3, 1))) |>
-    dplyr::select(compound_id, compound, compound_trans, transition_id)
+    dplyr::mutate(compound_trans = paste(.data$compound, round(.data$q3, 1))) |>
+    dplyr::select("compound_id", "compound", "compound_trans", "transition_id")
 
   cmpds
 }
@@ -215,7 +215,7 @@ chromres_to_matrix <- function(chrom_res, wide = FALSE) {
         select("compound_id", "compound_trans"),
       by = "compound_id"
     ) |>
-    dplyr::mutate(area = round(area, 2)) |>
+    dplyr::mutate(area = round(.data$area, 2)) |>
     select("filename", "compound_trans", "area")
 
   if (wide) {
@@ -249,7 +249,7 @@ has_default_RT <- function(chrom_res, compound_id) {
     res <- compounds |>
       dplyr::filter(.data$compound_id == compound_id_filter) |>
       dplyr::select("expected_peak_start", "expected_peak_end") |>
-      complete.cases()
+      stats::complete.cases()
   }
   res
 }

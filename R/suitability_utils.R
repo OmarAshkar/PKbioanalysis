@@ -103,7 +103,7 @@ run_suitability <- function(quantres) {
 plot_suitability <- function(quantres) {
   ggplot2::ggplot(
     quantres@suitability[["results"]],
-    aes(y = compound, x = RSD, fill = compound)
+    aes(y = .data$compound, x = .data$RSD, fill = .data$compound)
   ) +
     ggplot2::geom_col() +
     ggplot2::labs(title = "RSD Plot", x = "Compound", y = "RSD%") +

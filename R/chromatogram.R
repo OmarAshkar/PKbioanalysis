@@ -324,7 +324,7 @@ plot_chrom <- function(
   if (ncol > 0) {
     y <- ggplot(
       active_df,
-      aes(x = RT, y = Intensity, color = transition_label)
+      aes(x = .data$RT, y = .data$Intensity, color = .data$transition_label)
     ) +
       geom_line() +
       theme_minimal() +
@@ -340,7 +340,7 @@ plot_chrom <- function(
   } else {
     y <- ggplot(
       active_df,
-      aes(x = RT, y = Intensity, color = transition_label)
+      aes(x = .data$RT, y = .data$Intensity, color = .data$transition_label)
     ) +
       geom_line() +
       theme_minimal() +
@@ -357,20 +357,20 @@ plot_chrom <- function(
   if (show_RT) {
     y <- y +
       ggplot2::geom_point(
-        aes(x = observed_rt, y = observed_peak_height),
+        aes(x = .data$observed_rt, y = .data$observed_peak_height),
         color = "purple"
       ) +
-      ggplot2::geom_point(aes(x = observed_peak_start, y = 0), color = "blue") +
-      ggplot2::geom_point(aes(x = observed_peak_end, y = 0), color = "green") +
+      ggplot2::geom_point(aes(x = .data$observed_peak_start, y = 0), color = "blue") +
+      ggplot2::geom_point(aes(x = .data$observed_peak_end, y = 0), color = "green") +
       ggplot2::geom_text(
         aes(
-          x = observed_rt,
-          y = observed_peak_height,
+          x = .data$observed_rt,
+          y = .data$observed_peak_height,
           label = paste0(
             "RT:",
-            observed_rt %>% round(2),
+            .data$observed_rt %>% round(2),
             " Area: ",
-            round(area, 3)
+            round(.data$area, 3)
           )
         ),
         check_overlap = T,
@@ -688,11 +688,11 @@ is_integrated_chrom_res <- function(chrom_res, compound_id, sample_id = NULL) {
         .data$compound_id == compound_id_filter
     ) |>
     dplyr::select(
-      observed_rt,
-      observed_peak_height,
-      observed_peak_start,
-      observed_peak_end,
-      area
+      "observed_rt",
+      "observed_peak_height",
+      "observed_peak_start",
+      "observed_peak_end",
+      "area"
     )
 
   #}
@@ -702,7 +702,7 @@ is_integrated_chrom_res <- function(chrom_res, compound_id, sample_id = NULL) {
     )
   }
 
-  res <- complete.cases(res)
+  res <- stats::complete.cases(res)
   all(res)
 }
 

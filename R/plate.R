@@ -435,6 +435,7 @@ add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
     )
     new_df <- rbind(new_df, new_row)
   }
+  stopifnot(nrow(new_df) == length(logIds))
   df <- .bind_new_samples(df, new_df)
 
   plateobj@df <- df
@@ -1091,7 +1092,7 @@ plot.PlateObj <- function(
 
   descr <- plate@descr
   plate_df <- plate@df |> # zero if blanks, NA if empty cell. Conc otherwise
-    mutate(conc = as.character(conc))
+    mutate(conc = as.character(.data$conc))
 
   # mutate(time = as.character(.data$time))  |>
   # mutate(dose = as.character(.data$dose)) |>
@@ -1100,9 +1101,10 @@ plot.PlateObj <- function(
   samples_on_plate <- na.omit(unique(plate@df$log_id))
   if (length(samples_on_plate) > 0) {
     plate_df <- left_join(
-      plate_df,
+      plate_df |> dplyr::mutate(dilStr = paste0(.data$dil, "X")),
       plate@samples_metadata,
-      by = c("log_id", "study_id")
+      by = c("log_id", "study_id", "dilStr"),
+      relationship = "one-to-one"
     )
   }
   color_actual <- switch(
@@ -1142,8 +1144,8 @@ plot.PlateObj <- function(
     )
   }
   plate_df <- plate_df |> 
-    dplyr::mutate(new_value = str_replace_all(plate_df$new_value, "_", "\n")) |> 
-    dplyr::mutate(dil = factor(dil, levels = unique(dil[order(as.numeric(dil))])))
+    dplyr::mutate(new_value = str_replace_all(.data$new_value, "_", "\n")) |> 
+    dplyr::mutate(dil = factor(.data$dil, levels = unique(.data$dil[order(as.numeric(.data$dil))])))
 
   currentLayout <- x@filling_scheme
   rbound <- currentLayout$rbound
@@ -1729,7 +1731,7 @@ plate_groups <- function(plate) {
   checkmate::assertClass(plate, "PlateObj")
   plate@df |>
     dplyr::mutate(
-      a_group = ifelse(is.na(a_group), "No Group", .data$a_group)
+      a_group = ifelse(is.na(.data$a_group), "No Group", .data$a_group)
     ) |>
     dplyr::pull("a_group") |>
     unique()
@@ -1911,7 +1913,7 @@ samples_naming_style <- function(
       by = c("log_id", "study_id")
     ) |>
     dplyr::mutate(
-      value = ifelse(TYPE == "Analyte", .data$new_value, .data$value)
+      value = ifelse(.data$TYPE == "Analyte", .data$new_value, .data$value)
     ) |>
     dplyr::select(-"new_value")
 

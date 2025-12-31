@@ -32,7 +32,7 @@ RRF <- function(RF1, RF2) {
 #' @return numeric
 #' @export
 cv <- function(x, percent = TRUE) {
-  p <- sd(x) / mean(x)
+  p <- stats::sd(x) / mean(x)
   p * ifelse(percent, 100, 1)
 }
 

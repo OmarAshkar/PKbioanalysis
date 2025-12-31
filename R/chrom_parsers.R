@@ -69,9 +69,9 @@ dir_or_files_to_files <- function(dir, file_pattern) {
     transition_id <- paste0("T", seq_along(q1_transitions))
 
     transition_df <- data.frame(q1 = q1_transitions, q3 = q3_transitions) |>
-      dplyr::arrange(q1, q3) |>
+      dplyr::arrange(.data$q1, .data$q3) |>
       dplyr::mutate(transition_id = transition_id) |>
-      dplyr::mutate(transition_label = paste0(round(q1, 2), ">", round(q3, 2)))
+      dplyr::mutate(transition_label = paste0(round(.data$q1, 2), ">", round(.data$q3, 2)))
 
     colnames(f[[1]]) <- c(
       transition_id,
@@ -162,26 +162,26 @@ dir_or_files_to_files <- function(dir, file_pattern) {
     x <- RaMS::grabMSdata(x, grab_what = c("chroms", "metadata"))
 
     y <- x$chroms |>
-      dplyr::filter(chrom_type != "TIC") |>
+      dplyr::filter(.data$chrom_type != "TIC") |>
       dplyr::mutate(
         q1 = gsub(
-          chrom_type,
+          .data$chrom_type,
           pattern = ".*Q1=(.*)\\sQ3=(.*)\\sfunction.*",
           replacement = "\\1"
         ),
         q3 = gsub(
-          chrom_type,
+          .data$chrom_type,
           pattern = ".*Q1=(.*)\\sQ3=(.*)\\sfunction.*",
           replacement = "\\2"
         )
       ) |>
-      dplyr::mutate(q1 = as.numeric(q1), q3 = as.numeric(q3)) |>
-      select(chrom_index, rt, int, filename, q1, q3) |>
-      rename(transition_id = chrom_index, RT = rt, Intensity = int) |>
-      dplyr::mutate(transition_id = paste0("T", transition_id))
+      dplyr::mutate(q1 = as.numeric(.data$q1), q3 = as.numeric(.data$q3)) |>
+      dplyr::select("chrom_index", "rt", "int", "filename", "q1", "q3") |>
+      dplyr::rename(transition_id = .data$chrom_index, RT = .data$rt, Intensity = .data$int) |>
+      dplyr::mutate(transition_id = paste0("T", .data$transition_id))
 
     dat <- y |>
-      select(RT, transition_id, Intensity) |>
+      dplyr::select("RT", "transition_id", "Intensity") |>
       tidyr::pivot_wider(
         names_from = "transition_id",
         values_from = "Intensity"
@@ -195,7 +195,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
         date = x$metadata$timestamp
       ),
       sample_transitions = y |>
-        dplyr::select(transition_id, q1, q3) |>
+        dplyr::select("transition_id", "q1", "q3") |>
         dplyr::distinct()
     )
   })
@@ -280,11 +280,11 @@ dir_or_files_to_files <- function(dir, file_pattern) {
   )
 
   transition_df <- transition_df |>
-    dplyr::mutate(across(c(q1, q3), as.numeric)) |>
-    dplyr::arrange(round(q1, 1), round(q3, 1))
+    dplyr::mutate(across(c("q1", "q3"), as.numeric)) |>
+    dplyr::arrange(round(.data$q1, 1), round(.data$q3, 1))
   transitiondb <- transitiondb |>
-    dplyr::mutate(across(c(q1, q3), as.numeric)) |>
-    dplyr::arrange(round(q1, 1), round(q3, 1))
+    dplyr::mutate(across(c("q1", "q3"), as.numeric)) |>
+    dplyr::arrange(round(.data$q1, 1), round(.data$q3, 1))
 
   # check chrom and db consistency
   if (
@@ -316,14 +316,14 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
 .construct_experiment_peaktab <- function(chrom_res) {
   # update adding add compounds columns to files_metadata
-  spiked_vec <- chrom_res$exp_compounds |> dplyr::pull(compound) |> unique()
+  spiked_vec <- chrom_res$exp_compounds |> dplyr::pull("compound") |> unique()
   spiked_vec <- paste0("spiked_", spiked_vec)
   chrom_res$metadata[, spiked_vec] <- as.numeric(NA)
 
   compounds_ids <- chrom_res$exp_compounds |>
-    dplyr::pull(compound_id) |>
+    dplyr::pull("compound_id") |>
     unique()
-  samples_ids <- chrom_res$metadata |> dplyr::pull(sample_id) |> unique()
+  samples_ids <- chrom_res$metadata |> dplyr::pull("sample_id") |> unique()
 
   chrom_res$exp_peaktab <- expand.grid(
     sample_id = samples_ids,
@@ -395,11 +395,11 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
   # within all samples (groups), assert equal number of compounds
   check <- peaks |>
-    dplyr::group_by(filename) |>
+    dplyr::group_by(.data$filename) |>
     dplyr::summarise(
-      n_cmpd = n_distinct(compound),
-      n_q1 = n_distinct(q1),
-      n_q3 = n_distinct(q3)
+      n_cmpd = n_distinct(.data$compound),
+      n_q1 = n_distinct(.data$q1),
+      n_q3 = n_distinct(.data$q3)
     ) |>
     select(-"filename") |>
     dplyr::distinct()
@@ -422,11 +422,11 @@ dir_or_files_to_files <- function(dir, file_pattern) {
     ) |>
     dplyr::mutate(observed_peak_height = as.numeric(NA)) |>
     dplyr::mutate(area = as.numeric(NA)) |>
-    dplyr::mutate(dum_q1 = round(q1, 0), dum_q3 = round(q3, 0)) |>
+    dplyr::mutate(dum_q1 = round(.data$q1, 0), dum_q3 = round(.data$q3, 0)) |>
     dplyr::select(-"q1", -"q3") |> # remove the manual q1 and q3, keeping the ones from chromatograms
     dplyr::left_join(
       res$exp_transitions |>
-        dplyr::mutate(dum_q1 = round(q1, 0), dum_q3 = round(q3, 0)),
+        dplyr::mutate(dum_q1 = round(.data$q1, 0), dum_q3 = round(.data$q3, 0)),
       by = c("dum_q1", "dum_q3")
     ) |>
     dplyr::select(-"dum_q1", -"dum_q3") |>
@@ -487,7 +487,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
   # compound names are unique in chromres, not in db
   compoundsdf <- compoundsdf |>
-    dplyr::mutate(compound = make.unique(as.character(compound), sep = "_"))
+    dplyr::mutate(compound = make.unique(as.character(.data$compound), sep = "_"))
 
   exp_compounds <- compoundsdf |>
     select(
@@ -515,9 +515,9 @@ dir_or_files_to_files <- function(dir, file_pattern) {
     q3 <- new_chrom_res$exp_transitions[trans_row, "q3"]
     inlet_method <- new_chrom_res$exp_transitions[trans_row, "inlet_method"]
     max_id <- tbl(db, "methodstab") |>
-      dplyr::summarise(id = max(transition_id), na.rm = T) |>
+      dplyr::summarise(id = max(.data$transition_id), na.rm = T) |>
       as.data.frame() |>
-      pull(id)
+      pull("id")
     max_id <- ifelse(is.na(max_id), 0, max_id)
 
     query <- tbl(db, "methodstab") |>
@@ -590,7 +590,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
 .construct_pk_metadata <- function(chrom_res) {
   # get sample_id and filename df
-  cmpd_vec <- chrom_res$exp_compounds |> dplyr::pull(compound_id) |> unique()
+  cmpd_vec <- chrom_res$exp_compounds |> dplyr::pull(.data$compound_id) |> unique()
   # cmpd_vec <- paste0("spiked_", cmpd_vec)
 
   # pkmetadf <- chrom_res$metadata |>

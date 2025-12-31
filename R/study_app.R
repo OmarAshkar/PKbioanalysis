@@ -44,7 +44,7 @@ remove_old_ui <- function() {
 
 plate_plot_module_ui <- function(id, str) {
   popover(
-    bs_icon("gear"),
+    bsicons::bs_icon("gear"),
     selectInput(
       paste0(str, "_color_toggle"),
       "Color By",
@@ -790,6 +790,8 @@ ui <- bslib::page_navbar(
 
 study_app_server <- function(input, output, session) {
   # plate_positions <- gen_plate_positions()
+
+  current_cmpd_df <- reactiveVal(NULL)
 
   ########################## sample list
 
@@ -2168,6 +2170,7 @@ study_app_server <- function(input, output, session) {
   current_plate_row <- reactiveVal(1)
   current_injec_seq <- reactiveVal(NULL)
   current_injec_protcols <- reactiveVal(1)
+  selected_ids <- reactiveVal(NULL) # actuall plates ids
   # https://stackoverflow.com/questions/34157684/dynamic-number-of-actionbuttons-tied-to-unique-observeevent
 
   # default to last
@@ -2275,7 +2278,6 @@ study_app_server <- function(input, output, session) {
       reactable::reactable(selection = "multiple", onClick = "select")
   })
 
-  selected_ids <- reactiveVal(NULL) # actuall plates ids
 
   current_plate_row <- reactive({
     # get selected plates ids
@@ -2380,7 +2382,6 @@ study_app_server <- function(input, output, session) {
       current_cmpd_df()
   })
 
-  current_cmpd_df <- reactiveVal(NULL)
   lock_export <- reactiveVal(TRUE)
 
   observeEvent(lock_export(), {

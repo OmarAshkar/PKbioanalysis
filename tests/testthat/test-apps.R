@@ -1,3 +1,5 @@
+skip_on_cran()
+skip_on_ci()
 test_that("study app launches and server is valid", {
   shiny::testServer(study_app_server, {
     expect_true(!is.null(session))

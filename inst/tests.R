@@ -26,7 +26,9 @@ devtools::check_rhub()
 devtools::check_man()
 
 
-checkglobals::checkglobals(pkg = ".")
+chk <- checkglobals::checkglobals(pkg = ".")
+chk$globals
+chk$imports
 
 unquoted_to_string <- function(x) {
   deparse(substitute(x))

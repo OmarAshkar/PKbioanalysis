@@ -18,7 +18,7 @@ fit_var <- function(
     c("Nelder-Mead", "BFGS", "L-BFGS-B", "nlminb", "nlme") |>
     stopifnot()
 
-  X <- model.matrix(~ stdconc - 1, data = data)
+  X <- stats::model.matrix(~ stdconc - 1, data = data)
   vecdata <- list(X = X, y = data$conc, varpred = data$stdconc)
   nll <- function(par) {
     RTMB::getAll(par, vecdata)
@@ -30,13 +30,13 @@ fit_var <- function(
   par1 <- list(beta = rep(0, ncol(X)), omega = c(0.1, 0.1))
   obj <- RTMB::MakeADFun(nll, par = par1, silent = TRUE)
   if (method == "nlminb") {
-    fit <- with(obj, nlminb(start = par, objective = fn, gradient = gr))
+    fit <- with(obj, stats::nlminb(start = par, objective = fn, gradient = gr))
   } else if (method == "BFGS") {
-    fit <- with(obj, optim(par = par, fn = fn, gr = gr, method = method))
+    fit <- with(obj, stats::optim(par = par, fn = fn, gr = gr, method = method))
   } else if (method == "L-BFGS-B") {
     fit <- with(
       obj,
-      optim(
+      stats::optim(
         par = par,
         fn = fn,
         gr = gr,
@@ -110,8 +110,8 @@ formated_print <- function(x, digits = 3) {
   x <- x |>
     mutate(
       term = case_when(
-        term == "const" ~ "Constant",
-        term == "prop" ~ "Proportional"
+        .data$term == "const" ~ "Constant",
+        .data$term == "prop" ~ "Proportional"
       )
     )
 
@@ -129,11 +129,11 @@ formated_print <- function(x, digits = 3) {
     gt::fmt_number(columns = everything(), decimals = 3) |>
     gt::fmt_percent(
       columns = c("est", "lwr", "upr"),
-      rows = term == "Proportional",
+      rows = .data$term == "Proportional",
       decimals = 2
     ) |>
     gt::fmt_percent(
-      columns = c(rse_pct),
+      columns = c("rse_pct"),
       scale_values = FALSE,
       decimals = 1
     ) |>
@@ -240,15 +240,15 @@ estim_lloq <- function(
 #' @export
 plot_var_pattern <- function(df, title = "") {
   x <- ggplot(df) +
-    geom_point(aes(x = stdconc, y = cv)) +
-    geom_line(aes(x = stdconc, y = cv)) +
+    geom_point(aes(x = .data$stdconc, y = .data$cv)) +
+    geom_line(aes(x = .data$stdconc, y = .data$cv)) +
     labs(y = "Coefficient of Variation", x = "Standard Concentration") +
     scale_y_continuous(labels = scales::percent_format(scale = 1)) +
     theme(text = element_text(size = 21), title = element_text(size = 21))
 
   y <- ggplot(df) +
-    geom_point(aes(x = stdconc, y = sd)) +
-    geom_line(aes(x = stdconc, y = sd)) +
+    geom_point(aes(x = .data$stdconc, y = .data$sd)) +
+    geom_line(aes(x = .data$stdconc, y = .data$sd)) +
     labs(y = "Standard Deviation", x = "Standard Concentration") +
     theme(text = element_text(size = 21), title = element_text(size = 21))
 
@@ -288,7 +288,7 @@ calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.
     dplyr::summarize(
       mean = mean(.data[[col]], na.rm = TRUE),
       sd = stats::sd(.data[[col]], na.rm = TRUE),
-      median = median(.data[[col]], na.rm = TRUE),
+      median = stats::median(.data[[col]], na.rm = TRUE),
       cv = cv(.data[[col]]),
       mape  = mean(abs(.data$rel_dev), na.rm = TRUE),
       n = dplyr::n(), 

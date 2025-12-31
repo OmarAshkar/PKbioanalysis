@@ -151,7 +151,7 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
         filter(.data$sample_id %in% samples_ids),
       by = dplyr::join_by("sample_id")
     ) |>
-    dplyr::mutate(area = as.numeric(area)) |>
+    dplyr::mutate(area = as.numeric(.data$area)) |>
     dplyr::group_by(
       .data$sample_id,
       .data$compound_id,
@@ -174,18 +174,6 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
     )
 
   update_peak_area_from_df(chrom_res, integrated_peaks)
-}
-
-#' @title Find the peak's RT given it's boundaries
-.manual_rt_find <- function() {
-  x <- .filter_peak(
-    chrom_res = chrom_res,
-    transition,
-    sample_id,
-    peak_start,
-    peak_end
-  )
-  x$RT[which.max(intensity_vec)]
 }
 
 
@@ -562,17 +550,17 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
       expected_peak_start = ifelse(
         .data$compound_id == compound_id_filter,
         peak_start,
-        expected_peak_start
+        .data$expected_peak_start
       ),
       expected_peak_end = ifelse(
         .data$compound_id == compound_id_filter,
         peak_end,
-        expected_peak_end
+        .data$expected_peak_end
       ),
       expected_rt = ifelse(
         .data$compound_id == compound_id_filter,
         (peak_start + peak_end) / 2,
-        expected_rt
+        .data$expected_rt
       )
     )
   obs_rt <- .filter_peak(
@@ -788,7 +776,7 @@ apply_area_cutoff <- function(chrom_res, cutoff, compound_id) {
       area = ifelse(
         .data$area < cutoff & .data$compound_id == !!compound_id,
         0,
-        area
+        .data$area
       )
     )
 
@@ -933,11 +921,11 @@ update_RT <- function(
 
   if (is.null(RT_df)) {
     peaktab_default <- dat |>
-      dplyr::group_by(compound_id, sample_id, compound, sample) |>
+      dplyr::group_by(.data$compound_id, .data$sample_id, .data$compound, .data$sample) |>
       dplyr::summarize(
-        expected_peak_end = max(RT),
-        expected_peak_start = min(RT),
-        expected_peak_RT = (max(RT) + min(RT)) / 2
+        expected_peak_end = max(.data$RT),
+        expected_peak_start = min(.data$RT),
+        expected_peak_RT = (max(.data$RT) + min(.data$RT)) / 2
       )
     if (
       "expected_peak_start" %in%
@@ -955,8 +943,8 @@ update_RT <- function(
   } else if (!is.null(RT_df) && ncol(RT_df) == 4) {
     message("RT_df provided. Using min and max from RT_df to find peak.")
     peaktab <- RT_df |>
-      dplyr::rename(expected_peak_start = RT_min, expected_peak_end = RT_max) |>
-      dplyr::mutate(expected_peak_RT = (RT_min + RT_max) / 2)
+      dplyr::rename(expected_peak_start = "RT_min", expected_peak_end = "RT_max") |>
+      dplyr::mutate(expected_peak_RT = (.data$RT_min + .data$RT_max) / 2)
   } else {
     (stop(
       "RT_df should be a dataframe with columns: sample_id, compound_id, RT_min, RT_max"
@@ -976,7 +964,17 @@ update_RT <- function(
       cutoff = cutoff
     )
   }
-  .chrom_res(chrom_res$res, vendor, smoothed, peaktab = chrom_res$peaktab)
+  chrom_res <- new(
+    "ChromResBase",
+    metadata = chrom_res$metadata,
+    peaks = chrom_res$exp_peaktab,
+    transitions = chrom_res$exp_transitions,
+    compounds = chrom_res$exp_compounds,
+    linearity = chrom_res$linearity,
+    pk_metadata = chrom_res$pk_metadata,
+    suitability = chrom_res$suitability,
+    vendor = vendor
+  )
 }
 
 
@@ -988,8 +986,8 @@ update_RT <- function(
 #' @import checkmate
 #' @noRd
 #' @author Omar Elashkar
-.find_peak <- function(x, cutoff = 1e2) {
-  checkmate::assertList(x)
+.find_peak <- function(chrom_res, cutoff = 1e2) {
+  checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertNumber(cutoff, lower = 0, upper = 1e20)
 
   # recieve list with samples and chromatogram to find peak
@@ -1065,7 +1063,7 @@ update_RT <- function(
       peak_area = calculated_peak_area
     )
   ) |> # rbind closed here
-    dplyr::group_by(compound_id, sample_id, compound, sample) |>
+    dplyr::group_by(.data$compound_id, .data$sample_id, .data$compound, .data$sample) |>
     dplyr::slice_tail(n = 1) |>
     dplyr::ungroup()
 

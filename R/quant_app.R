@@ -22,7 +22,7 @@ upload_quant_file_ui <- function(id) {
       selectInput(
         ns("method_id"),
         "Select Method ID",
-        choices = setNames(.get_methodsdb()$method_id, .get_methodsdb()$method)
+        choices = stats::setNames(.get_methodsdb()$method_id, .get_methodsdb()$method)
       )
     ),
     actionButton(ns("load_quant_btn"), "Load Quant File")

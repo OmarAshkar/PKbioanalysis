@@ -6,7 +6,7 @@
 make_sequence_names <- function(df){
   df <- df |>
     dplyr::group_by(.data$SAMPLE_LOCATION) |>
-    dplyr::mutate(FILE_NAME = ifelse(TYPE != "Analyte", paste0(.data$FILE_NAME, "_", dplyr::row_number()), .data$FILE_NAME)) |>
+    dplyr::mutate(FILE_NAME = ifelse(.data$TYPE != "Analyte", paste0(.data$FILE_NAME, "_", dplyr::row_number()), .data$FILE_NAME)) |>
     dplyr::ungroup() |>
     dplyr::group_by(.data$FILE_NAME) |>
     dplyr::mutate(FILE_NAME = paste0(.data$FILE_NAME, LETTERS[dplyr::row_number()])) |>
@@ -25,7 +25,7 @@ make_sequence_names <- function(df){
   )
   rep_vec <- rep(seq_len(nrow(res)), each = nrep)
   res <- res[rep_vec, ]
-  res$injec_rep <- ave(rep_vec, rep_vec, FUN = seq_along)
+  res$injec_rep <- stats::ave(rep_vec, rep_vec, FUN = base::seq_along)
   res <- dplyr::arrange(res, .data$injec_rep, .data$e_rep, .data$std_rep)
 
   if (nrow(res) == 0) {
@@ -57,7 +57,7 @@ make_sequence_names <- function(df){
     stop("A group does not have any blanks. Cannot add blank at the end.")
   }
   blanks_df <- tmpseq$Blank |>
-    filter(.data$injec_rep == min(.data$injec_rep) & e_rep == max(.data$e_rep))
+    filter(.data$injec_rep == min(.data$injec_rep) & .data$e_rep == max(.data$e_rep))
 
   tmpseq$last_blank <- blanks_df
 

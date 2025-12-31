@@ -13,13 +13,13 @@ export_integeration <- function(chrom_res, path) {
   peaktab <- chrom_res@peaks
   detected_peaks_dat <- peaktab |>
     dplyr::select(
-      transition,
-      sample,
-      transition_id,
-      sample_id,
-      expected_peak_start,
-      expected_peak_end,
-      expected_peak_RT
+      "transition",
+      "sample",
+      "transition_id",
+      "sample_id",
+      "expected_peak_start",
+      "expected_peak_end",
+      "expected_peak_RT"
     ) |>
     write.csv(file = path, row.names = F)
 }

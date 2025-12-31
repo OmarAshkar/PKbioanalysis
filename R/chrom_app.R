@@ -810,7 +810,7 @@ chromapp_server <- function(input, output, session) {
     p <- plot_ly(
       data = peak,
       x = ~RT,
-      y = as.formula(paste0("~", colnames(peak)[2])),
+      y = stats::as.formula(paste0("~", colnames(peak)[2])),
       type = "scatter",
       mode = "lines", #source = "chrom_plots",
       selected = list(marker = list(color = "red"))
@@ -842,7 +842,7 @@ chromapp_server <- function(input, output, session) {
       plotly::add_markers(
         # add marker to select to work
         x = ~RT,
-        y = as.formula(paste0("~", colnames(peak)[2])),
+        y = stats::as.formula(paste0("~", colnames(peak)[2])),
         marker = list(size = 1)
       ) |>
       plotly::config(

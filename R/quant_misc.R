@@ -9,7 +9,7 @@
   if (is.null(cmpd_number)) {
     peaks_res$res
   } else {
-    peaks_res$res |> filter(cmpd_id %in% cmpd_number)
+    peaks_res$res |> filter(.data$cmpd_id %in% cmpd_number)
   }
 }
 
@@ -20,7 +20,7 @@
   if (is.null(cmpd_number)) {
     peaks_res$res
   } else {
-    peaks_res$res |> filter(cmpd_id %in% cmpd_number)
+    peaks_res$res |> filter(.data$cmpd_id %in% cmpd_number)
   }
 }
 
@@ -135,8 +135,8 @@ plot_peak_areas.PeakRes <- function(
   y <- .filter_cmpd(peaks_res = peaks_res, cmpd_number = compounds)
 
   y <- y |>
-    mutate(sample_name = forcats::as_factor(sample_name)) |>
-    filter(sample_type %in% filtervec)
+    mutate(sample_name = forcats::as_factor(.data$sample_name)) |>
+    filter(.data$sample_type %in% filtervec)
 
   yname <- ifelse(normalize, "area_ratio", "PEAK_area")
 
@@ -155,9 +155,9 @@ plot_peak_areas.PeakRes <- function(
       aes(
         x = sample_name,
         y = !!sym(yname),
-        group = interaction(cmpd_name, sample_type),
-        color = cmpd_name,
-        shape = sample_type # linetype = sample_type
+        group = interaction(.data$cmpd_name, .data$sample_type),
+        color = .data$cmpd_name,
+        shape = .data$sample_type # linetype = sample_type
       )
     ) +
       geom_line(size = 1.1) +
@@ -210,16 +210,16 @@ plot_RT.PeakRes <- function(
 
   y <- .filter_cmpd(peaks_res = peaks_res, cmpd_number = compounds)
   y <- y |>
-    mutate(sample_name = forcats::as_factor(sample_name)) |>
-    filter(sample_type %in% filtervec) |>
+    mutate(sample_name = forcats::as_factor(.data$sample_name)) |>
+    filter(.data$sample_type %in% filtervec) |>
     mutate(across(
-      c(PEAK_startrt, PEAK_endrt, PEAK_foundrt),
+      c("PEAK_startrt", "PEAK_endrt", "PEAK_foundrt"),
       ~ if_else(.x == 0, NA, .x)
     ))
 
-  res <- (ggplot(y, aes(y = sample_name, x = PEAK_foundrt, color = cmpd_name)) +
-    geom_point(aes(size = PEAK_area)) +
-    geom_errorbarh(aes(xmin = PEAK_startrt, xmax = PEAK_endrt), width = 0.2))
+  res <- (ggplot(y, aes(y = sample_name, x = PEAK_foundrt, color = .data$cmpd_name)) +
+    geom_point(aes(size = .data$PEAK_area)) +
+    geom_errorbarh(aes(xmin = .data$PEAK_startrt, xmax = .data$PEAK_endrt), width = 0.2))
 
   if (facet) {
     res <- res + facet_wrap(~cmpd_name, scale = "free")
@@ -244,19 +244,19 @@ precision_per_vial <- function(peaks_res, suitability = FALSE) {
 
   if (!suitability) {
     print("suitability samples ignored")
-    y <- y |> filter(!grepl("suitability", y$sample_name, ignore.case = T))
+    y <- y |> filter(!grepl("suitability", .data$sample_name, ignore.case = T))
   }
 
   y |>
-    select(sample_name, sample_vial, sample_type, ISPEAK_area) |>
+    select("sample_name", "sample_vial", "sample_type", "ISPEAK_area") |>
     distinct() |>
     slice_head(n = 1, by = "sample_name") |>
     mutate(
-      ISPEAK_area = case_when(is.na(ISPEAK_area) ~ 0.01, .default = ISPEAK_area)
+      ISPEAK_area = case_when(is.na(.data$ISPEAK_area) ~ 0.01, .default = .data$ISPEAK_area)
     ) |>
-    group_by(sample_vial, sample_type) |>
-    summarize(percisio = percision(ISPEAK_area, "CV", percent = T)) |>
-    ggplot(aes(x = sample_vial, y = percisio, fill = sample_type)) +
+    group_by(.data$sample_vial, .data$sample_type) |>
+    summarize(percision = percision(.data$ISPEAK_area, "CV", percent = T)) |>
+    ggplot(aes(x = .data$sample_vial, y = .data$percision, fill = .data$sample_type)) +
     geom_bar(stat = "identity", position = "dodge")
 }
 
@@ -303,9 +303,9 @@ area_report.PeakRes <- function(
   }
 
   .filter_cmpd(peaks_res = peaks_res, cmpd_number = compounds) |>
-    filter(sample_type %in% filtervec) |>
-    select(sample_name, PEAK_area, cmpd_name) |>
-    pivot_wider(names_from = cmpd_name, values_from = PEAK_area) |>
+    filter(.data$sample_type %in% filtervec) |>
+    select("sample_name", "PEAK_area", "cmpd_name") |>
+    pivot_wider(names_from = "cmpd_name", values_from = "PEAK_area") |>
     gt(rowname_col = "sample_name") |>
     fmt_number(decimals = 0) |>
     data_color(

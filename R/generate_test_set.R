@@ -132,7 +132,7 @@
     )
   )
   nrow(trans)
-  all <- trans |> mutate(all = paste(q1, q3, compound, sep = "__")) |> pull(all)
+  all <- trans |> mutate(all = paste(.data$q1, .data$q3, .data$compound, sep = "__")) |> pull(.data$all)
   length(all)
 
   imported_peaks_path <- system.file(
@@ -140,9 +140,9 @@
     package = "PKChromaMetrics"
   )
   expand.grid(filename = names, all = all) |>
-    separate(all, c("q1", "q3", "compound"), sep = "__") |>
+    separate_wider_delim("all", names = c("q1", "q3", "compound"), delim = "__") |>
     mutate(peak_start = NA, peak_end = NA) |>
-    arrange(filename, compound) |>
+    arrange(.data$filename, .data$compound) |>
     mutate(IS = "dopamine-d4") |>
     write.csv(imported_peaks_path, row.names = F)
 }

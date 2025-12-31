@@ -411,8 +411,8 @@ prefilter_precision_data.QuantRes <- function(
   stopifnot(has_linearity(x, compound_id))
 
   df <- x@linearity[[compound_id]]$linearitytab |>
-    dplyr::rename(conc = estimated_conc) |>
-    dplyr::select(conc, stdconc, type)
+    dplyr::rename(conc = "estimated_conc") |>
+    dplyr::select("conc", "stdconc", "type")
 
   prefilter_precision_data(df, type = type, acc_cutoff = acc_cutoff, dev_cutoff = dev_cutoff)
 }

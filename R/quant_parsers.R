@@ -95,7 +95,7 @@ peakres_to_chromres <- function(peakres, method = NA) {
         "ISPEAK_area",
         "PEAK_chromtrace"
       ) |>
-      mutate(rel_response = PEAK_area / ISPEAK_area)
+      mutate(rel_response = .data$PEAK_area / .data$ISPEAK_area)
   })
 
   metadata_df <- peakres$res |>
@@ -125,14 +125,14 @@ peakres_to_chromres <- function(peakres, method = NA) {
 
     mutate(std_rep = as.character(NA)) |>
     mutate(inj_vol = "sample_injectvolume") |>
-    mutate(dilution_factor = as.numeric(dilution_factor)) |>
-    mutate(sample_id = as.character(sample_id)) |>
+    mutate(dilution_factor = as.numeric(.data$dilution_factor)) |>
+    mutate(sample_id = as.character(.data$sample_id)) |>
     mutate(subject_id = as.character(NA)) |>
     mutate(sampling_time = as.numeric(NA)) |>
     mutate(invitro_conc = as.numeric(NA)) |>
     mutate(factor = as.character(NA)) |>
     mutate(dose = as.numeric(NA)) |>
-    mutate(date = paste0(sample_createdate, " ", sample_createtime)) |>
+    mutate(date = paste0(.data$sample_createdate, " ", .data$sample_createtime)) |>
     distinct()
 
   transitions_df <- do.call(
@@ -142,10 +142,10 @@ peakres_to_chromres <- function(peakres, method = NA) {
     })
   ) |>
     dplyr::filter(.data$PEAK_chromtrace != "") |>
-    tidyr::separate(PEAK_chromtrace, into = c("q1", "q3"), sep = ">") |>
+    tidyr::separate_wider_delim("PEAK_chromtrace", names = c("q1", "q3"), delim = ">") |>
     mutate(transition_id = paste0("T", row_number())) |>
     mutate(method_id = method) |>
-    select(transition_id, q1, q3)
+    select("transition_id", "q1", "q3")
 
   transitions_df <- .construct_experiment_transitions(transitions_df, method)
 
@@ -187,6 +187,10 @@ peakres_to_chromres <- function(peakres, method = NA) {
     select(
       "sample_name",
       "PEAK_area",
+      "PEAK_height",
+      "PEAK_startrt",
+      "PEAK_endrt",
+      "PEAK_foundrt",
       "PEAK_foundrt",
       "PEAK_startrt",
       "PEAK_endrt",
@@ -198,9 +202,9 @@ peakres_to_chromres <- function(peakres, method = NA) {
       c(PEAK_area, PEAK_foundrt, PEAK_startrt, PEAK_endrt, PEAK_height),
       as.numeric
     )) |>
-    filter(PEAK_chromtrace != "") |>
-    tidyr::separate(PEAK_chromtrace, into = c("q1", "q3"), sep = ">") |>
-    mutate(compound_trans = paste(cmpd_name, round(as.numeric(q3), 1))) |>
+    filter(.data$PEAK_chromtrace != "") |>
+    tidyr::separate_wider_delim("PEAK_chromtrace", names = c("q1", "q3"), delim = ">") |>
+    mutate(compound_trans = paste(.data$cmpd_name, round(as.numeric(.data$q3), 1))) |>
     left_join(cmpds_trans_df, by = "compound_trans") |>
 
     rename(
@@ -220,7 +224,7 @@ peakres_to_chromres <- function(peakres, method = NA) {
       "observed_peak_height",
       "observed_rt"
     ) |>
-    filter(!is.na(compound_id))
+    filter(!is.na(.data$compound_id))
 
   if (nrow(int_area) == 0) {
     stop(
@@ -326,11 +330,11 @@ peakres_to_chromres <- function(peakres, method = NA) {
         ),
         as.numeric
       )) |>
-      mutate(area_ratio = normalizeIS(PEAK_area, ISPEAK_area)) |>
+      mutate(area_ratio = normalizeIS(.data$PEAK_area, .data$ISPEAK_area)) |>
       mutate(
         sample_type = case_when(
-          sample_type == "Analyte" ~ "Sample",
-          .default = sample_type
+          .data$sample_type == "Analyte" ~ "Sample",
+          .default = .data$sample_type
         )
       ),
     vendor = "targetlynx"
@@ -357,7 +361,7 @@ peakres_to_chromres <- function(peakres, method = NA) {
       peak_area_ratio = peak_res$res$area_ratio,
       transition = peak_res$res$PEAK_chromtrace
     ) |>
-      tidyr::separate(transition, into = c("q1", "q3"), sep = ">")
+      tidyr::separate_wider_delim("transition", names = c("q1", "q3"), delim = ">")
   } else if (peak_res$vendor == "targetlynxCSV") {
     stop("Not implemented yet")
   } else {
@@ -377,7 +381,7 @@ peakres_to_chromres <- function(peakres, method = NA) {
   x <- readLines(filepath, n = 5)
 
   first_cmpd <- gsub("Compound \\d+:\\s+", "", x[5])
-  x <- read.delim(
+  x <- utils::read.delim(
     filepath,
     skip = 5,
     sep = "\t",
@@ -418,15 +422,15 @@ peakres_to_chromres <- function(peakres, method = NA) {
   names(mylist) <- compound_names
   reslist <- lapply(mylist, function(x) {
     x |>
-      rename(conc = `Conc.`) |>
-      rename(stdconc = `Std. Conc`) |>
-      rename(area = `Area`) |>
-      rename(area_ratio = `Area Ratio`) |>
-      mutate(across(
+      dplyr::rename(conc = .data$`Conc.`) |>
+      dplyr::rename(stdconc = .data$`Std. Conc`) |>
+      dplyr::rename(area = .data$`Area`) |>
+      dplyr::rename(area_ratio = .data$`Area Ratio`) |>
+      dplyr::mutate(across(
         c("conc", "area_ratio", "stdconc", "area", "%Dev"),
         as.numeric
       )) |>
-      mutate(accuracy = accuracy(conc, stdconc))
+      dplyr::mutate(accuracy = accuracy(.data$conc, .data$stdconc))
   })
 
   .peak_res(reslist, vendor = "targetlynx")

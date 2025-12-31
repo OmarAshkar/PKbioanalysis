@@ -5,13 +5,13 @@ extract_pk_profiles <- function(chrom_res) {
     if (has_linearity(chrom_res, i)) {
       samples_conc[[i]] <- chrom_res@linearity[[i]]$linearitytab |>
         dplyr::filter(
-          type == "Sample" &
-            !is.na(sampling_time) &
-            !is.na(subject_id)
+          .data$type == "Sample" &
+            !is.na(.data$sampling_time) &
+            !is.na(.data$subject_id)
         ) |> # check if time and subject id present
-        dplyr::mutate(estimated_conc_analytical = estimated_conc) |>
+        dplyr::mutate(estimated_conc_analytical = .data$estimated_conc) |>
         dplyr::mutate(
-          estimated_conc = estimated_conc * dilution_factor
+          estimated_conc = .data$estimated_conc * .data$dilution_factor
         ) |>
         dplyr::select(
           "filename",
@@ -24,8 +24,8 @@ extract_pk_profiles <- function(chrom_res) {
           "estimated_conc",
           "dilution_factor"
         ) |>
-        dplyr::mutate(dosage = ifelse(is.na(dosage), ".", dosage)) |>
-        dplyr::mutate(compound_id = i)
+        dplyr::mutate(dosage = ifelse(is.na(.data$dosage), ".", .data$dosage)) |>
+        dplyr::mutate(compound_id =  i)
 
       if (nrow(samples_conc[[i]]) == 0) {
         message(paste0("No PK samples found for ", i))
@@ -58,7 +58,7 @@ has_pk_profiles <- function(chrom_res, compound_id) {
 plot_pk_profiles <- function(chrom_res, compound_id = NULL) {
   if (is.null(compound_id)) {
     data_to_plot <- do.call(rbind, chrom_res@pk_metadata) |>
-      dplyr::filter(!is.na(compound_id))
+      dplyr::filter(!is.na(.data$compound_id))
   } else {
     data_to_plot <- chrom_res@pk_metadata[[compound_id]]
   }
@@ -69,7 +69,7 @@ plot_pk_profiles <- function(chrom_res, compound_id = NULL) {
 
   p <- ggplot2::ggplot(
     data_to_plot,
-    ggplot2::aes(x = sampling_time, y = estimated_conc, color = subject_id)
+    ggplot2::aes(x = .data$sampling_time, y = .data$estimated_conc, color = .data$subject_id)
   ) +
     ggplot2::geom_line() +
     ggplot2::geom_point() +

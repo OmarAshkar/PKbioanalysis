@@ -5,6 +5,8 @@
     dplyr::select(
       "sample_id",
       "filename",
+      "sample_name",
+      "sample_type",
       "area",
       "compound_id",
       "observed_peak_start",
@@ -14,21 +16,21 @@
     dplyr::mutate(sample_id = as.numeric(sample_id)) |>
     # get compount name
     dplyr::left_join(
-      chrom_res@compounds |> select("compound_id", "compound", "transition_id"),
+      chrom_res@compounds |> dplyr::select("compound_id", "compound", "transition_id"),
       by = "compound_id"
     ) |>
     # get type
     dplyr::left_join(
-      chrom_res@metadata |> select("filename", "type"),
+      chrom_res@metadata |> dplyr::select("filename", "type"),
       by = "filename"
     ) |>
     # get q3 from transitons tab
     dplyr::left_join(
-      chrom_res@transitions |> select("transition_id", "q3"),
+      chrom_res@transitions |> dplyr::select("transition_id", "q3"),
       by = "transition_id"
     ) |>
-    dplyr::mutate(compound_label = paste0(compound, " (", round(q3, 1), ")")) |>
-    dplyr::mutate(split_id = paste0(compound_id, "___split___", filename))
+    dplyr::mutate(compound_label = paste0(.data$compound, " (", round(.data$q3, 1), ")")) |>
+    dplyr::mutate(split_id = paste0(.data$compound_id, "___split___", .data$filename))
   dat
 }
 
@@ -42,17 +44,17 @@ plot_RT.ChromRes <- function(chrom_res) {
     aes(y = .data$sample_id, x = .data$observed_rt, color = .data$type)
   ) +
     ggiraph::geom_point_interactive(
-      aes(tooltip = split_id, data_id = split_id),
+      aes(tooltip = .data$split_id, data_id = .data$split_id),
       stat = "identity",
       size = 0.7
     ) +
     ggplot2::theme_minimal() +
     ggiraph::geom_errorbarh_interactive(
       aes(
-        data_id = split_id,
-        tooltip = compound_id,
-        xmin = observed_peak_start,
-        xmax = observed_peak_end
+        data_id = .data$split_id,
+        tooltip = .data$compound_id,
+        xmin = .data$observed_peak_start,
+        xmax = .data$observed_peak_end
       ),
       height = 0.1
     ) +
@@ -78,9 +80,9 @@ plot_RT.ChromRes <- function(chrom_res) {
 plot_area_bar.ChromRes <- function(chrom_res, log_scale = TRUE) {
   dat <- .vis_data(chrom_res)
   # df: area vs filename vs compound
-  res <- ggplot2::ggplot(dat, aes(x = sample_id, y = area, fill = type)) +
+  res <- ggplot2::ggplot(dat, aes(x = .data$sample_id, y = .data$area, fill = .data$type)) +
     ggiraph::geom_bar_interactive(
-      aes(tooltip = paste0(filename, area, type), data_id = split_id),
+      aes(tooltip = paste0(.data$filename, .data$area, .data$type), data_id = .data$split_id),
       color = "white",
       stat = "identity",
       position = ggplot2::position_dodge(width = 0.001),
@@ -122,9 +124,9 @@ ggiraph_config1 <- function(res) {
 plot_area_dot.ChromRes <- function(chrom_res, log_scale = TRUE) {
   dat <- .vis_data(chrom_res)
   # df: area vs filename vs compound
-  res <- ggplot2::ggplot(dat, aes(y = type, x = area)) +
+  res <- ggplot2::ggplot(dat, aes(y = .data$type, x = .data$area)) +
     ggiraph::geom_point_interactive(
-      aes(tooltip = paste0(filename, area, type), data_id = split_id),
+      aes(tooltip = paste0(.data$filename, .data$area, .data$type), data_id = .data$split_id),
       shape = 21,
       size = 0.7,
       fill = "green"
@@ -153,10 +155,10 @@ plot_area_dot.ChromRes <- function(chrom_res, log_scale = TRUE) {
 plot_areas_heatmap <- function(chrom_res) {
   # filename, compound_label, type
   dat <- .vis_data(chrom_res)
-  res <- ggplot(dat, aes(x = sample_id, y = compound_label, fill = area)) +
+  res <- ggplot(dat, aes(x = .data$sample_id, y = .data$compound_label, fill = .data$area)) +
     # ggplot2::geom_tile(lwd = 1.5, color = "white", fill = "red") +
     ggiraph::geom_tile_interactive(
-      aes(tooltip = paste0(filename, area, type), data_id = split_id),
+      aes(tooltip = paste0(.data$filename, .data$area, .data$type), data_id = .data$split_id),
       color = "white",
       lwd = 0.6,
       linetype = 1

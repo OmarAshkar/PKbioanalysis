@@ -785,23 +785,23 @@ make_cell_stability_study <- function(
     dplyr::distinct() |>
     dplyr::mutate(
       study_id = "test_study",
-      group_label = paste0(arms, "_", cmpds),
-      group_replicate = replicates,
-      extra_factors = conditions,
-      subject_id = subject_id
+      group_label = paste0(.data$arms, "_", .data$cmpds),
+      group_replicate = .data$replicates,
+      extra_factors = .data$conditions,
+      subject_id = .data$subject_id
     ) |>
     dplyr::select(
-      subject_id,
-      study_id,
-      group_label,
-      group_replicate,
-      extra_factors
+      "subject_id",
+      "study_id",
+      "group_label",
+      "group_replicate",
+      "extra_factors"
     )
 
   samplelogdf <- res |>
     dplyr::select("subject_id", "time_points") |>
     dplyr::mutate(
-      nominal_time = as.character(time_points),
+      nominal_time = as.character(.data$time_points),
       time_unit = time_unit,
       status = "Planned"
     ) |>

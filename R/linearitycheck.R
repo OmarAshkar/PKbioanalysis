@@ -6,8 +6,8 @@
 #' @author Omar I. Elashkar
 #' @export
 reverse_predict <- function(fit, newdata, intercept) {
-  slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
-  intercept <- ifelse(intercept, unname(coef(fit)[1]), 0)
+  slope <- ifelse(intercept, unname(stats::coef(fit)[2]), unname(stats::coef(fit)[1]))
+  intercept <- ifelse(intercept, unname(stats::coef(fit)[1]), 0)
 
   # calculate estimated response
   (newdata - intercept) / slope
@@ -39,7 +39,7 @@ sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE) {
           quantres@peaks |>
           dplyr::filter(compound_id == is_id) |>
           dplyr::select("filename", "area", "compound_id") |>
-          dplyr::rename(IS_area = area)
+          dplyr::rename(IS_area = .data$area)
       }
     }
     if (!exists("IS_area_df")) {
@@ -60,7 +60,7 @@ sync_linearity <- function(quantres, compound_id = NULL, meta_only = FALSE) {
       # dplyr::filter(.data$type %in% c("Standard", "QC")) |>
       dplyr::rename(abs_response = .data$area) |>
       dplyr::left_join(IS_area_df, by = dplyr::join_by("filename")) |> # NOTE SAME cmpd, so no cmpd_id
-      dplyr::mutate(rel_response = abs_response / IS_area) |>
+      dplyr::mutate(rel_response = .data$abs_response / .data$IS_area) |>
       dplyr::select(
         "filename",
         "type",
@@ -214,9 +214,9 @@ run_linearity_df <- function(
   # check if set_linearity
 
   if (model == "linear") {
-    model_func <- lm
+    model_func <- stats::lm
   } else if (model == "quadratic") {
-    model_func <- nls
+    model_func <- stats::nls
   }
 
   if (weight == "1/x") {
@@ -238,7 +238,7 @@ run_linearity_df <- function(
 
   if (avg_rep) {
     quantres <- quantres |>
-      group_by(stdconc) |>
+      group_by(.data$stdconc) |>
       summarise(
         response = mean(!!sym(response), na.rm = TRUE)
       )
@@ -247,7 +247,7 @@ run_linearity_df <- function(
   if (intercept) {
     if (model == "linear") {
       fit <- model_func(
-        as.formula(paste0(response, "~stdconc")),
+        stats::as.formula(paste0(response, "~stdconc")),
         weights = weight_vec,
         data = target_df
       )
@@ -261,7 +261,7 @@ run_linearity_df <- function(
   } else {
     if (model == "linear") {
       fit <- model_func(
-        as.formula(paste0(response, "~stdconc - 1")),
+        stats::as.formula(paste0(response, "~stdconc - 1")),
         weights = weight_vec,
         data = target_df
       )
@@ -275,8 +275,8 @@ run_linearity_df <- function(
   }
 
   # https://stackoverflow.com/questions/38109501/how-does-predict-lm-compute-confidence-interval-and-prediction-interval
-  fitted_res <- predict(fit, interval = "confidence") |> as.data.frame()
-  fitted_res_pred <- predict(fit, interval = "prediction") |> as.data.frame()
+  fitted_res <- stats::predict(fit, interval = "confidence") |> as.data.frame()
+  fitted_res_pred <- stats::predict(fit, interval = "prediction") |> as.data.frame()
   # update target_df with resdiual_response and estimated_response
 
   target_df <- target_df |>
@@ -286,8 +286,8 @@ run_linearity_df <- function(
     dplyr::mutate(estimate_CI_upr = fitted_res$upr) |>
     dplyr::mutate(estimated_pred_lwr = fitted_res_pred$lwr) |>
     dplyr::mutate(estimated_pred_upr = fitted_res_pred$upr) |>
-    dplyr::mutate(residual_response = residuals(fit)) |>
-    dplyr::mutate(rstandard_response = rstandard(fit))
+    dplyr::mutate(residual_response = stats::residuals(fit)) |>
+    dplyr::mutate(rstandard_response = stats::rstandard(fit))
 
 
   resdf <- df |> 
@@ -320,23 +320,23 @@ run_linearity_df <- function(
     dplyr::filter(.data$type == "Standard")
 
 
-  slope <- ifelse(intercept, unname(coef(fit)[2]), unname(coef(fit)[1]))
+  slope <- ifelse(intercept, unname(stats::coef(fit)[2]), unname(stats::coef(fit)[1]))
 
-  intercept <- ifelse(intercept, unname(coef(fit)[1]), intercept)
+  intercept <- ifelse(intercept, unname(stats::coef(fit)[1]), intercept)
   intercept <- ifelse(
     intercept != FALSE,
     paste0(
       round(intercept, 2),
       " 95% CI: (",
-      round(confint(fit)[1, 1], 2),
+      round(stats::confint(fit)[1, 1], 2),
       " - ",
-      round(confint(fit)[1, 2], 2),
+      round(stats::confint(fit)[1, 2], 2),
       ")"
     ),
     FALSE
   )
 
-  sd_residuals <- sd(residuals(fit))
+  sd_residuals <- stats::sd(stats::residuals(fit))
 
   
   reslist <- list(
@@ -366,7 +366,7 @@ run_linearity_df <- function(
     qc_level_passed = .find_passed_qc_level(resdfqc),
     n_standards = nrow(resdfstd),
     n_qcs = nrow(resdfqc),
-    aic = AIC(fit)
+    aic = stats::AIC(fit)
   )
   
     list(resdf = resdf, summary = reslist)
@@ -448,21 +448,21 @@ run_linearity_quantres <- function(
 #' @noRd
 .find_passed_lloq <- function(df) {
   df |>
-    dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.20, TRUE, FALSE)) |>
-    dplyr::filter(passed) |>
-    dplyr::mutate(stdconc = as.numeric(stdconc)) |>
+    dplyr::mutate(passed = ifelse(abs(.data$dev_conc) <= 0.20, TRUE, FALSE)) |>
+    dplyr::filter(.data$passed) |>
+    dplyr::mutate(stdconc = as.numeric(.data$stdconc)) |>
     dplyr::pull("stdconc") |>
     min()
 }
 
 
-#' @author Omar Elashkar
+#' @author Omar I. Elashkar
 #' @noRd
 .find_passed_uloq <- function(df) {
   df |>
-    dplyr::mutate(passed = ifelse(abs(dev_conc) <= 0.15, TRUE, FALSE)) |>
-    dplyr::filter(passed) |>
-    dplyr::mutate(stdconc = as.numeric(stdconc)) |>
+    dplyr::mutate(passed = ifelse(abs(.data$dev_conc) <= 0.15, TRUE, FALSE)) |>
+    dplyr::filter(.data$passed) |>
+    dplyr::mutate(stdconc = as.numeric(.data$stdconc)) |>
     dplyr::pull("stdconc") |>
     max()
 }
@@ -483,11 +483,11 @@ run_linearity_quantres <- function(
     dplyr::summarise(passed = sum(passed), total = n()) |>
     dplyr::mutate(
       passed = paste0(
-        passed,
+        .data$passed,
         "/",
-        total,
+        .data$total,
         " (",
-        round(passed / total * 100, 2),
+        round(.data$passed / .data$total * 100, 2),
         "%)"
       )
     ) |>
@@ -503,8 +503,8 @@ run_linearity_quantres <- function(
 .find_passed_qc_level <- function(df) {
   QCs_passed_level <- df |>
     # dplyr::filter(type == "QC") |>
-    dplyr::group_by(stdconc) |>
-    dplyr::summarise(passed = sum(passed), total = n()) |>
+    dplyr::group_by(.data$stdconc) |>
+    dplyr::summarise(passed = sum(.data$passed), total = n()) |>
     dplyr::mutate(
       QCs_passed = paste0(
         .data$stdconc,
@@ -545,45 +545,45 @@ plot_linearity <- function(quantres, compound_id) {
   ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimated_response), ],
-      aes(x = stdconc, y = estimated_response),
+      aes(x = .data$stdconc, y = .data$estimated_response),
       na.rm = TRUE
     ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimate_CI_lwr), ],
-      aes(x = stdconc, y = estimate_CI_lwr),
+      aes(x = .data$stdconc, y = .data$estimate_CI_lwr),
       linetype = "dashed",
       na.rm = TRUE,
       color = "blue"
     ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimate_CI_upr), ],
-      aes(x = stdconc, y = estimate_CI_upr),
+      aes(x = .data$stdconc, y = .data$estimate_CI_upr),
       linetype = "dashed",
       na.rm = TRUE,
       color = "blue"
     ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimated_pred_lwr), ],
-      aes(x = stdconc, y = estimated_pred_lwr),
+      aes(x = .data$stdconc, y = .data$estimated_pred_lwr),
       linetype = "dotted",
       na.rm = TRUE,
       color = "red"
     ) +
     ggplot2::geom_line(
       data = linearitytab[!is.na(linearitytab$estimated_pred_upr), ],
-      aes(x = stdconc, y = estimated_pred_upr),
+      aes(x = .data$stdconc, y = .data$estimated_pred_upr),
       linetype = "dotted",
       na.rm = TRUE,
       color = "red"
     ) +
     ggiraph::geom_point_interactive(
       aes(
-        tooltip = paste0(filename, " ", dev_conc, "%"),
-        data_id = filename,
-        x = stdconc,
+        tooltip = paste0(.data$filename, " ", .data$dev_conc, "%"),
+        data_id = .data$filename,
+        x = .data$stdconc,
         y = .data[[response]],
-        color = type,
-        shape = include
+        color = .data$type,
+        shape = .data$include
       ),
       size = 3
     ) +
@@ -626,7 +626,8 @@ plot_residuals <- function(quantres, compound_id) {
 
   residualsfig <- ggplot(
     linearitytab |>
-      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded"))
+      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded")),
+    aes(x = .data$stdconc, y = .data$residual_response)
   ) +
     ggiraph::geom_point_interactive(
       aes(
@@ -677,7 +678,8 @@ plot_deviations <- function(quantres, compound_id) {
     dplyr::filter(.data$type %in% c("Standard", "QC", "Suitability"))
   deviationsfig <- ggplot(
     linearitytab |>
-      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded"))
+      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded")),
+    aes(x = .data$stdconc, y = .data$dev_conc)
   ) +
     ggiraph::geom_point_interactive(aes(
       tooltip = paste0(.data$filename, " \n", .data$dev_conc * 100, "%"),
@@ -723,16 +725,16 @@ plot_deviations <- function(quantres, compound_id) {
 plot_standard_deviation <- function(quantres, compound_id) {
   linearitytab <- quantres@linearity[[compound_id]]$linearitytab |>
     dplyr::filter(.data$include == TRUE & .data$type %in% c("Blank", "QC")) |>
-    dplyr::mutate(stdconc = as.numeric(stdconc)) |>
-    dplyr::group_by("stdconc") |>
-    dplyr::summarise(sd = sd(estimated_conc, na.rm = TRUE))
+    dplyr::mutate(stdconc = as.numeric(.data$stdconc)) |>
+    dplyr::group_by(.data$stdconc) |>
+    dplyr::summarise(sd = stats::sd(.data$estimated_conc, na.rm = TRUE))
 
   ggplot(
     linearitytab |>
-      dplyr::mutate(include = ifelse(include, "Included", "Excluded"))
+      dplyr::mutate(include = ifelse(.data$include, "Included", "Excluded"))
   ) +
-    geom_point(aes(x = stdconc, y = sd)) +
-    geom_smooth(aes(x = stdconc, y = sd), method = "loess") +
+    geom_point(aes(x = .data$stdconc, y = .data$sd)) +
+    geom_smooth(aes(x = .data$stdconc, y = .data$sd), method = "loess") +
     labs(
       title = paste0(
         "Standard Deviation vs Actual Concentration of ",
