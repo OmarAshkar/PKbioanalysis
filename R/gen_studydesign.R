@@ -5,6 +5,11 @@ add_column_if_missing <- function(df, colname, default = NA_character_) {
   df
 }
 
+#' Create a new study in the database
+#' @param df A data frame with one row containing study details:
+#' type, title, description, pkstudy (logical), subject_type
+#' @returns A data frame with the created study details including generated id, start_date, and status
+#' @export
 create_new_study <- function(df) {
   checkmate::assertNames(
     names(df),
