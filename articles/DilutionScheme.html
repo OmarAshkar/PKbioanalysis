@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul>
 </li>
@@ -77,7 +78,14 @@ Elashkar</h4>
     
 <p>PKbioanalysis supports interactive dilution scheme generation.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in readLines(file, warn = readLines.warn): incomplete final line found</span></span>
+<span><span class="co">#&gt; on '/home/runner/.config/R/PKbioanalysis/config.yaml'</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'PKbioanalysis'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     integrate</span></span></code></pre></div>
 <p>Let’s generate fairly complex plate with multiple different
 standards, QC and DQCs.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -88,13 +96,13 @@ standards, QC and DQCs.</p>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, lbound <span class="op">=</span> <span class="fl">4</span>, rbound <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_cs_curve.html">add_cs_curve</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span><span class="op">)</span>, rep <span class="op">=</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, tbound <span class="op">=</span> <span class="st">"D"</span>, bbound <span class="op">=</span> <span class="st">"E"</span>, lbound <span class="op">=</span> <span class="fl">1</span>, rbound <span class="op">=</span> <span class="fl">12</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_QC.html">add_QC</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">90</span>, <span class="fl">180</span>, reg <span class="op">=</span> <span class="cn">T</span>, n_qc <span class="op">=</span> <span class="fl">6</span>, qc_serial <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_QC.html">add_QC</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">90</span>, <span class="fl">180</span>, reg <span class="op">=</span> <span class="cn">T</span>, n_qc <span class="op">=</span> <span class="fl">6</span>, qc_serial <span class="op">=</span> <span class="cn">F</span>, group <span class="op">=</span> <span class="st">"DrugA"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, lbound <span class="op">=</span> <span class="fl">1</span>, rbound <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_DQC.html">add_DQC</a></span><span class="op">(</span>conc <span class="op">=</span> <span class="fl">1000</span>, <span class="fl">100</span>, rep <span class="op">=</span> <span class="fl">6</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, lbound <span class="op">=</span> <span class="fl">1</span>, rbound <span class="op">=</span> <span class="fl">8</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_cs_curve.html">add_cs_curve</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span>, <span class="fl">15</span>, <span class="fl">75</span>, <span class="fl">150</span>, <span class="fl">200</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"h"</span>, tbound <span class="op">=</span> <span class="st">"G"</span>, bbound <span class="op">=</span> <span class="st">"H"</span>, lbound <span class="op">=</span> <span class="fl">1</span>, rbound <span class="op">=</span> <span class="fl">8</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="../reference/add_QC.html">add_QC</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">95</span>, <span class="fl">190</span>, reg <span class="op">=</span> <span class="cn">T</span>, n_qc <span class="op">=</span> <span class="fl">4</span>, qc_serial <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_QC.html">add_QC</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">95</span>, <span class="fl">190</span>, reg <span class="op">=</span> <span class="cn">T</span>, n_qc <span class="op">=</span> <span class="fl">4</span>, qc_serial <span class="op">=</span> <span class="cn">F</span>, group <span class="op">=</span> <span class="st">"DrugB"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/fill_scheme.html">fill_scheme</a></span><span class="op">(</span><span class="st">"v"</span>, lbound <span class="op">=</span> <span class="fl">9</span>, rbound <span class="op">=</span> <span class="fl">12</span>, tbound <span class="op">=</span> <span class="st">"F"</span>, bbound <span class="op">=</span> <span class="st">"H"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_DQC.html">add_DQC</a></span><span class="op">(</span>conc <span class="op">=</span> <span class="fl">1000</span>, <span class="fl">10</span>, rep <span class="op">=</span> <span class="fl">6</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_DQC.html">add_DQC</a></span><span class="op">(</span>conc <span class="op">=</span> <span class="fl">1000</span>, <span class="fl">100</span>, rep <span class="op">=</span> <span class="fl">6</span><span class="op">)</span> </span></code></pre></div>
@@ -103,14 +111,14 @@ standards, QC and DQCs.</p>
 <span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
 <span><span class="co">#&gt; Warning: Removed 3 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
-<p><img src="DilutionScheme_files/figure-html/unnamed-chunk-4-1.png" width="1440"></p>
+<p><img src="DilutionScheme_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="1440"></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/register_plate.html">register_plate</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
 <p>Accessing dilution scheme generation is done through the
-<code><a href="../reference/plate_app.html">plate_app()</a></code> function, which is same for historical plate
+<code><a href="../reference/study_app.html">study_app()</a></code> function, which is same for historical plate
 navigation and generation of injection sequence.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plate_app.html">plate_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/study_app.html">study_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Make sure to select the plate you want to generate dilution scheme
 for. The last registered plate will be selected by default.</p>
 <ul>

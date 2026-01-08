@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul>
 </li>
@@ -76,29 +77,37 @@ Elashkar</h4>
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in readLines(file, warn = readLines.warn): incomplete final line found</span></span>
+<span><span class="co">#&gt; on '/home/runner/.config/R/PKbioanalysis/config.yaml'</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'PKbioanalysis'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     integrate</span></span></code></pre></div>
 <p>We will load Waters <code>.raw</code> Chromatograms using
 <code><a href="../reference/read_chrom.html">read_chrom()</a></code>. We need to have method specified in the
 <code>method</code> argument. This can be done or edited using the
-interface in <code><a href="../reference/plate_app.html">plate_app()</a></code>.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+interface in <code><a href="../reference/study_app.html">study_app()</a></code>.</p>
+<pre><code><span><span class="co">#&gt; [1] TRUE</span></span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">chrompath</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"waters_raw_ex"</span>, package<span class="op">=</span><span class="st">"PKbioanalysis"</span><span class="op">)</span></span>
 <span><span class="va">chroms</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_chrom.html">read_chrom</a></span><span class="op">(</span><span class="va">chrompath</span>, method <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Reading Waters Raw Files</span></span>
+<span><span class="co">#&gt; Downloading uv...Done!</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Found 7 raw files</span></span>
 <span><span class="co">#&gt; → Loading</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
-<span><span class="co">#&gt; → loading /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Loaded 7 chromatograms</span></span>
-<span><span class="co">#&gt; → loading</span></span>
-<span><span class="co">#&gt; /tmp/RtmplfDwgK/temp_libpath1deb201d1b2/PKbioanalysis/extdata/waters_…</span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; → loading /tmp/Rtmpw4jdrf/temp_libpath1f0320d4f56a/PKbioanalysis/extdata/waters…</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_sample_names.html">get_sample_names</a></span><span class="op">(</span><span class="va">chroms</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                     sample sample_id</span></span>
 <span><span class="co">#&gt; 1      2024-04-15_DB_NT_R1         1</span></span>
@@ -108,11 +117,11 @@ interface in <code><a href="../reference/plate_app.html">plate_app()</a></code>.
 <span><span class="co">#&gt; 5   2024-04-15_CS3_5_NT_R8         5</span></span>
 <span><span class="co">#&gt; 6   2024-04-15_CS2_2_NT_R7         6</span></span>
 <span><span class="co">#&gt; 7   2024-04-15_CS1_1_NT_R6         7</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_chrom.html">plot_chrom</a></span><span class="op">(</span><span class="va">chroms</span>, sample_id <span class="op">=</span> <span class="fl">3</span>, ncol  <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualizeChromatograms_files/figure-html/unnamed-chunk-6-1.png" width="1440"></p>
-<p>More interactive features for integeration and visualization are to
-be added in the future.</p>
+<p><img src="visualizeChromatograms_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="1440"></p>
+<p>More interactive features for integration and visualization are to be
+added in the future.</p>
   </main>
 </div>
 

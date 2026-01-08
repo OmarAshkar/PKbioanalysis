@@ -11,7 +11,7 @@ If you are not following this guideline, you can set `reg = TRUE` to ignore the 
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,9 +23,10 @@ If you are not following this guideline, you can set `reg = TRUE` to ignore the 
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -60,7 +61,8 @@ If you are not following this guideline, you can set `reg = TRUE` to ignore the 
 <span>  extra <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_qc <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  qc_serial <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  reg <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  reg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  group <span class="op">=</span> <span class="cn">NA</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -85,7 +87,7 @@ If you are not following this guideline, you can set `reg = TRUE` to ignore the 
 
 
 <dt id="arg-extra">extra<a class="anchor" aria-label="anchor" href="#arg-extra"></a></dt>
-<dd><p>numeric vector of extra QC concentrations. Default is NULL.</p></dd>
+<dd><p>numeric vector of extra QC concentrations.</p></dd>
 
 
 <dt id="arg-n-qc">n_qc<a class="anchor" aria-label="anchor" href="#arg-n-qc"></a></dt>
@@ -98,6 +100,10 @@ If you are not following this guideline, you can set `reg = TRUE` to ignore the 
 
 <dt id="arg-reg">reg<a class="anchor" aria-label="anchor" href="#arg-reg"></a></dt>
 <dd><p>logical. Indicates if restrictions should not be applied to the QC samples. Default is TRUE</p></dd>
+
+
+<dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
+<dd><p>A string for bioanalytical group.</p></dd>
 
 </dl></div>
     <div class="section level2">

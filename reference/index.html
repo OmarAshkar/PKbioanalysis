@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -39,18 +40,48 @@
     </div>
 
     <div class="section level2">
+      <h2 id="installations">Installations<a class="anchor" aria-label="anchor" href="#installations"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="install_py_dep.html">install_py_dep()</a></code>
+
+        </dt>
+        <dd>Install Python dependencies for PKbioanalysis</dd>
+      </dl></div><div class="section level2">
+      <h2 id="study-design">Study Design<a class="anchor" aria-label="anchor" href="#study-design"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="create_new_study.html">create_new_study()</a></code>
+
+        </dt>
+        <dd>Create a new study in the database</dd>
+      </dl></div><div class="section level2">
       <h2 id="plate-design">Plate Design<a class="anchor" aria-label="anchor" href="#plate-design"></a></h2>
 
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
       <h3 id="generate-plate">Generate Plate<a class="anchor" aria-label="anchor" href="#generate-plate"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -66,8 +97,7 @@
       <h3 id="add-entries-to-plate">Add Entries to Plate<a class="anchor" aria-label="anchor" href="#add-entries-to-plate"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -78,43 +108,57 @@
 
         </dt>
         <dd>Add double blank (DB) to a plate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="add_blank.html">add_blank()</a></code>
 
         </dt>
         <dd>Add blank to the plate Can be either double blank (DB), CS0IS+ or CS+IS0</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="add_cs_curve.html">add_cs_curve()</a></code>
 
         </dt>
         <dd>Add calibration curve to the plate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="add_QC.html">add_QC()</a></code>
 
         </dt>
         <dd>Add quality control samples to the plate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="add_DQC.html">add_DQC()</a></code>
 
         </dt>
         <dd>Add dilution quality control (DQC) to the plate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="add_samples.html">add_samples()</a></code>
 
         </dt>
         <dd>Add samples to plate with pharmacokinetic attributes</dd>
-      </dl><dl><dt>
 
-          <code><a href="add_samples_c.html">add_samples_c()</a></code>
+        <dt>
+
+          <code><a href="add_samples_db.html">add_samples_db()</a></code>
 
         </dt>
-        <dd>Cartesian product of sample factors to a plate</dd>
-      </dl><dl><dt>
+        <dd>Add samples from the sample log to the plate</dd>
+
+        <dt>
+
+          <code><a href="add_samples_db2.html">add_samples_db2()</a></code>
+
+        </dt>
+        <dd>Add samples from the sample log to the plate with multiplication</dd>
+
+        <dt>
 
           <code><a href="add_suitability.html">add_suitability()</a></code>
 
@@ -125,8 +169,7 @@
       <h3 id="plate-filling-orientation">Plate Filling Orientation<a class="anchor" aria-label="anchor" href="#plate-filling-orientation"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -142,8 +185,7 @@
       <h3 id="multiple-plates">Multiple Plates<a class="anchor" aria-label="anchor" href="#multiple-plates"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -154,13 +196,15 @@
 
         </dt>
         <dd>Combine plates in MultiPlate object</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="length-MultiPlate-method.html">length(<i>&lt;MultiPlate&gt;</i>)</a></code>
 
         </dt>
         <dd>Length method for MultiPlate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sub-sub-MultiPlate-method.html">`[[`(<i>&lt;MultiPlate&gt;</i>)</a></code>
 
@@ -171,8 +215,7 @@
       <h3 id="study-starters">Study Starters<a class="anchor" aria-label="anchor" href="#study-starters"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -183,7 +226,8 @@
 
         </dt>
         <dd>Create a calibration study with calibration standards and QCs</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="make_metabolic_study.html">make_metabolic_study()</a></code>
 
@@ -194,8 +238,7 @@
       <h3 id="plate-and-study-inspection">Plate and Study Inspection<a class="anchor" aria-label="anchor" href="#plate-and-study-inspection"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -206,25 +249,26 @@
 
         </dt>
         <dd>Plotting 96 well plate</dd>
-      </dl><dl><dt>
 
-          <code><a href="plot_design.html">plot_design()</a></code>
-
-        </dt>
-        <dd>Plot the design of the plate</dd>
-      </dl><dl><dt>
+        <dt>
 
           <code><a href="plate_metadata.html">plate_metadata()</a></code>
 
         </dt>
         <dd>Set plate description</dd>
+
+        <dt>
+
+          <code><a href="plate_tree.html">plate_tree()</a></code>
+
+        </dt>
+        <dd>Plot the design of the plate</dd>
       </dl></div><div class="section level2">
 
       <h3 id="plate-registration">Plate Registration<a class="anchor" aria-label="anchor" href="#plate-registration"></a></h3>
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -234,14 +278,13 @@
           <code><a href="register_plate.html">register_plate()</a></code>
 
         </dt>
-        <dd>Register a plate This will save the plate to the database</dd>
+        <dd>This will save the plate to the database</dd>
       </dl></div><div class="section level2">
       <h2 id="injection-sequences">Injection Sequences<a class="anchor" aria-label="anchor" href="#injection-sequences"></a></h2>
 
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -252,19 +295,22 @@
 
         </dt>
         <dd>Create Injection Sequence</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="combine_injec_lists.html">combine_injec_lists()</a></code>
 
         </dt>
         <dd>Create Sample List with rigorous design</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="write_injec_seq.html">write_injec_seq()</a></code>
 
         </dt>
         <dd>Write injection sequence to database</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="download_sample_list.html">download_sample_list()</a></code>
 
@@ -275,15 +321,14 @@
 
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
 
       <dl><dt>
 
-          <code><a href="plate_app.html">plate_app()</a></code>
+          <code><a href="study_app.html">study_app()</a></code>
 
         </dt>
         <dd>bioanalytic_app</dd>
@@ -292,8 +337,7 @@
 
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -304,72 +348,292 @@
 
         </dt>
         <dd>Read Chromatogram Files</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_chrom.html">plot_chrom()</a></code>
 
         </dt>
         <dd>Plot Chromatogram per Sample for Selected transitions</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="filter_chrom.html">filter_chrom()</a></code>
 
         </dt>
         <dd>title Filter Chromatogram Peaks</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_compound_ID.html">get_compound_ID()</a></code>
 
         </dt>
         <dd>Find Compound ID from compound Name</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_sample_ID.html">get_sample_ID()</a></code>
 
         </dt>
         <dd>Find Sample ID from sample Name</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_sample_names.html">get_sample_names()</a></code>
 
         </dt>
         <dd>Find sample names for all samples</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="has_default_RT.html">has_default_RT()</a></code>
 
         </dt>
         <dd>check if default expected RT is set for a compound</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="is_smoothed.html">is_smoothed()</a></code>
 
         </dt>
         <dd>Return an indicator if the chromatogram is smoothed</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="is_integrated.html">is_integrated()</a></code>
 
         </dt>
-        <dd>Check if peak has been integrated</dd>
-      </dl><dl><dt>
+        <dd>Check if peak was integrated for a specific compound</dd>
+
+        <dt>
 
           <code><a href="read_experiment_results.html">read_experiment_results()</a></code>
 
         </dt>
         <dd>Read experiment results</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="smooth_chrom.html">smooth_chrom()</a></code>
 
         </dt>
         <dd>Smooth Chromatogram Peaks</dd>
-      </dl><dl><dt>
 
-          <code><a href="precision.html">precision()</a></code>
+        <dt>
+
+          <code><a href="update_RT.html">update_RT()</a></code>
 
         </dt>
-        <dd>Calculate precision (Coefficient of variation)</dd>
+        <dd>Manually Update Observed RT for either all compounds, all next samples, or single compound and sample</dd>
+
+        <dt>
+
+          <code><a href="export_run.html">export_run()</a></code>
+
+        </dt>
+        <dd>Export run</dd>
+
+        <dt>
+
+          <code><a href="export_integration.html">export_integration()</a></code>
+
+        </dt>
+        <dd>Export Expected RT</dd>
+
+        <dt>
+
+          <code><a href="extract_peak_bounds.html">extract_peak_bounds()</a></code>
+
+        </dt>
+        <dd>Extract Peak Boundaries</dd>
+
+        <dt>
+
+          <code><a href="check_chrom_cmpds.html">check_chrom_cmpds()</a></code>
+
+        </dt>
+        <dd>Check Matching of Compound and Transitions in chrom_res and method database</dd>
+
+        <dt>
+
+          <code><a href="chrom_app.html">chrom_app()</a></code>
+
+        </dt>
+        <dd>chrom_apps</dd>
+
+        <dt>
+
+          <code><a href="area_report.PeakRes.html">area_report.PeakRes()</a></code>
+
+        </dt>
+        <dd>gt table of areas</dd>
+
+        <dt>
+
+          <code><a href="integrate.html">integrate()</a></code>
+
+        </dt>
+        <dd>integrate Peak with trapzoid method given start and end</dd>
+
+        <dt>
+
+          <code><a href="plot_peak_areas.PeakRes.html">plot_peak_areas.PeakRes()</a></code>
+
+        </dt>
+        <dd>Plot peak areas</dd>
+
+        <dt>
+
+          <code><a href="plot_RT.ChromRes.html">plot_RT.ChromRes()</a></code>
+
+        </dt>
+        <dd>Plotting RT intervals of chromatogram</dd>
+
+        <dt>
+
+          <code><a href="plot_RT.PeakRes.html">plot_RT.PeakRes()</a></code>
+
+        </dt>
+        <dd>Plot RT</dd>
+
+        <dt>
+
+          <code><a href="run_summary.html">run_summary()</a></code>
+
+        </dt>
+        <dd>Get Summary of an object</dd>
+      </dl></div><div class="section level2">
+      <h2 id="quantification">Quantification<a class="anchor" aria-label="anchor" href="#quantification"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="application">Application<a class="anchor" aria-label="anchor" href="#application"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="quant_app.html">quant_app()</a></code>
+
+        </dt>
+        <dd>Quantification App</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="suitability">Suitability<a class="anchor" aria-label="anchor" href="#suitability"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="config_suitability.html">config_suitability()</a></code>
+
+        </dt>
+        <dd>Configure suitability runs</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="method-precision">Method Precision<a class="anchor" aria-label="anchor" href="#method-precision"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="precision_per_vial.html">precision_per_vial()</a></code>
+
+        </dt>
+        <dd>Precision per vial</dd>
+
+        <dt>
+
+          <code><a href="prefilter_precision_data.html">prefilter_precision_data()</a></code>
+
+        </dt>
+        <dd>Filter data</dd>
+
+        <dt>
+
+          <code><a href="calc_var_summary.html">calc_var_summary()</a></code>
+
+        </dt>
+        <dd>Calculate Summary Statistics for Each Concentration Level For Either Concentration, Area, or Area Ratio</dd>
+
+        <dt>
+
+          <code><a href="estim_lloq.html">estim_lloq()</a></code>
+
+        </dt>
+        <dd>Estimate LLOQ From Existing Additive and Proportional errors</dd>
+
+        <dt>
+
+          <code><a href="fit_var.html">fit_var()</a></code>
+
+        </dt>
+        <dd>Estimate Additive and proportional errors from calibration data</dd>
+
+        <dt>
+
+          <code><a href="formated_print.html">formated_print()</a></code>
+
+        </dt>
+        <dd>Format and print the results of fit_var</dd>
+
+        <dt>
+
+          <code><a href="cv.html">cv()</a></code>
+
+        </dt>
+        <dd>Calculate Coefficient of variation</dd>
+
+        <dt>
+
+          <code><a href="plot_var_pattern.html">plot_var_pattern()</a></code>
+
+        </dt>
+        <dd>Plot Relationship Between Concentration and CV/SD</dd>
+
+        <dt>
+
+          <code><a href="estim_dil_limit.html">estim_dil_limit()</a></code>
+
+        </dt>
+        <dd>Estimate Dilution Limit Based on Additive and Proportional Errors and LLOQ</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="linearity">linearity<a class="anchor" aria-label="anchor" href="#linearity"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="reverse_predict.html">reverse_predict()</a></code>
+
+        </dt>
+        <dd>Reverse predict concentration from response</dd>
+
+        <dt>
+
+          <code><a href="response_to_conc.html">response_to_conc()</a></code>
+
+        </dt>
+        <dd>Convert response to concentration</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

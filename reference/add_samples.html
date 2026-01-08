@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -46,19 +47,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_samples</span><span class="op">(</span></span>
-<span>  <span class="va">plate</span>,</span>
-<span>  <span class="va">samples</span>,</span>
-<span>  time <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  conc <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  dil <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  factor <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  dosage <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  route <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  cmt <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  prefix <span class="op">=</span> <span class="st">""</span>,</span>
-<span>  vtime <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_samples</span><span class="op">(</span><span class="va">plate</span>, <span class="va">samples</span>, prefix <span class="op">=</span> <span class="cn">NA</span>, dil <span class="op">=</span> <span class="cn">NA</span>, group <span class="op">=</span> <span class="cn">NA</span>, rep <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -73,40 +62,20 @@
 <dd><p>A vector representing samples names. Must be unique.</p></dd>
 
 
-<dt id="arg-time">time<a class="anchor" aria-label="anchor" href="#arg-time"></a></dt>
-<dd><p>A vector representing time points. If vtime = FALSE, time will propagate to all samples.</p></dd>
-
-
-<dt id="arg-conc">conc<a class="anchor" aria-label="anchor" href="#arg-conc"></a></dt>
-<dd><p>A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.</p></dd>
+<dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
+<dd><p>A prefix to be added before samples names. Default is "Sub".</p></dd>
 
 
 <dt id="arg-dil">dil<a class="anchor" aria-label="anchor" href="#arg-dil"></a></dt>
-<dd><p>A vector representing dilution factor. Must be same length as samples.</p></dd>
+<dd><p>A vector representing samples' dilution factor. Must be same length as samples.</p></dd>
 
 
-<dt id="arg-factor">factor<a class="anchor" aria-label="anchor" href="#arg-factor"></a></dt>
-<dd><p>A vector representing factor. Must be same length as samples.</p></dd>
+<dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
+<dd><p>A vector representing samples' bioanalytical group. Must be same length as samples.</p></dd>
 
 
-<dt id="arg-dosage">dosage<a class="anchor" aria-label="anchor" href="#arg-dosage"></a></dt>
-<dd><p>A vector representing dosage. Must be same length as samples.</p></dd>
-
-
-<dt id="arg-route">route<a class="anchor" aria-label="anchor" href="#arg-route"></a></dt>
-<dd><p>A vector representing route of administration. Must be same length as samples.</p></dd>
-
-
-<dt id="arg-cmt">cmt<a class="anchor" aria-label="anchor" href="#arg-cmt"></a></dt>
-<dd><p>A vector representing compartment. Must be same length as samples.</p></dd>
-
-
-<dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
-<dd><p>A prefix to be added before samples names. Default is "S"</p></dd>
-
-
-<dt id="arg-vtime">vtime<a class="anchor" aria-label="anchor" href="#arg-vtime"></a></dt>
-<dd><p>A logical. If TRUE, time is a vector of sample length as samples. Default is FALSE</p></dd>
+<dt id="arg-rep">rep<a class="anchor" aria-label="anchor" href="#arg-rep"></a></dt>
+<dd><p>Number of technical replicates for each combination. Default is 1.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -118,34 +87,15 @@
     <p>final name will be of form. Prefix-SampleName-Time-Concentration-Factor
 samples must be a unique vector and did not exist in the plate before.
 Time is either a vector or a single value. If it is a vector, it will be repeated for each sample.
-Conc, dil, factor and dosage are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.</p>
+Conc, dil, factor and dose are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.</p>
+<p>Allowed routes are "IV", "IM", "IP", "SC", "PO", "INH" which are short for Intravenous, Intramuscular, Intraperitoneal, Subcutaneous, Per Os (oral), Inhalation.</p>
+<p>Factor is an arbitrary factor used in the design like food vs fasted, healthy vs diseased, positive genotype ... etc.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span> <span class="fu">add_samples</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"T"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">12</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">Indometh</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span></span>
-<span class="r-in"><span> <span class="fu">add_samples</span><span class="op">(</span></span></span>
-<span class="r-in"><span>   samples <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">Subject</span>, </span></span>
-<span class="r-in"><span>   time <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">time</span>, </span></span>
-<span class="r-in"><span>   dosage <span class="op">=</span> <span class="st">"100mg"</span>,</span></span>
-<span class="r-in"><span>   route <span class="op">=</span> <span class="st">"IV"</span>,</span></span>
-<span class="r-in"><span>   cmt <span class="op">=</span> <span class="st">"plasma"</span>,</span></span>
-<span class="r-in"><span>   vtime <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"samples"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Plate not registered. To register, use register_plate()</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 30 rows containing missing values or values outside the scale range</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_text()`).</span>
-<span class="r-plt img"><img src="add_samples-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Plate not registered. To register, use register_plate()</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 30 rows containing missing values or values outside the scale range</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_text()`).</span>
-<span class="r-plt img"><img src="add_samples-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

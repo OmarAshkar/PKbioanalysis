@@ -1,0 +1,64 @@
+# Add samples to plate with pharmacokinetic attributes
+
+Add samples to plate with pharmacokinetic attributes
+
+## Usage
+
+``` r
+add_samples(plate, samples, prefix = NA, dil = NA, group = NA, rep = 1)
+```
+
+## Arguments
+
+- plate:
+
+  PlateObj
+
+- samples:
+
+  A vector representing samples names. Must be unique.
+
+- prefix:
+
+  A prefix to be added before samples names. Default is "Sub".
+
+- dil:
+
+  A vector representing samples' dilution factor. Must be same length as
+  samples.
+
+- group:
+
+  A vector representing samples' bioanalytical group. Must be same
+  length as samples.
+
+- rep:
+
+  Number of technical replicates for each combination. Default is 1.
+
+## Value
+
+PlateObj
+
+## Details
+
+final name will be of form. Prefix-SampleName-Time-Concentration-Factor
+samples must be a unique vector and did not exist in the plate before.
+Time is either a vector or a single value. If it is a vector, it will be
+repeated for each sample. Conc, dil, factor and dose are either a vector
+or a single value. If it is a vector, it must be the corrosponding
+length of samples.
+
+Allowed routes are "IV", "IM", "IP", "SC", "PO", "INH" which are short
+for Intravenous, Intramuscular, Intraperitoneal, Subcutaneous, Per Os
+(oral), Inhalation.
+
+Factor is an arbitrary factor used in the design like food vs fasted,
+healthy vs diseased, positive genotype ... etc.
+
+## Examples
+
+``` r
+plate <- generate_96() |>
+ add_samples(paste0("T", 1:12))
+```

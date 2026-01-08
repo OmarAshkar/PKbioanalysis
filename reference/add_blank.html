@@ -9,7 +9,7 @@ Can be either double blank (DB), CS0IS+ or CS+IS0"><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,9 +21,10 @@ Can be either double blank (DB), CS0IS+ or CS+IS0"><meta property="og:image" con
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -49,7 +50,7 @@ Can be either double blank (DB), CS0IS+ or CS+IS0</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_blank</span><span class="op">(</span><span class="va">plate</span>, IS <span class="op">=</span> <span class="cn">TRUE</span>, analyte <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_blank</span><span class="op">(</span><span class="va">plate</span>, IS <span class="op">=</span> <span class="cn">TRUE</span>, analyte <span class="op">=</span> <span class="cn">FALSE</span>, analytical <span class="op">=</span> <span class="cn">FALSE</span>, group <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,6 +67,14 @@ Can be either double blank (DB), CS0IS+ or CS+IS0</p>
 
 <dt id="arg-analyte">analyte<a class="anchor" aria-label="anchor" href="#arg-analyte"></a></dt>
 <dd><p>logical. If TRUE, add analyte to the well.</p></dd>
+
+
+<dt id="arg-analytical">analytical<a class="anchor" aria-label="anchor" href="#arg-analytical"></a></dt>
+<dd><p>logical. If FALSE, the blank is analytical, if TRUE it is bioanalytical.</p></dd>
+
+
+<dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
+<dd><p>A string for bioanalytical group.</p></dd>
 
 </dl></div>
     <div class="section level2">

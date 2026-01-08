@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Study Design Review • PKbioanalysis</title>
+<title>Study Design and Management • PKbioanalysis</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Study Design Review">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Study Design and Management">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
-    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design Review</a></li>
+    <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/visualizeChromatograms.html">Visualize Chromatograms</a></li>
   </ul>
 </li>
@@ -61,11 +62,10 @@
 
 
 
-<link href="Study_Design_files/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
-<script src="Study_Design_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><script src="Study_Design_files/viz-1.8.2/viz.js"></script><link href="Study_Design_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet">
-<script src="Study_Design_files/grViz-binding-1.0.11/grViz.js"></script><div class="row">
+
+<div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Study Design Review</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Study Design and Management</h1>
                         <h4 data-toc-skip class="author">Omar
 Elashkar</h4>
             
@@ -76,49 +76,29 @@ Elashkar</h4>
 
     
     
+<p>In our proposed workflow, we put a lot of emphasis on the plate
+design and management. The plate will carry all information needed not
+only for bioanalytical purposes, but also the pharmacokinetic
+information needed for the study.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://omarashkar.github.io/PKbioanalysis/">PKbioanalysis</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in readLines(file, warn = readLines.warn): incomplete final line found</span></span>
+<span><span class="co">#&gt; on '/home/runner/.config/R/PKbioanalysis/config.yaml'</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'PKbioanalysis'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     integrate</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">study</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, dosage <span class="op">=</span> <span class="st">"A"</span>, factor <span class="op">=</span> <span class="st">"M"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">*</span><span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="fl">6</span><span class="op">:</span><span class="fl">10</span>, dosage <span class="op">=</span> <span class="st">"A"</span>, factor <span class="op">=</span> <span class="st">"F"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">*</span><span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">15</span>, dosage <span class="op">=</span> <span class="st">"B"</span>, factor <span class="op">=</span> <span class="st">"M"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">*</span><span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span><span class="fl">16</span><span class="op">:</span><span class="fl">18</span>, dosage <span class="op">=</span> <span class="st">"B"</span>, factor <span class="op">=</span> <span class="st">"F"</span>, time <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">*</span><span class="fl">30</span><span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">study</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
-<span><span class="co">#&gt; Warning: Removed 12 rows containing missing values or values outside the scale range</span></span>
-<span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
-<p><img src="Study_Design_files/figure-html/unnamed-chunk-4-1.png" width="1440"></p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_design.html">plot_design</a></span><span class="op">(</span><span class="va">study</span><span class="op">)</span></span></code></pre></div>
-<div class="grViz html-widget html-fill-item" id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:1440px;height:960px;"></div>
-<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"diagram":"digraph flowchart {\n  graph [layout = dot, rankdir = TB]\n  node [shape = box, style = filled, fillcolor = lightblue, fontsize = 10]\n\n  root [label = \"Total Samples\\nn = 18\"];\ndosage_1 [label = \"Dosage: A\\nn = 10\"];\nroot -> dosage_1;\ndosage_2 [label = \"Dosage: B\\nn = 8\"];\nroot -> dosage_2;\nfactor_1 [label = \"Factor: F\\nn = 5\\n10 (120, 150, 30, 60, 90)\\n6 (120, 150, 30, 60, 90)\\n7 (120, 150, 30, 60, 90)\\n8 (120, 150, 30, 60, 90)\\n9 (120, 150, 30, 60, 90)\"];\ndosage_1 -> factor_1;\nfactor_2 [label = \"Factor: M\\nn = 5\\n1 (120, 150, 30, 60, 90)\\n2 (120, 150, 30, 60, 90)\\n3 (120, 150, 30, 60, 90)\\n4 (120, 150, 30, 60, 90)\\n5 (120, 150, 30, 60, 90)\"];\ndosage_1 -> factor_2;\nfactor_3 [label = \"Factor: F\\nn = 3\\n16 (30, 60, 90)\\n17 (30, 60, 90)\\n18 (30, 60, 90)\"];\ndosage_2 -> factor_3;\nfactor_4 [label = \"Factor: M\\nn = 5\\n11 (120, 150, 30, 60, 90)\\n12 (120, 150, 30, 60, 90)\\n13 (120, 150, 30, 60, 90)\\n14 (120, 150, 30, 60, 90)\\n15 (120, 150, 30, 60, 90)\"];\ndosage_2 -> factor_4;\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">Indometh</span><span class="op">)</span></span>
-<span><span class="va">plate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_96.html">generate_96</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="../reference/add_samples.html">add_samples</a></span><span class="op">(</span></span>
-<span>    samples <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">Subject</span>, </span>
-<span>    time <span class="op">=</span> <span class="va">Indometh</span><span class="op">$</span><span class="va">time</span>, </span>
-<span>    dosage <span class="op">=</span> <span class="st">"100mg"</span>,</span>
-<span>    route <span class="op">=</span> <span class="st">"IV"</span>,</span>
-<span>    cmt <span class="op">=</span> <span class="st">"plasma"</span>,</span>
-<span>    vtime <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"samples"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
-<span><span class="co">#&gt; Warning: Removed 30 rows containing missing values or values outside the scale range</span></span>
-<span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
-<p><img src="Study_Design_files/figure-html/unnamed-chunk-7-1.png" width="1440"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plate</span>, color <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Plate not registered. To register, use register_plate()</span></span>
-<span><span class="co">#&gt; Warning: Removed 30 rows containing missing values or values outside the scale range</span></span>
-<span><span class="co">#&gt; (`geom_text()`).</span></span></code></pre></div>
-<p><img src="Study_Design_files/figure-html/unnamed-chunk-7-2.png" width="1440"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_design.html">plot_design</a></span><span class="op">(</span><span class="va">plate</span><span class="op">)</span></span></code></pre></div>
-<div class="grViz html-widget html-fill-item" id="htmlwidget-e5c8c404fe174e4c81bd" style="width:1440px;height:960px;"></div>
-<script type="application/json" data-for="htmlwidget-e5c8c404fe174e4c81bd">{"x":{"diagram":"digraph flowchart {\n  graph [layout = dot, rankdir = TB]\n  node [shape = box, style = filled, fillcolor = lightblue, fontsize = 10]\n\n  root [label = \"Total Samples\\nn = 6\"];\ndosage_1 [label = \"Dosage: 100mg\\nn = 6\"];\nroot -> dosage_1;\nfactor_1 [label = \"Factor: NA\\nn = 6\\n1 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\\n2 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\\n3 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\\n4 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\\n5 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\\n6 (0.25, 0.5, 0.75, 1, 1.25, 2, 3, 4, 5, 6, 8)\"];\ndosage_1 -> factor_1;\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script></main>
+<code class="sourceCode R"><span><span class="va">newstudy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  type <span class="op">=</span> <span class="st">"SD"</span>,</span>
+<span>  pkstudy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"New Study"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"Description of the new study"</span>,</span>
+<span>  subject_type <span class="op">=</span> <span class="st">"Human"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">new_study</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_new_study.html">create_new_study</a></span><span class="op">(</span><span class="va">newstudy</span><span class="op">)</span></span></code></pre></div>
+  </main>
 </div>
 
 
