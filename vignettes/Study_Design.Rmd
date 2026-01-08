@@ -40,7 +40,7 @@ ev <- et(
   ii = 24, 
   addl = 4, 
   cmt = "dose", 
-  evid = 1, time = 2, arm = 1) |> View()
+  evid = 1, time = 2, arm = 1)
 
 
 ```
