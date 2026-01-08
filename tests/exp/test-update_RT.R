@@ -57,7 +57,7 @@ test_that("update_RT", {
 
   expect_error(has_default_RT(dat, compound_id = 23), "Compound ID not found")
 
-  # start integeration and setting default
+  # start integration and setting default
   # update RT and integerate (update_RT)
 
   ##################################################
@@ -76,7 +76,7 @@ test_that("update_RT", {
     )
   )
 
-  # example of automatic integeration with peak present
+  # example of automatic integration with peak present
   (update_RT(
     y,
     sample_id = NULL,
@@ -254,7 +254,7 @@ test_that("individual_RT_update", {
   # expect_warning() # expected RT not found
   # expect_warning() # observed RT was found
   # expect_warning() # peakstart > peakend
-  # expect_error() # no peak found in auto mode, force manual integeration.
+  # expect_error() # no peak found in auto mode, force manual integration.
 
   # no peak logic
   expect_no_error(

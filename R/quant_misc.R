@@ -2,7 +2,8 @@
 #' @description Filter compounds
 #' @param peaks_res PeakRes object
 #' @param cmpd_number numeric vector of compound numbers
-#' @import dplyr
+#' @return data.frame
+#' @noRd
 .filter_cmpd <- function(peaks_res, cmpd_number) {
   checkmate::assertClass(peaks_res, "PeakRes")
   checkmate::assertNumeric(cmpd_number, null.ok = T)
@@ -13,15 +14,6 @@
   }
 }
 
-.filter_cmpd <- function(peaks_res, cmpd_number) {
-  checkmate::assertClass(peaks_res, "PeakRes")
-  checkmate::assertNumeric(cmpd_number, null.ok = T)
-  if (is.null(cmpd_number)) {
-    peaks_res$res
-  } else {
-    peaks_res$res |> filter(.data$cmpd_id %in% cmpd_number)
-  }
-}
 
 #' @title Get Summary of an object
 #' @param object A PeakRes object
@@ -75,9 +67,8 @@ run_summary.PeakRes <- function(object) {
 #' @description Export run
 #' @param peaks_res PeakRes object
 #' @param path path to save csv
-#' @import checkmate
 #' @export
-export_run.PeakRes <- function(peaks_res, path) {
+export_run <- function(peaks_res, path) {
   checkmate::assertClass(peaks_res, "PeakRes")
   checkmate::assertCharacter(path)
 

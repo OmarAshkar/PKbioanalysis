@@ -1003,7 +1003,7 @@ quantapp_server <- function(input, output, session) {
 
 
 #' @title Quantification App
-#' @description This function creates a shiny app for quantification after peak integeration
+#' @description This function creates a shiny app for quantification after peak integration
 #' @export
 quant_app <- function() {
   # user input

@@ -45,4 +45,4 @@ plot_chrom(chroms, sample_id = 3, ncol  = 2)
 ```
 
 
-More interactive features for integeration and visualization are to be added in the future. 
+More interactive features for integration and visualization are to be added in the future. 

@@ -140,9 +140,9 @@ chromapp_ui <- function() {
       )
     ),
     bslib::nav_panel(
-      "Peak Integeration",
+      "Peak integration",
       id = "auto_peak",
-      h2("Peak Integeration"),
+      h2("Peak integration"),
       fluidPage(
         bslib::layout_column_wrap(
           width = NULL,
@@ -167,14 +167,14 @@ chromapp_ui <- function() {
 
         tabsetPanel(
           type = "tabs",
-          id = "integeration_tabs",
+          id = "integration_tabs",
           tabPanel(
             "Chromatogram",
             shinyWidgets::dropdownButton(
-              tags$h3("Peak Integeration"),
+              tags$h3("Peak integration"),
               radioButtons(
-                "integeration_menu",
-                "Integeration",
+                "integration_menu",
+                "integration",
                 choices = c("Save as default (all)" = "all")
               ),
               shinyWidgets::prettySwitch(
@@ -201,7 +201,7 @@ chromapp_ui <- function() {
           ),
           tabPanel(
             "Areas Plot",
-            # plotlyOutput("integeration_areas_plotly")
+            # plotlyOutput("integration_areas_plotly")
             bslib::card(
               bslib::card_header(
                 "Areas Plot",
@@ -215,7 +215,7 @@ chromapp_ui <- function() {
                 )
               ),
               ggiraph::girafeOutput(
-                "integeration_areas_bar_ggiraph",
+                "integration_areas_bar_ggiraph",
                 width = "100%",
                 height = "100%"
               ),
@@ -238,7 +238,7 @@ chromapp_ui <- function() {
                 )
               ),
               ggiraph::girafeOutput(
-                "integeration_areas_dot_ggiraph",
+                "integration_areas_dot_ggiraph",
                 width = "100%",
                 height = "100%"
               ),
@@ -250,7 +250,7 @@ chromapp_ui <- function() {
             "RT Plot",
             bslib::card(
               ggiraph::girafeOutput(
-                "integeration_RT_ggiraph",
+                "integration_RT_ggiraph",
                 width = "100%",
                 height = "100%"
               ),
@@ -258,8 +258,8 @@ chromapp_ui <- function() {
               full_screen = TRUE
             )
           ),
-          tabPanel("Table", DTOutput("integeration_table")),
-          tabPanel("Summary", verbatimTextOutput("integeration_summary"))
+          tabPanel("Table", DTOutput("integration_table")),
+          tabPanel("Summary", verbatimTextOutput("integration_summary"))
         )
       )
     ),
@@ -748,7 +748,7 @@ chromapp_server <- function(input, output, session) {
   })
 
   ##############################
-  # peak integeration tab ######
+  # peak integration tab ######
 
   ## transition_id rendetext ####
   ## This should match whatever the compound is selected, retrive label
@@ -877,7 +877,7 @@ chromapp_server <- function(input, output, session) {
     event_data("plotly_selecting") |> selected_peak_range()
   })
 
-  ## Integeration Options start ####
+  ## integration Options start ####
 
   observeEvent(
     c(input$compound_trans_input, selected_peak_range()),
@@ -908,7 +908,7 @@ chromapp_server <- function(input, output, session) {
       ) {
         updateRadioButtons(
           session,
-          "integeration_menu",
+          "integration_menu",
           choices = c(
             "Save Peak" = "single",
             "Save as default (all)" = "all",
@@ -919,7 +919,7 @@ chromapp_server <- function(input, output, session) {
       } else {
         updateRadioButtons(
           session,
-          "integeration_menu",
+          "integration_menu",
           choices = c("Save as default (all)" = "all"),
           selected = "all"
         )
@@ -928,7 +928,7 @@ chromapp_server <- function(input, output, session) {
     ignoreNULL = FALSE
   )
 
-  ## Firing integeration logic ########
+  ## Firing integration logic ########
   ### select compound and verify changes ####
   observeEvent(input$save_peak, {
     req(input$sample_file_input)
@@ -946,24 +946,24 @@ chromapp_server <- function(input, output, session) {
       tags$p("Manual Peak: ", input$manual_peak_toggle),
       tags$p(paste0("Peak Start: ", min(selected_peak_range()$x))),
       tags$p(paste0("Peak End: ", max(selected_peak_range()$x))),
-      tags$p(paste0("save option:", input$integeration_menu)),
+      tags$p(paste0("save option:", input$integration_menu)),
       title = "Add Compound",
       easyClose = TRUE,
       footer = tagList(
-        actionButton("verify_integeration_button", "save"),
+        actionButton("verify_integration_button", "save"),
         modalButton("Cancel")
       )
     ))
   })
 
-  ## verify integeration button clicked ####
-  observeEvent(input$verify_integeration_button, {
+  ## verify integration button clicked ####
+  observeEvent(input$verify_integration_button, {
     req(input$sample_file_input)
     req(input$compound_trans_input)
     req(selected_peak_range())
 
     # set sample name to NULL if all is selected.
-    if (input$integeration_menu == "all") {
+    if (input$integration_menu == "all") {
       sample_name <- NULL
     } else {
       sample_name <- iloc_sample()
@@ -979,7 +979,7 @@ chromapp_server <- function(input, output, session) {
       sample_id = sample_name,
       peak_start = min(selected_peak_range()$x),
       peak_end = max(selected_peak_range()$x),
-      target = input$integeration_menu,
+      target = input$integration_menu,
       manual = input$manual_peak_toggle
     ) |>
       peaksobj()
@@ -992,8 +992,8 @@ chromapp_server <- function(input, output, session) {
     plot_areas_heatmap(peaksobj()) |> ggiraph_config1()
   })
 
-  # ## integeration areas plotly output ####
-  # output$integeration_areas_plotly <- renderPlotly({
+  # ## integration areas plotly output ####
+  # output$integration_areas_plotly <- renderPlotly({
   #   req(class(peaksobj()) == "ChromRes")
   #   req(!is.null(input$sample_file_input))
   #   req(input$compound_trans_input)
@@ -1019,7 +1019,7 @@ chromapp_server <- function(input, output, session) {
   #       customdata = ~compound,
   #       # color = ~ rep(c("STD", "QC"), nrow(x) / 2), # FIXME
   #       type = "bar",
-  #       source = "integeration_areas_plotly"
+  #       source = "integration_areas_plotly"
   #     ) |>
   #       add_annotations(
   #         text = ~compound,
@@ -1039,61 +1039,61 @@ chromapp_server <- function(input, output, session) {
   #     plotly::toWebGL()
   # })
 
-  # observeEvent(plotly::event_data(event = "plotly_click", source = "integeration_areas_plotly"), {
-  #   clicked_dat <- plotly::event_data(event = "plotly_click", source = "integeration_areas_plotly")
+  # observeEvent(plotly::event_data(event = "plotly_click", source = "integration_areas_plotly"), {
+  #   clicked_dat <- plotly::event_data(event = "plotly_click", source = "integration_areas_plotly")
   #   updateSelectInput(session, "sample_file_input", selected = clicked_dat$y)
   #   updateSelectInput(session, "compound_trans_input" , selected = clicked_dat$customdata)
-  #   updateTabsetPanel(session, inputId = "integeration_tabs", selected = "Chromatogram") # move to integration tab
+  #   updateTabsetPanel(session, inputId = "integration_tabs", selected = "Chromatogram") # move to integration tab
   # })
 
-  output$integeration_areas_bar_ggiraph <- ggiraph::renderGirafe({
+  output$integration_areas_bar_ggiraph <- ggiraph::renderGirafe({
     req(!is.null(input$sample_file_input))
     plot_area_bar.ChromRes(peaksobj(), input$log_scale_area_bar) |>
       ggiraph_config1()
   })
 
-  observeEvent(input$integeration_areas_bar_ggiraph_selected, {
+  observeEvent(input$integration_areas_bar_ggiraph_selected, {
     cmpd_id <- strsplit(
-      input$integeration_areas_bar_ggiraph_selected,
+      input$integration_areas_bar_ggiraph_selected,
       "___split___"
     )[[1]][1]
     updateSelectInput(
       session,
       "sample_file_input",
-      selected = input$integeration_areas_bar_ggiraph_selected
+      selected = input$integration_areas_bar_ggiraph_selected
     )
     updateTabsetPanel(
       session,
-      inputId = "integeration_tabs",
+      inputId = "integration_tabs",
       selected = "Chromatogram"
     ) # move to integration tab
   })
 
-  output$integeration_areas_dot_ggiraph <- ggiraph::renderGirafe({
+  output$integration_areas_dot_ggiraph <- ggiraph::renderGirafe({
     req(!is.null(input$sample_file_input))
     plot_area_dot.ChromRes(peaksobj(), input$log_scale_area_dot) |>
       ggiraph_config1()
   })
 
-  observeEvent(input$integeration_areas_dot_girafe_selected, {
+  observeEvent(input$integration_areas_dot_girafe_selected, {
     cmpd_id <- strsplit(
-      input$integeration_areas_dot_girafe_selected,
+      input$integration_areas_dot_girafe_selected,
       "___split___"
     )[[1]][1]
     updateSelectInput(
       session,
       "sample_file_input",
-      selected = input$integeration_areas_dot_girafe_selected
+      selected = input$integration_areas_dot_girafe_selected
     )
     updateTabsetPanel(
       session,
-      inputId = "integeration_tabs",
+      inputId = "integration_tabs",
       selected = "Chromatogram"
     ) # move to integration tab
   })
 
   ## Integerated RT plotly output ####
-  # output$integeration_RT_plotly <- renderPlotly({
+  # output$integration_RT_plotly <- renderPlotly({
   #   req(class(peaksobj()) == "ChromRes")
   #   req(input$sample_file_input)
   #   req(input$compound_trans_input)
@@ -1120,7 +1120,7 @@ chromapp_server <- function(input, output, session) {
   #       # color = ~ rep(c("STD", "QC"), nrow(x) / 2),
   #       mode = "markers",
   #       type = "scatter",
-  #       source = "integeration_RT_plotly",
+  #       source = "integration_RT_plotly",
   #       error_x = list(
   #         symmetric = FALSE,
   #         array = ~offset,
@@ -1147,33 +1147,33 @@ chromapp_server <- function(input, output, session) {
 
   # })
 
-  # observeEvent(plotly::event_data(event = "plotly_click", source = "integeration_RT_plotly"), {
+  # observeEvent(plotly::event_data(event = "plotly_click", source = "integration_RT_plotly"), {
   #   req(class(peaksobj()) == "ChromRes")
-  #   clicked_dat <- plotly::event_data(event = "plotly_click", source = "integeration_RT_plotly")
+  #   clicked_dat <- plotly::event_data(event = "plotly_click", source = "integration_RT_plotly")
   #   updateSelectInput(session, "sample_id", selected = clicked_dat$y)
   #   updateSelectInput(session, "compound_trans_input" , selected = clicked_dat$customdata)
-  #   updateTabsetPanel(session, inputId = "integeration_tabs", selected = "Chromatogram") # move to integration tab
+  #   updateTabsetPanel(session, inputId = "integration_tabs", selected = "Chromatogram") # move to integration tab
   # })
 
-  output$integeration_RT_ggiraph <- ggiraph::renderGirafe({
+  output$integration_RT_ggiraph <- ggiraph::renderGirafe({
     req(!is.null(input$sample_file_input))
     plot_RT.ChromRes(peaksobj()) |> ggiraph_config1()
   })
 
-  observeEvent(input$integeration_RT_ggirafe_selected, {
+  observeEvent(input$integration_RT_ggirafe_selected, {
     updateSelectInput(
       session,
       "sample_file_input",
-      selected = input$integeration_RT_ggirafe_selected
+      selected = input$integration_RT_ggirafe_selected
     )
     updateTabsetPanel(
       session,
-      inputId = "integeration_tabs",
+      inputId = "integration_tabs",
       selected = "Chromatogram"
     ) # move to integration tab
   })
 
-  output$integeration_table <- renderDT({
+  output$integration_table <- renderDT({
     validate(need(peaksobj(), "No peaks object available"))
     DT::datatable(
       peaksobj()@peaks,
@@ -1231,7 +1231,7 @@ chromapp_server <- function(input, output, session) {
 
     updateTabsetPanel(
       session,
-      inputId = "integeration_tabs",
+      inputId = "integration_tabs",
       selected = "Chromatogram"
     ) # move to integration tab
   })

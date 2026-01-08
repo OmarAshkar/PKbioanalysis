@@ -349,6 +349,18 @@ add_samples <- function(
 #     )
 # }
 
+#' Add samples from the sample log to the plate
+#' @param plate PlateObj
+#' @param logIds A vector of log IDs from the sample log.
+#' @param dil A vector with length corresponding number of logIds. See details.
+#' @param namestyle A numeric value indicating the naming style. 1 for long names, 2 for short names.
+#' @param group A string for bioanalytical group.
+#' @details This function will retrieve sample information from the sample log database using the provided log IDs.
+#' It constructs sample names based on the specified naming style and adds them to the plate.
+#' The `dil` parameter allows specifying dilution factors for each sample, which will be appended to the sample names.
+#' If a single dilution factor is provided, it will be applied to all samples.
+#' @export
+#' @returns PlateObj
 add_samples_db <- function(plate, logIds, dil = 1, namestyle = 1, group = NA) {
   checkmate::assertVector(logIds, min.len = 1, any.missing = FALSE)
   checkmate::assertNumeric(dil, lower = 1, finite = TRUE)
@@ -1929,6 +1941,7 @@ samples_naming_style <- function(
 #' Convert a comma-separated string to a vector
 #' @param x character. Comma-separated string
 #' @param numeric logical. If TRUE, convert to numeric vector
+#' @noRd
 str_to_vec <- function(x, numeric = FALSE) {
   res <- unlist(strsplit(x, split = ","))
   res <- trimws(res)

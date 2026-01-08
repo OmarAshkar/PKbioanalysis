@@ -7,5 +7,5 @@
 quant_app()
 }
 \description{
-This function creates a shiny app for quantification after peak integeration
+This function creates a shiny app for quantification after peak integration
 }

@@ -10,7 +10,7 @@ extract_peak_bounds(chrom_res, compound_id)
 \item{chrom_res}{ChromRes object}
 
 \item{compound_id}{Compound ID
-The function automatically priortizes observed peak boundaries (manual integeration) over expected ones.
+The function automatically priortizes observed peak boundaries (manual integration) over expected ones.
 If observed boundaries are not available, it falls back to expected boundaries.}
 }
 \value{

@@ -110,7 +110,7 @@ update_peak_area_from_df <- function(chrom_res, df) {
 #' @param samples_ids Sample ID. If NULL, all samples will be used
 #' @param smoothed Logical. If TRUE, use smoothed chromatogram. Default is TRUE
 #' @export
-integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
+integrate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertCount(compound_id, positive = TRUE)
   # compound_id <- .cmpds_string_handler(compound_id)
@@ -508,6 +508,8 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 #' @title Find max intensity for a sample
 #' Observed RT regarless manual or automatic
 #' @param intensities Dataframe coming from .filter_peak
+#' @return Dataframe with sample_id, RT and peak_height
+#' @noRd
 .find_max_intensity <- function(intensities) {
   stopifnot(ncol(intensities) == 3)
   stopifnot("sample_id" %in% colnames(intensities))
@@ -1071,7 +1073,7 @@ set_observed_bounds <- function(
 #' @description Extract peak boundaries for a given compound ID
 #' @param chrom_res ChromRes object
 #' @param compound_id Compound ID
-#' The function automatically priortizes observed peak boundaries (manual integeration) over expected ones.
+#' The function automatically priortizes observed peak boundaries (manual integration) over expected ones.
 #' If observed boundaries are not available, it falls back to expected boundaries.
 #' @return Dataframe with compound_id, min, max
 extract_peak_bounds <- function(chrom_res, compound_id) {

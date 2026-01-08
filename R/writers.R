@@ -5,7 +5,7 @@
 #' @import checkmate
 #' @import dplyr
 #' @export
-export_integeration <- function(chrom_res, path) {
+export_integration <- function(chrom_res, path) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertString(path)
 
