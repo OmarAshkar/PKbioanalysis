@@ -244,7 +244,7 @@ shinyApp(ui, server)
 ```
 
 ```{r}
-x <- integerate_ai(main, transition_id = 1, sample_id = 4, peak_start = 0.5, peak_end = 0.7) 
+x <- integrate_ai(main, transition_id = 1, sample_id = 4, peak_start = 0.5, peak_end = 0.7) 
 ```
 
 ```{r}

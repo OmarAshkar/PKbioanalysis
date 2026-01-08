@@ -969,7 +969,7 @@ chromapp_server <- function(input, output, session) {
       sample_name <- iloc_sample()
     }
 
-    # integerate peak(s)
+    # integrate peak(s)
     update_RT(
       peaksobj(),
       compound_id = .get_compound_id_from_compound_trans(
@@ -1092,7 +1092,7 @@ chromapp_server <- function(input, output, session) {
     ) # move to integration tab
   })
 
-  ## Integerated RT plotly output ####
+  ## integrated RT plotly output ####
   # output$integration_RT_plotly <- renderPlotly({
   #   req(class(peaksobj()) == "ChromRes")
   #   req(input$sample_file_input)

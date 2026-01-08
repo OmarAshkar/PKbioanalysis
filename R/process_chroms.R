@@ -1,5 +1,5 @@
 process_chroms <- function(chrom_res) {
-  # reintegerate everything
+  # reintegrate everything
 
   # recalculate linearity
 

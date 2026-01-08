@@ -8,7 +8,7 @@ devtools::test(filter = "apps")
 
 devtools::test(filter = "chrom_parsers")
 devtools::test(filter = "chrom_res")
-devtools::test(filter = "integerate")
+devtools::test(filter = "integrate")
 devtools::test(filter = "update_RT")
 
 devtools::test(filter = "quant_object")

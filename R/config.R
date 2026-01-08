@@ -47,9 +47,9 @@ config_module_server <- function(id) {
           )
         ),
         numericInput(
-          ns("temprature"),
+          ns("temperature"),
           "AI Response Temperature",
-          value = get_pkbioanalysis_option("temprature"),
+          value = get_pkbioanalysis_option("temperature"),
           min = 0,
           max = 1,
           step = 0.1
@@ -73,7 +73,7 @@ config_module_server <- function(id) {
             base_url = input$base_url,
             api_key = input$api_key,
             model = input$model,
-            temprature = input$temprature
+            temperature = input$temperature
           )
           refresh_config()
           showNotification(

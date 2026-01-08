@@ -32,7 +32,7 @@ test_that("run linearity", {
 
 test_that("run linearity normalized", {
   # test that fails if no IS assigned
-  # test that normalize fails if not integerated IS
+  # test that normalize fails if not integrated IS
   # test it calculates on rel_response
 
   suppressWarnings({

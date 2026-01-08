@@ -2,7 +2,7 @@
 % Please edit documentation in R/peak_integerate.R
 \name{integrate}
 \alias{integrate}
-\title{Integerate Peak with trapzoid method given start and end}
+\title{integrate Peak with trapzoid method given start and end}
 \usage{
 integrate(chrom_res, compound_id, samples_ids, smoothed = TRUE)
 }
@@ -16,5 +16,5 @@ integrate(chrom_res, compound_id, samples_ids, smoothed = TRUE)
 \item{smoothed}{Logical. If TRUE, use smoothed chromatogram. Default is TRUE}
 }
 \description{
-Integerate Peak with trapzoid method given start and end
+integrate Peak with trapzoid method given start and end
 }

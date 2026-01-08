@@ -59,9 +59,9 @@ test_that("test integration status", {
 })
 
 
-test_that("integerate_all", {
+test_that("integrate_all", {
   is_integrated(main, sample_id = 6, compound_id = 20) |> expect_false()
-  x <- .integerate_all_slack(
+  x <- .integrate_all_slack(
     main,
     compound_id = 20,
     peak_start = 0.1,
@@ -95,8 +95,8 @@ test_that("extract_peak_bounds", {
 })
 
 
-test_that("integerate function", {
-  integerate(main, 1, NULL)
+test_that("integrate function", {
+  integrate(main, 1, NULL)
 })
 
 

@@ -27,7 +27,7 @@ refresh_config <- function() {
   PKbioanalysis_env$api_base_url <- config$api_base_url
   PKbioanalysis_env$api_key <- config$api_key
   PKbioanalysis_env$ai_model <- config$ai_model
-  PKbioanalysis_env$temprature <- config$temprature
+  PKbioanalysis_env$temperature <- config$temperature
 
   invisible()
 }
@@ -37,7 +37,7 @@ update_config <- function(
   base_url = NULL,
   api_key = NULL,
   model = NULL,
-  temprature = NULL
+  temperature = NULL
 ) {
   path <- config_path()
   configfile <- file.path(path, "config.yaml")
@@ -57,8 +57,8 @@ update_config <- function(
   if (!is.null(model)) {
     config$ai_model <- model
   }
-  if (!is.null(temprature)) {
-    config$temprature <- temprature
+  if (!is.null(temperature)) {
+    config$temperature <- temperature
   }
 
   yaml::write_yaml(config, configfile)

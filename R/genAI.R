@@ -4,7 +4,7 @@ chatfunc <- function() {
     model = get_pkbioanalysis_option("ai_model"),
     api_key = get_pkbioanalysis_option("api_key"),
     params = ellmer::params(
-      temperature = get_pkbioanalysis_option("temprature")
+      temperature = get_pkbioanalysis_option("temperature")
     ),
     system = "You are experienced bioanalytical researcher to interpret bioanalytical data according to best practices and regulatory guidelines. 
                 Give concise less than 200 words reports. Use titles, bullets and highlight important parts in bold. Mark risky items in red. Answer in markdown format. 
@@ -53,7 +53,7 @@ linearity_ai <- function(chat, quantres, compound_id) {
   chat$stream_async(prompt)
 }
 
-integerate_ai <- function(
+integrate_ai <- function(
   chrom_res,
   transition_id,
   sample_id,

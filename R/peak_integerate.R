@@ -20,7 +20,7 @@ sample_ids_handler <- function(samples_ids = NULL, chrom_res) {
 
 #' @title Update Peak Area, Observed RT, Peak Start, Peak End, Peak Height
 #' @description Update Peak Area, Observed RT, Peak Start, Peak End, Peak Height for a specific compound and sample
-#' Function is not vectorized and needs to be preceeded by `integerate()`
+#' Function is not vectorized and needs to be preceeded by `integrate()`
 #' @param chrom_res ChromRes object
 #' @param compound_id Compound ID
 #' @param sample_id Sample ID
@@ -103,8 +103,8 @@ update_peak_area_from_df <- function(chrom_res, df) {
   chrom_res
 }
 
-#' @title Integerate Peak with trapzoid method given start and end
-#' @description Integerate Peak with trapzoid method given start and end
+#' @title integrate Peak with trapzoid method given start and end
+#' @description integrate Peak with trapzoid method given start and end
 #' @param chrom_res ChromRes object. Must have observed RT values
 #' @param compound_id Compound ID
 #' @param samples_ids Sample ID. If NULL, all samples will be used
@@ -139,7 +139,7 @@ integrate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
   )
   stopifnot(all(sort(unique(filtered_peaks$sample_id)) == sort(samples_ids)))
 
-  # group intesities by sample_id and compound_id, then integerate
+  # group intesities by sample_id and compound_id, then integrate
   # here I need to join to be able to find the peakstart and end at peaktab
   integrated_peaks <-
     filtered_peaks |>
@@ -271,7 +271,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 
 # #' @title Add a compound to quantify
 # #' @description Add a compound to quantify. This function will add a compound to quantify in the chromatogram.
-# #' This function does not reintegerate the chromatogram automatically.
+# #' This function does not reintegrate the chromatogram automatically.
 # #' @param chrom_res ChromRes object
 # #' @param transition_id Transition ID
 # #' @param compound_name Compound name
@@ -522,7 +522,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 }
 
 
-.integerate_all_slack <- function(
+.integrate_all_slack <- function(
   chrom_res,
   compound_id,
   peak_start,
@@ -571,7 +571,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   )
 
   if (manual) {
-    # integerate obs_rt
+    # integrate obs_rt
     # update observed_peak_start, observed_peak_end
 
     # set area to NA
@@ -601,7 +601,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     # peaktab <- dplyr::rows_patch(peaktab, obs_rt, by = c("sample_id", "compound_id"))
   } else {
     x <- split(obs_rt, obs_rt$sample_id)
-    fp <- py$peak_integerate$find_peak2_d
+    fp <- py$peak_integrate$find_peak2_d
     append_peaktab <- fp(x, 1)
     # append_peaktab$compound_id <- compound_id_filter
 
@@ -620,12 +620,12 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   chrom_res@peaks <- peaktab
   chrom_res@compounds <- compounds
 
-  integerate(chrom_res, compound_id, samples_ids = NULL) # in all
+  integrate(chrom_res, compound_id, samples_ids = NULL) # in all
 }
 
-#' @title Integerate Next Peak
+#' @title integrate Next Peak
 #' @noRd
-.integerate_next_slack <- function(
+.integrate_next_slack <- function(
   chrom_res,
   compound_id,
   sample_id,
@@ -652,7 +652,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   }
 
   for (i in sample_id) {
-    chrom_res <- .integerate_individual_slack(
+    chrom_res <- .integrate_individual_slack(
       chrom_res,
       compound_id,
       i,
@@ -665,9 +665,9 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   chrom_res
 }
 
-#' @title Integerate single sample
+#' @title integrate single sample
 #' @noRd
-.integerate_individual_slack <- function(
+.integrate_individual_slack <- function(
   chrom_res,
   compound_id,
   sample_id,
@@ -709,7 +709,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   filtered_dat <- dat[as.character(samples_ids)]
 
   if (manual) {
-    # integerate obs_rt
+    # integrate obs_rt
     peaktab <- dplyr::rows_update(
       peaktab,
       data.frame(
@@ -738,7 +738,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     )
   } else {
     x <- split(obs_rt, obs_rt$sample_id)
-    fp <- py$peak_integerate$find_peak2_d
+    fp <- py$peak_integrate$find_peak2_d
     append_peaktab <- fp(x, 1)
     append_peaktab$compound_id <- compound_id_filter
 
@@ -755,7 +755,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 
   chrom_res@peaks <- peaktab
 
-  integerate(chrom_res, compound_id, samples_ids = samples_ids) # in all_next
+  integrate(chrom_res, compound_id, samples_ids = samples_ids) # in all_next
 }
 
 
@@ -864,7 +864,7 @@ update_RT <- function(
     }
 
     message("Updating RT for single compound and sample")
-    chrom_res <- .integerate_individual_slack(
+    chrom_res <- .integrate_individual_slack(
       chrom_res,
       compound_id_iloc,
       sample_id_iloc,
@@ -875,7 +875,7 @@ update_RT <- function(
   } else if (target == "all") {
     stopifnot(is.null(sample_id_iloc))
 
-    chrom_res <- .integerate_all_slack(
+    chrom_res <- .integrate_all_slack(
       chrom_res,
       compound_id_iloc,
       peak_start,
@@ -884,7 +884,7 @@ update_RT <- function(
     )
   } else if (target == "all_next") {
     stopifnot(!is.null(sample_id_iloc))
-    chrom_res <- .integerate_next_slack(
+    chrom_res <- .integrate_next_slack(
       chrom_res,
       compound_id_iloc,
       sample_id_iloc,
@@ -924,8 +924,8 @@ update_RT <- function(
   stopifnot(length(unique(dat$compound_id)) == 1)
 
   # find the highest prominenant peak in range
-  find_peak_py <- py$peak_integerate$find_peak2
-  integral_range <- py$peak_integerate$integral_range
+  find_peak_py <- py$peak_integrate$find_peak2
+  integral_range <- py$peak_integrate$integral_range
 
   if (all(is_smoothed(chrom_res))) {
     intensity_vec <- dat$smoothed_intensity

@@ -74,7 +74,7 @@ test_that("targetlynxXML_to_chrom_res", {
   )
   # check against DB
 
-  # reintegerate without peakfinding => areas/S&N
+  # reintegrate without peakfinding => areas/S&N
 })
 
 test_that("targetlynxCSV_to_chrom_res", {

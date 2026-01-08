@@ -58,7 +58,7 @@ test_that("update_RT", {
   expect_error(has_default_RT(dat, compound_id = 23), "Compound ID not found")
 
   # start integration and setting default
-  # update RT and integerate (update_RT)
+  # update RT and integrate (update_RT)
 
   ##################################################
 
@@ -96,8 +96,8 @@ test_that("next_RT_update", {
   ##################################################
   has_default_RT(main, compound_id = 1) |> expect_false()
 
-  # test integerate_all_slack_next logic
-  .integerate_next_slack(
+  # test integrate_all_slack_next logic
+  .integrate_next_slack(
     main,
     compound_id = 1,
     sample_id = "5",
@@ -107,7 +107,7 @@ test_that("next_RT_update", {
   ) |>
     expect_error("Expected RT not set")
 
-  x <- .integerate_all_slack(
+  x <- .integrate_all_slack(
     main,
     compound_id = 1,
     peak_start = 0.5,
@@ -115,7 +115,7 @@ test_that("next_RT_update", {
     manual = TRUE
   )
 
-  x <- .integerate_next_slack(
+  x <- .integrate_next_slack(
     x,
     compound_id = "C1",
     sample_id = 5,
@@ -179,8 +179,8 @@ test_that("next_RT_update", {
 
 test_that("individual_RT_update", {
   #################################################
-  # test integerate_single logic
-  .integerate_individual_slack(
+  # test integrate_single logic
+  .integrate_individual_slack(
     main,
     compound_id = 1,
     sample_id = 4,
@@ -190,7 +190,7 @@ test_that("individual_RT_update", {
   ) |>
     expect_error("Expected RT not set")
 
-  x <- .integerate_individual_slack(
+  x <- .integrate_individual_slack(
     x,
     compound_id = 1,
     sample_id = 5,

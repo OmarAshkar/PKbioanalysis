@@ -552,7 +552,7 @@ smooth_chrom <- function(chrom_res, filter = "mean", window = 2, iter = 2) {
   )
 
   # py <<- reticulate::import_from_path("inst", delay_load = T)
-  smooth_peaks <- py$peak_integerate$smooth_peaks
+  smooth_peaks <- py$peak_integrate$smooth_peaks
 
   dat <- lapply(dat, \(x) {
     x$smoothed <- x[[1]] |>
