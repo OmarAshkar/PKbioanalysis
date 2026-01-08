@@ -4,17 +4,17 @@
 \alias{read_experiment_results}
 \title{Read experiment results}
 \usage{
-read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx")
+read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx_xml")
 }
 \arguments{
 \item{x}{path to experiment results. See details}
 
 \item{drop_prefix}{logical. If TRUE, drop the prefix from the sample name}
 
-\item{vendor}{vendor name. Only "targetlynx"}
+\item{vendor}{vendor name. Currently only "targetlynx_xml" or "targetlynx_csv" are supported.}
 }
 \value{
-PeakRes object with the results of the experiment.
+QuantRes object with the results of the experiment.
 }
 \description{
 Read experiment results

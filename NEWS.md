@@ -19,10 +19,12 @@
 - 
 ## Version 0.5.0
 - Bioanalytical `group` adding allowing more systematic injection sequence creation. 
-- Support for plate generation from `plate_app` GUI 
+- Support for plate generation from `study_app` GUI 
 - plate generation undo support 
 - tree visualization for plate
 - Support for analytical blanks
 - Support for study registration
+- Injection sequence ending now has specific pattern of letter and number, for instance A2 means location A and repeated 2nd time.
+- Enhanced naming convention for reinjections and replicates.
 
  

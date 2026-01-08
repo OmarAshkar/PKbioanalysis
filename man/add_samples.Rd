@@ -4,58 +4,18 @@
 \alias{add_samples}
 \title{Add samples to plate with pharmacokinetic attributes}
 \usage{
-add_samples(
-  plate,
-  samples,
-  time = NA,
-  conc = NA,
-  dil = NA,
-  factor = NA,
-  dose = NA,
-  II = NA,
-  addl = NA,
-  dose_unit = "mg",
-  sex = NA,
-  route = NA,
-  cmt = NA,
-  prefix = "Sub",
-  group = NA,
-  time_unit = "h",
-  rep = 1
-)
+add_samples(plate, samples, prefix = NA, dil = NA, group = NA, rep = 1)
 }
 \arguments{
 \item{plate}{PlateObj}
 
 \item{samples}{A vector representing samples names. Must be unique.}
 
-\item{time}{A vector representing time points.}
-
-\item{conc}{A vector representing concentration. Usefull in case of In Vitro Studies. Must be same length as samples.}
-
-\item{dil}{A vector representing dilution factor. Must be same length as samples.}
-
-\item{factor}{A vector representing factor. Must be same length as samples.}
-
-\item{dose}{A vector representing dose. Must be same length as samples.}
-
-\item{II}{A vector representing inter-dose interval. Must be same length as samples.}
-
-\item{addl}{A vector representing additional doses. Must be same length as samples.}
-
-\item{dose_unit}{A string representing dose unit. Default is "mg".}
-
-\item{sex}{A vector representing subject sex if applicable. Must be same length as samples.}
-
-\item{route}{A vector representing route of administration. Must be same length as samples.}
-
-\item{cmt}{A vector representing compartment. Must be same length as samples.}
-
 \item{prefix}{A prefix to be added before samples names. Default is "Sub".}
 
-\item{group}{A vector representing samples' bioanalytical group. Must be same length as samples.}
+\item{dil}{A vector representing samples' dilution factor. Must be same length as samples.}
 
-\item{time_unit}{A string representing time unit. Default is "h". Can be "h", "min" or "sec".}
+\item{group}{A vector representing samples' bioanalytical group. Must be same length as samples.}
 
 \item{rep}{Number of technical replicates for each combination. Default is 1.}
 }
@@ -67,7 +27,7 @@ Add samples to plate with pharmacokinetic attributes
 }
 \details{
 final name will be of form. Prefix-SampleName-Time-Concentration-Factor
-samples must be a unique vector and did not exist in the plate before. 
+samples must be a unique vector and did not exist in the plate before.
 Time is either a vector or a single value. If it is a vector, it will be repeated for each sample.
 Conc, dil, factor and dose are either a vector or a single value. If it is a vector, it must be the corrosponding length of samples.
 
@@ -78,15 +38,4 @@ Factor is an arbitrary factor used in the design like food vs fasted, healthy vs
 \examples{
 plate <- generate_96() |>
  add_samples(paste0("T", 1:12))
-
-data(Indometh)
-plate <- generate_96() |> 
- add_samples(
-   samples = Indometh$Subject, 
-   time = Indometh$time, 
-   dose = "100mg",
-   route = "IV",
-   cmt = "plasma")
-plot(plate, color = "samples")
-plot(plate, color = "time")
 }

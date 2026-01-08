@@ -1,11 +1,10 @@
-process_chroms <- function(chrom_res){
-    
-    # reintegerate everything 
+process_chroms <- function(chrom_res) {
+  # reintegrate everything
 
-    # recalculate linearity 
+  # recalculate linearity
 
-    # recalculate suitability 
+  # recalculate suitability
 
-    validObject(chrom_res)
-    chrom_res
+  validObject(chrom_res)
+  chrom_res
 }

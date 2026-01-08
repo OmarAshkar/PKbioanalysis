@@ -29,6 +29,12 @@ authors:
 development:
   mode: auto
 reference:
+- title: Installations 
+  contents: 
+  - install_py_dep
+- title: Study Design 
+  contents:
+  - create_new_study
 - title: Plate Design
 - subtitle: Generate Plate
   contents: generate_96
@@ -40,7 +46,8 @@ reference:
   - add_QC
   - add_DQC
   - add_samples
-  - add_samples_c
+  - add_samples_db
+  - add_samples_db2 
   - add_suitability
 - subtitle: Plate Filling Orientation
   contents: fill_scheme
@@ -56,8 +63,8 @@ reference:
 - subtitle: Plate and Study Inspection
   contents:
   - plot.PlateObj
-  - plot_design
   - plate_metadata
+  - plate_tree
 - subtitle: Plate Registration
   contents: register_plate
 - title: Injection Sequences
@@ -67,7 +74,7 @@ reference:
   - write_injec_seq
   - download_sample_list
 - title: UI for Injection Sequence and Dilution Scheme
-  contents: plate_app
+  contents: study_app
 - title: Chromatogram Analysis
   contents:
   - read_chrom
@@ -81,6 +88,40 @@ reference:
   - is_integrated
   - read_experiment_results 
   - smooth_chrom
-  - precision
+  - update_RT
+  - export_run
+  - export_integration
+  - extract_peak_bounds
+  - check_chrom_cmpds
+  - chrom_app
+  - area_report.PeakRes
+  - integrate
+  - plot_peak_areas.PeakRes
+  - plot_RT.ChromRes 
+  - plot_RT.PeakRes
+  - run_summary
+
+- title: Quantification
+- subtitle: Application
+  contents: 
+  - quant_app 
+- subtitle: Suitability
+  contents:
+  - config_suitability
+- subtitle: Method Precision
+  contents:
+  - precision_per_vial 
+  - prefilter_precision_data
+  - calc_var_summary
+  - estim_lloq
+  - fit_var
+  - formated_print
+  - cv
+  - plot_var_pattern
+  - estim_dil_limit
+- subtitle: linearity
+  contents:
+  - reverse_predict
+  - response_to_conc
 
 

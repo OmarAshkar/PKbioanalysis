@@ -10,7 +10,6 @@ d <- read.csv(system.file("extdata", "GU_1.csv", package = "PKbioanalysis"))
 
 ```{r}
 head(d)
-
 ```
 
 ```{r}
@@ -28,7 +27,7 @@ only_qc
 ```
 
 ```{r}
-plot_res_rel(only_qc)
+plot_var_pattern(only_qc)
 ```
 
 
@@ -41,18 +40,17 @@ formated_print(fit)
 ```
 
 
-## Estimated dilution limit 
-Divide additive/proportional error
-
-```{r}
-0.016/0.032
-```
-
 ## Estimate LLOQ
 ```{r}
-0.016/0.2
-
-estim_lloq(add_err = 0.016, prop_err = 0.032, cv = 0.08 )
+estim_lloq(add_err = 0.016, prop_err = 0.032, cv_lloq = 0.1 , cv_lqc = 0.05)
 ```
+
+## Estimated dilution limit 
+Divide additive/proportional error
+```{r}
+estim_dil_limit(add_err = 0.016, prop_err = 0.032, lloq = 0.2)
+```
+
+
 
 

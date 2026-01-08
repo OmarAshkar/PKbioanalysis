@@ -49,7 +49,7 @@ The first part of the plate ID is unique to the plate itself, while the second p
 ![Plate Database](https://raw.githubusercontent.com/OmarAshkar/PKbioanalysis_data/main/man/figures/plate_db.png)
 
 
-To find all previous plate, you can use `plate_app()` to find it and retrieve it for reuse.
+To find all previous plate, you can use `study_app()` to find it and retrieve it for reuse.
 
 Calibration study examples
 
@@ -64,7 +64,7 @@ plate <- generate_96("Calibration study") |>
     add_DB() |> 
     add_blank(analyte = TRUE, IS = FALSE) |> # CS1IS0
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200, 500)) |>
-    add_QC(2, 180 , 400) 
+    add_QC(2, 180 , 400, group = "test") 
 
 plot(plate, label_size = 1)
 ```
@@ -96,9 +96,9 @@ After you are satisfied with the design, you can register the plates in the data
 plate <- register_plate(plate)
 ```
 
-Finally, you can use `plate_app()` to further inspect the plates or to generate injection sequences and dilution schemes.
+Finally, you can use `study_app()` to further inspect the plates or to generate injection sequences and dilution schemes.
 ```{r eval = FALSE}
-plate_app()
+study_app()
 ```
 
 ## Adding samples with pharmackinetic information
@@ -126,18 +126,16 @@ plot(plate)
 plate <- generate_96()
 
 plate <- plate |> 
-    add_samples("1", dose = "20mg", factor = "M", time = 1) |>
-    add_samples("2", dose = "30mg", factor = "F", time = 1) |>
-    add_samples("3", dose = "50mg", factor = "M", time = 1) 
+    add_samples(samples = c("subject1", "subject2", "subject3"))
 
-plot(plate, color = "factor")
+plot(plate)
 ```
 
 ### Adding samples from external spreadsheet by pharmacokinetic data
 
 In this example, will will pass pharmacokinetic data to `add_samples()`. 
 In this case, we don't need to repeat time for each sample, hence we set `vtime = TRUE`. 
-```{r}
+```{r eval = FALSE}
 data(Indometh)
 plate <- generate_96() |> 
     add_samples(samples = Indometh$Subject, 
@@ -148,7 +146,7 @@ plot(plate, color = "samples")
 
 
 Time propagated automatically for each subject. 
-```{r}
+```{r eval = FALSE}
 plate <- generate_96() |> 
     # add_samples_c(c("subject1", "subject2"), time = c(0, 10, 30, 60, 120), factor = "Male") |>
     add_samples("subject1", time = c(0, 10, 30, 60, 120), 
@@ -166,7 +164,7 @@ plot(plate, color = "conc")
 
 If you have a cross-over study, you can use `add_samples_c()` to create the full design quickly.
 Here samples are not uniquely defined, but you can use prefix to prepend the sample name.
-```{r}
+```{r eval = FALSE}
 plate <- generate_96() |> 
     add_samples_c(4, time = c(0, 10, 30, 60, 120), 
          factor = c("Fed", "Fast"), prefix = "subject") 
@@ -196,7 +194,7 @@ plate2 <- generate_96("Dilution integerity") |>
   fill_scheme("h", lbound = 1, rbound = 8) |>
   add_cs_curve(c(1, 4, 6, 8, 15, 75, 150, 200)) |> 
   fill_scheme("h", tbound = "G", bbound = "H", lbound = 1, rbound = 8) |> 
-  add_QC(3, 95, 190, reg = T, n_qc = 4, qc_serial = F) |>
+  add_QC(3, 95, 190, reg = T, n_qc = 4, qc_serial = F, group = "test") |>
   fill_scheme("v", lbound = 9, rbound = 12, tbound = "F", bbound = "H") |>
   add_DQC(conc = 1000, 10, rep = 6) |>
   add_DQC(conc = 1000, 100, rep = 6) 
@@ -221,6 +219,8 @@ plates <- make_metabolic_study(
 
 ```{r}
 length(plates)
+```
+```{r eval = FALSE}
 plot(plates[[1]], color = "samples", label_size = 1)
 plot(plates[[2]], color = "samples", label_size = 1)
 plot(plates[[3]], color = "samples", label_size = 1)
@@ -228,7 +228,6 @@ plot(plates[[4]], color = "samples", label_size = 1)
 plot(plates[[5]], color = "samples", label_size = 1)
 plot(plates[[6]], color = "samples", label_size = 1)
 ```
-
 
 
 ```{r eval = FALSE}

@@ -33,10 +33,12 @@ plot_chrom(
 This function plots chromatograms for selected transitions per sample.
 }
 \examples{
+\dontrun{
 path <- system.file("extdata", "waters_raw_ex", package="PKbioanalysis")
-main <- read_chrom(path)
+main <- read_chrom(path, method = 1)
 plot_chrom(main, ncol = 2, transitions_ids = c(18,19,20), sample_id = 3)
 plot_chrom(main, ncol = 3, transitions_ids = c(18,19,20), sample_id = 3)
 plot_chrom(main, ncol = 1, transitions_ids = c(18,19,20), sample_id = 3)
 plot_chrom(main, ncol = NULL, transitions_ids = c(18,19,20), sample_id = 3)
+}
 }

@@ -34,13 +34,13 @@ x <- generate_96("Dilution integerity") |>
   fill_scheme("h", lbound = 4, rbound = 11) |>
   add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200), rep =3) |> 
   fill_scheme("h", tbound = "D", bbound = "E", lbound = 1, rbound = 12) |>
-  add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F) |>
+  add_QC(3, 90, 180, reg = T, n_qc = 6, qc_serial = F, group = "DrugA") |>
   fill_scheme("h", lbound = 1, rbound = 4) |>
   add_DQC(conc = 1000, 100, rep = 6) |> 
   fill_scheme("h", lbound = 1, rbound = 8) |>
   add_cs_curve(c(1, 4, 6, 8, 15, 75, 150, 200)) |> 
   fill_scheme("h", tbound = "G", bbound = "H", lbound = 1, rbound = 8) |> 
-  add_QC(3, 95, 190, reg = T, n_qc = 4, qc_serial = F) |>
+  add_QC(3, 95, 190, reg = T, n_qc = 4, qc_serial = F, group = "DrugB") |>
   fill_scheme("v", lbound = 9, rbound = 12, tbound = "F", bbound = "H") |>
   add_DQC(conc = 1000, 10, rep = 6) |>
   add_DQC(conc = 1000, 100, rep = 6) 
@@ -58,10 +58,10 @@ register_plate(x)
 ```
 
 
-Accessing dilution scheme generation is done through the `plate_app()` function, which is same for historical plate navigation and generation of injection sequence.
+Accessing dilution scheme generation is done through the `study_app()` function, which is same for historical plate navigation and generation of injection sequence.
 
 ```{r eval=FALSE}
-plate_app()
+study_app()
 ```
 
 Make sure to select the plate you want to generate dilution scheme for. The last registered plate will be selected by default.

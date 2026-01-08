@@ -7,6 +7,8 @@
 smooth_chrom(chrom_res, filter = "mean", window = 2, iter = 2)
 }
 \arguments{
+\item{chrom_res}{ChromRes object}
+
 \item{filter}{Filter to use. Options are "mean", "median", "savgol", "gaussian"}
 
 \item{window}{Window size for the filter}

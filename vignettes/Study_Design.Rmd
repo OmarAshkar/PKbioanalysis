@@ -1,9 +1,9 @@
 ---
-title: "Study Design Review"
+title: "Study Design and Management"
 author: "Omar Elashkar"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Study Design Review}
+  %\VignetteIndexEntry{Plate Design and Management}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,115 +11,28 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>", 
+  comment = "#>",
   fig.width = 15,
-  fig.height = 10, 
-  # use toc 
-  toc = TRUE
-
+  fig.height = 10
 )
 ```
 
-Pharmacokinetic studies require careful planning and design to ensure that the data collected is suitable for analysis. There are few common studies with primary focus on PK such as : 
+In our proposed workflow, we put a lot of emphasis on the plate design and management.
+The plate will carry all information needed not only for bioanalytical purposes, but also the pharmacokinetic information needed for the study.
 
 
 ```{r}
 library(PKbioanalysis)
-library(rxode2)
-```
-
-
-## Single Ascending Dose (SAD)
-SAD used for assessing MTD, clinical PK and dose proportionality. Each dose level is tested in different cohort of subjects.
-
-
-```{r}
-ev <- et(
-  id = 1,
-  amt = c(100, 200, 300, 400, 500), 
-  ii = 24, 
-  addl = 4, 
-  cmt = "dose", 
-  evid = 1, time = 2, arm = 1) |> View()
-
-
-```
-
-```{r}
-sample_times <- seq(0, 120, by = 30) # Sample times in minutes
-generate_96() |> 
-  add_samples(
-    samples = 1:2,
-    dose = "",
-    sex = "M",
-    time = sample_times) |>
-  add_samples(
-    samples = 3:7,
-    dose = "placebo",
-    sex = "M",
-    time = sample_times) |>
-  add_samples(
-    samples = 8:9,
-    dose = "placebo",
-    sex = "M",
-    time = sample_times) |>
-  add_samples(
-    samples = 10:15,
-    dose = "placebo",
-    sex = "M",
-    time = sample_times) |>
-    plot()
-
-```
-
-
-## Multiple Ascending Dose (MAD)
-MAD studies are used for steady state PK, accumulation, and long-term safety.
-## Bioavailability Study 
-## Bioequivalence Study
-- Trt A caps vs trt B liquid formulation
-### Parallel Design
-### Randomized Crossover Study
-## Drug-Drug Interaction Study
-## Food Effect Study
-## Hepatic Impairment Study
-## Renal Impairment Study
-
-```{r}
-study <- generate_96() |> 
-    add_samples(1:5, dose = "A", factor = "M", time = 1:5*30) |>
-    add_samples(6:10, dose = "A", factor = "F", time = 1:5*30) |>
-    add_samples(11:15, dose = "B", factor = "M", time = 1:5*30) |>
-    add_samples(16:18, dose = "B", factor = "F", time = 1:3*30) 
-
-```
-
-```{r}
-plot(study)
-```
-
-```{r}
-plot_design(study)
 ```
 
 
 ```{r}
-data(Indometh)
-plate <- generate_96() |> 
-  add_samples(
-    samples = Indometh$Subject, 
-    time = Indometh$time, 
-    dose = "100mg",
-    route = "IV",
-    cmt = "plasma",
-    vtime = TRUE)
-```
-
-```{r}
-plot(plate, color = "samples")
-plot(plate, color = "time")
-```
-
-```{r}
-plot_design(plate)
+newstudy <- data.frame(
+  type = "SD",
+  pkstudy = TRUE,
+  title = "New Study",
+  description = "Description of the new study",
+  subject_type = "Human"
+)
+new_study <- create_new_study(newstudy)
 ```
