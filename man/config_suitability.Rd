@@ -14,8 +14,6 @@ config_suitability(quantres, vial_pos, start = NULL, end = NULL)
 \item{start}{Start position (1-based index) of runs to include. If NULL, starts from the first run.}
 
 \item{end}{End position (1-based index) of runs to include. If NULL, ends at the last run.}
-
-\item{compound_id}{Compound ID to use for suitability. If NULL, all compounds are used.}
 }
 \value{
 Updated QuantRes object with suitability configuration.

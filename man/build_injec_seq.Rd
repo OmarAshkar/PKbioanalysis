@@ -91,6 +91,8 @@ build_injec_seq(
 
 \item{repeat_analyte}{number of re-injections for unknown samples. Default is 1}
 
+\item{n_explore}{A number of exploratory samples to be injected at the top of the entire sequence. Default is 0}
+
 \item{blank_after_top_conc}{If TRUE, adding blank after high concentrations of standards and QCS.}
 
 \item{blank_at_end}{If True, adding blank at the end of queue.}
@@ -108,8 +110,6 @@ build_injec_seq(
 \item{tray}{Location in sample manager.}
 
 \item{conc_df}{data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.}
-
-\item{n_explore.}{A number of exploratory samples to be injected at the top of the entire sequence. Default is 0}
 }
 \value{
 InjecListObj object

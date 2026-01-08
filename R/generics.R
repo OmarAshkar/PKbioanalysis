@@ -13,7 +13,7 @@
 #' @param descr Run description.
 #' @param suffix string to be added to the end of the filename. Default is "1".
 #' @param prefix string at the beginning of the filename. Default is today's date.
-#' @param n_explore. A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
+#' @param n_explore A number of exploratory samples to be injected at the top of the entire sequence. Default is 0
 #' @param tray Location in sample manager.
 #' @param conc_df data.frame matching compound name to a scaling factor. Maximum 20 compounds allowed.
 #'
@@ -62,8 +62,8 @@ setGeneric("register_plate", function(plate) standardGeneric("register_plate"))
 
 #' Check if peak was integrated for a specific compound
 #' @param chrom_res ChromRes or ChromResBase object
-#' @param sample_id Sample ID. If NULL, all samples are checked
 #' @param compound_id Compound ID
+#' @param sample_id Sample ID. If NULL, all samples are checked
 #' @return logical
 #' @export
 #' @examples
@@ -128,9 +128,11 @@ setGeneric(
 
 
 #' Filter data
-#' @param x. Dataframe or QuantRes Object
-#' @param type. QC, DQC, or Standard
-#' @param cutoff. Accuracy cutoff. 20\% by default
+#' @param x Dataframe or QuantRes Object
+#' @param type QC, DQC, or Standard
+#' @param acc_cutoff Accuracy cutoff. 20\% by default 
+#' @param dev_cutoff Deviation cutoff. 20\% by default
+#' @param compound_id Compound ID to filter. If NULL, all compounds are considered
 #' @return Filtered data
 #' @author Omar I. Elashkar
 #' @export

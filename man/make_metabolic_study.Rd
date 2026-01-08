@@ -14,9 +14,13 @@ make_metabolic_study(
 )
 }
 \arguments{
+\item{study}{study name}
+
 \item{cmpds}{vector of compounds, including any standards}
 
 \item{time_points}{vector of time points}
+
+\item{dose}{dose amount. Default is NA}
 
 \item{n_NAD}{number of NAD positive samples. Default is 3}
 

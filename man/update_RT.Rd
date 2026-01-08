@@ -18,6 +18,10 @@ update_RT(
 \arguments{
 \item{chrom_res}{ChromRes object}
 
+\item{compound_id}{Compound ID}
+
+\item{sample_id}{Sample ID}
+
 \item{peak_start}{Minimum RT value}
 
 \item{peak_end}{Maximum RT value}
@@ -27,12 +31,6 @@ update_RT(
 \item{target}{Target of update. Options are "single", "all", "all_next"}
 
 \item{force}{Force update if previous peak exists. Default is FALSE}
-
-\item{compound}{Compound ID}
-
-\item{sample}{Sample ID}
-
-\item{cutoff}{Cutoff value for peak height}
 }
 \description{
 Update RT for either all compounds, all next samples, or single compound and sample

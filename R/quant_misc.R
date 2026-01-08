@@ -13,7 +13,6 @@
   }
 }
 
-#' @import dplyr
 .filter_cmpd <- function(peaks_res, cmpd_number) {
   checkmate::assertClass(peaks_res, "PeakRes")
   checkmate::assertNumeric(cmpd_number, null.ok = T)
@@ -25,17 +24,14 @@
 }
 
 #' @title Get Summary of an object
-#' @param object An object to summarize
+#' @param object A PeakRes object
 #' @export
 run_summary <- function(object) {
   UseMethod("run_summary")
 }
 
-
-#' @title Get Summary of PeakRes object
-#' @param peaks_res PeakRes object
-#' @import checkmate
-#' @export
+#'@rdname run_summary
+#'@export
 run_summary.PeakRes <- function(object) {
   checkmate::assertClass(object, "PeakRes")
 
@@ -94,6 +90,7 @@ export_run.PeakRes <- function(peaks_res, path) {
 #' @param peaks_res PeakRes object
 #' @param normalize logical. If TRUE, normalize the peak area by the IS area.
 #' @param blanks logical. If TRUE, plot blanks
+#' @param compounds numeric vector of compound numbers to include. If NULL, include all compounds
 #' @param analytes logical. If TRUE, plot analytes
 #' @param standards logical. If TRUE, plot standards
 #' @param QCs logical. If TRUE, plot QCs
@@ -104,13 +101,12 @@ export_run.PeakRes <- function(peaks_res, path) {
 plot_peak_areas.PeakRes <- function(
   peaks_res,
   normalize = TRUE,
+  blanks = TRUE,
   compounds = NULL,
-  blanks = T,
-  analytes = T,
-  standards = T,
-  QCs = T,
-  type = "bar",
-  ...
+  analytes = TRUE,
+  standards = TRUE,
+  QCs = TRUE,
+  type = "bar"
 ) {
   checkmate::assertClass(peaks_res, "PeakRes")
   checkmate::assertLogical(blanks)
@@ -143,17 +139,17 @@ plot_peak_areas.PeakRes <- function(
   if (type == "bar") {
     res <- ggplot(
       y,
-      aes(y = sample_name, x = !!sym(yname), fill = sample_type)
+      aes(y = .data$sample_name, x = !!sym(yname), fill = .data$sample_type)
     ) +
       geom_bar(stat = "identity", position = "dodge") +
-      facet_wrap(~cmpd_name, scale = "free")
+      facet_wrap(~cmpd_name, scales = "free")
   }
 
   if (type == "line") {
     res <- ggplot(
       y,
       aes(
-        x = sample_name,
+        x = .data$sample_name,
         y = !!sym(yname),
         group = interaction(.data$cmpd_name, .data$sample_type),
         color = .data$cmpd_name,
@@ -162,7 +158,7 @@ plot_peak_areas.PeakRes <- function(
     ) +
       geom_line(size = 1.1) +
       geom_point(size = 2) +
-      # facet_wrap(cmpd_name~sample_type, scale = "free") +
+      # facet_wrap(cmpd_name~sample_type, scales = "free") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
   }
 
@@ -171,19 +167,25 @@ plot_peak_areas.PeakRes <- function(
 
 
 #' @title Plot RT
-#' @description Plot RT
 #' @param peaks_res PeakRes object
+#' @param normalize logical. If TRUE, normalize the peak area by the IS area.
+#' @param blanks logical. If TRUE, plot blanks
+#' @param analytes logical. If TRUE, plot analytes
+#' @param standards logical. If TRUE, plot standards
+#' @param QCs logical. If TRUE, plot QCs
+#' @param facet logical. If TRUE, facet by compound name
+#' @param compounds numeric vector of compound numbers to include. If NULL, include all compounds
 #' @importFrom ggplot2 ggplot geom_point geom_errorbarh facet_wrap aes
 #' @return ggplot2 object
 #' @export
 plot_RT.PeakRes <- function(
   peaks_res,
-  normalize = T,
-  blanks = T,
-  analytes = T,
-  standards = T,
-  QCs = T,
-  facet = F,
+  normalize = TRUE,
+  blanks = TRUE,
+  analytes = TRUE,
+  standards = TRUE,
+  QCs = TRUE,
+  facet = FALSE,
   compounds = NULL
 ) {
   checkmate::assertClass(peaks_res, "PeakRes")
@@ -217,12 +219,13 @@ plot_RT.PeakRes <- function(
       ~ if_else(.x == 0, NA, .x)
     ))
 
-  res <- (ggplot(y, aes(y = sample_name, x = PEAK_foundrt, color = .data$cmpd_name)) +
+  res <- (ggplot(y, 
+    aes(y = .data$sample_name, x = .data$PEAK_foundrt, color = .data$cmpd_name)) +
     geom_point(aes(size = .data$PEAK_area)) +
     geom_errorbarh(aes(xmin = .data$PEAK_startrt, xmax = .data$PEAK_endrt), width = 0.2))
 
   if (facet) {
-    res <- res + facet_wrap(~cmpd_name, scale = "free")
+    res <- res + facet_wrap(~cmpd_name, scales = "free")
   }
 
   res
@@ -255,8 +258,8 @@ precision_per_vial <- function(peaks_res, suitability = FALSE) {
       ISPEAK_area = case_when(is.na(.data$ISPEAK_area) ~ 0.01, .default = .data$ISPEAK_area)
     ) |>
     group_by(.data$sample_vial, .data$sample_type) |>
-    summarize(percision = percision(.data$ISPEAK_area, "CV", percent = T)) |>
-    ggplot(aes(x = .data$sample_vial, y = .data$percision, fill = .data$sample_type)) +
+    summarize(precision_val = cv(.data$ISPEAK_area, percent = T)) |>
+    ggplot(aes(x = .data$sample_vial, y = .data$precision_val, fill = .data$sample_type)) +
     geom_bar(stat = "identity", position = "dodge")
 }
 
@@ -274,10 +277,10 @@ precision_per_vial <- function(peaks_res, suitability = FALSE) {
 area_report.PeakRes <- function(
   peaks_res,
   normalize = TRUE,
-  blanks = T,
-  analytes = T,
-  standards = T,
-  QCs = T,
+  blanks = TRUE,
+  analytes = TRUE,
+  standards = TRUE,
+  QCs = TRUE,
   compounds = NULL
 ) {
   checkmate::assertClass(peaks_res, "PeakRes")

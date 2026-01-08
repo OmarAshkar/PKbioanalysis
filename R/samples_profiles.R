@@ -106,7 +106,7 @@ export_pk_profiles <- function(format = "nonmem") {}
 nca_table <- function(chrom_res) {
   # filter pk_metadata for only available data #FIXME clean up
   df <- chrom_res@pk_metadata[
-    lapply(main2@pk_metadata, \(x) !is.null(x) & nrow(x) > 0) |>
+    lapply(chrom_res@pk_metadata, \(x) !is.null(x) & nrow(x) > 0) |>
       unlist() |>
       names()
   ] |>

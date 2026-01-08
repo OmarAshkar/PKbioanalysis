@@ -203,7 +203,7 @@
               as.character()
           ) |>
           dplyr::mutate(
-            qualifier = ifelse(is.na(qualifier), FALSE, qualifier)
+            qualifier = ifelse(is.na(.data$qualifier), FALSE, .data$qualifier)
           ) |>
           dplyr::select(
             "compound_id",

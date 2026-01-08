@@ -1168,23 +1168,25 @@ plot.PlateObj <- function(
         )
       },
       if (layoutOverlay & scheme == 'h') {
+        y_positions <- (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5
         ggplot2::annotate(
           'segment',
-          x = lbound,
-          y = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5,
-          xend = rbound,
-          yend = (which(LETTERS == tbound):which(LETTERS == bbound)) - 0.5,
+          x = rep(lbound, length(y_positions)),
+          y = y_positions,
+          xend = rep(rbound, length(y_positions)),
+          yend = y_positions,
           linetype = "dashed",
           arrow = ggplot2::arrow(type = "open", length = unit(0.2, "inches"))
         )
       },
       if (layoutOverlay & scheme == 'v') {
+        x_positions <- (lbound:rbound) - 0.5
         ggplot2::annotate(
           'segment',
-          x = (lbound:rbound) - 0.5,
-          y = (which(LETTERS == tbound)) - 0.5,
-          xend = (lbound:rbound) - 0.5,
-          yend = (which(LETTERS == bbound)) - 0.5,
+          x = x_positions,
+          y = rep((which(LETTERS == tbound)) - 0.5, length(x_positions)),
+          xend = x_positions,
+          yend = rep((which(LETTERS == bbound)) - 0.5, length(x_positions)),
           linetype = "dashed",
           arrow = ggplot2::arrow(type = "open", length = unit(0.2, "inches"))
         )

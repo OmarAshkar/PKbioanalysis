@@ -7,7 +7,7 @@ get_sample_names <- function(chrom_res) {
   # sample_name <- lapply(dat, \(x) data.frame(sample = x[[2]]$sample, sample_id = x[[2]]$sample_id))
   # do.call(rbind, sample_name)
   sample_name <- chrom_res@peaks |>
-    dplyr::select(filename, sample_id) |>
+    dplyr::select("filename", "sample_id") |>
     dplyr::distinct() |>
     dplyr::rename(sample = "filename", sample_id = "sample_id")
   sample_name
@@ -80,7 +80,7 @@ update_IS <- function(chrom_res, compound_id, standard_id) {
   }
   chrom_res@compounds <- chrom_res@compounds |>
     dplyr::mutate(
-      IS_id = ifelse(.data$compound_id == !!compound_id, standard_id, IS_id)
+      IS_id = ifelse(.data$compound_id == !!compound_id, standard_id, .data$IS_id)
     )
   chrom_res
 }
@@ -102,7 +102,7 @@ get_cmpd_IS <- function(chrom_res, compound_id) {
 
   is_id <- chrom_res@compounds |>
     dplyr::filter(.data$compound_id == !!compound_id) |>
-    pull("IS_id")
+    dplyr::pull("IS_id")
   is_id # returns NA if no IS is set
 }
 
@@ -341,4 +341,8 @@ update_metadata <- function(chrom_res, metadata, ignore_unmatched = TRUE) {
 
   validObject(chrom_res)
   chrom_res
+}
+
+list_compound_names <- function(chrom_res) {
+  chrom_res@compounds$compound
 }

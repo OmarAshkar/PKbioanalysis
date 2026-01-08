@@ -13,7 +13,7 @@
       "observed_peak_end",
       "observed_rt"
     ) |>
-    dplyr::mutate(sample_id = as.numeric(sample_id)) |>
+    dplyr::mutate(sample_id = as.numeric(.data$sample_id)) |>
     # get compount name
     dplyr::left_join(
       chrom_res@compounds |> dplyr::select("compound_id", "compound", "transition_id"),

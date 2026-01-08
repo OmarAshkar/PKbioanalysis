@@ -6,9 +6,6 @@
 \usage{
 quant_app()
 }
-\arguments{
-\item{quantres}{A QuantRes object}
-}
 \description{
 This function creates a shiny app for quantification after peak integeration
 }

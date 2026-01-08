@@ -2,7 +2,6 @@
 #' @description Configure suitability runs by specifying vial position and range of runs to include.
 #' @param quantres QuantRes object
 #' @param vial_pos Vial position to use for suitability (e.g., "2:H,9")
-#' @param compound_id Compound ID to use for suitability. If NULL, all compounds are used.
 #' @param start Start position (1-based index) of runs to include. If NULL, starts from the first run.
 #' @param end End position (1-based index) of runs to include. If NULL, ends at the last run.
 #' @return Updated QuantRes object with suitability configuration.
@@ -109,7 +108,7 @@ plot_suitability <- function(quantres) {
     ggplot2::labs(title = "RSD Plot", x = "Compound", y = "RSD%") +
     ggplot2::theme_minimal() +
     ggplot2::geom_label(
-      aes(label = paste0(round(RSD, 2), "%")),
+      aes(label = paste0(round(.data$RSD, 2), "%")),
       fill = "white",
       position = ggplot2::position_stack(vjust = 0.5)
     ) +
@@ -131,9 +130,9 @@ plot_suitability_trend <- function(quantres) {
     rsd_list[[i]] <- new_df
   }
   rsd_values <- do.call(rbind, rsd_list) |>
-    tidyr::pivot_longer(cols = -n, names_to = "compound", values_to = "RSD")
+    tidyr::pivot_longer(cols = -"n", names_to = "compound", values_to = "RSD")
 
-  ggplot2::ggplot(rsd_values, aes(x = n, y = RSD, color = compound)) +
+  ggplot2::ggplot(rsd_values, aes(x = .data$n, y = .data$RSD, color = .data$compound)) +
     ggplot2::geom_line() +
     ggplot2::geom_point() +
     ggplot2::facet_wrap(~compound, scales = "free") +

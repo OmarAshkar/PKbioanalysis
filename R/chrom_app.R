@@ -28,7 +28,7 @@ chrom_data_load_server <- function(id, peaksobj) {
       tryCatch(
         {
           # progress bar
-          progress <- Progress$new(session, min = 1, max = 2)
+          progress <- shiny::Progress$new(session, min = 1, max = 2)
           progress$set(
             message = "Loading Data",
             detail = "This may take a while..."
@@ -57,13 +57,13 @@ chrom_data_load_server <- function(id, peaksobj) {
 chromapp_ui <- function() {
   bslib::page_navbar(
     title = "Chromatography App",
-    shinyjs::useShinyjs(),
+    header = shinyjs::useShinyjs(),
     bslib::nav_panel(
       "Load Chromatography Data",
       chrom_data_load_ui("chrom_data_load")
     ),
     bslib::nav_panel(
-      "Dashboard",
+      title = "Dashboard",
       bslib::navset_card_tab(
         nav_panel("Summary", verbatimTextOutput("run_summary")),
         nav_panel(
@@ -630,7 +630,7 @@ chromapp_server <- function(input, output, session) {
     samples_df <- samples_df() |>
       dplyr::filter(sample == input$sample_file_input)
     samples_df |>
-      pull(sample_id) |>
+      pull("sample_id") |>
       as.numeric() |>
       iloc_sample()
     updateSelectInput(
@@ -646,7 +646,7 @@ chromapp_server <- function(input, output, session) {
     samples_df <- samples_df() |>
       dplyr::filter(sample == input$sample_id_smooth)
     samples_df |>
-      pull(sample_id) |>
+      pull("sample_id") |>
       as.numeric() |>
       iloc_sample()
     updateSelectInput(
@@ -755,7 +755,7 @@ chromapp_server <- function(input, output, session) {
   output$transition_id <- renderText({
     req(input$compound_trans_input)
 
-    paste0("Transition Name: ", current_trans_name())
+    paste0("Transition Name: ", current_trans_id())
   })
 
   ## renderUI: update compound list when new compound is added ####
@@ -1256,6 +1256,7 @@ chromapp_server <- function(input, output, session) {
   ## button for next and previous transition #####
   observeEvent(input$next_cmpd, {
     current_cmpd <- input$compound_trans_input
+    cmpd_names <- list_compound_names(peaksobj())
     cmpd_idx <- which(cmpd_names == current_cmpd)
     next_cmpd <- cmpd_names[cmpd_idx + 1]
     updateSelectInput(session, "cmpd_id", selected = next_cmpd)
@@ -1263,6 +1264,7 @@ chromapp_server <- function(input, output, session) {
 
   observeEvent(input$prev_trans, {
     current_cmpd <- input$compound_trans_input
+    cmpd_names <- list_compound_names(peaksobj())
     cmpd_idx <- which(cmpd_names == current_cmpd)
     prev_cmpd <- cmpd_names[cmpd_idx - 1]
     updateSelectInput(session, "cmpd_id", selected = prev_cmpd)

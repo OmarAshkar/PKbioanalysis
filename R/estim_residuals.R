@@ -20,6 +20,11 @@ fit_var <- function(
 
   X <- stats::model.matrix(~ stdconc - 1, data = data)
   vecdata <- list(X = X, y = data$conc, varpred = data$stdconc)
+
+  omega <- NULL
+  varpred <- NULL
+  y <- NULL 
+
   nll <- function(par) {
     RTMB::getAll(par, vecdata)
     sigma <- exp(omega)
@@ -137,10 +142,10 @@ formated_print <- function(x, digits = 3) {
       scale_values = FALSE,
       decimals = 1
     ) |>
-    gt::fmt_markdown(columns = term) |>
+    gt::fmt_markdown(columns = "term") |>
     gt::cols_align(
       align = "left",
-      columns = c(term, method)
+      columns = c("term", "method")
     ) |>
     gt::tab_options(
       table.font.size = 12,

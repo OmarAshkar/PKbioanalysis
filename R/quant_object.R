@@ -1,15 +1,4 @@
-setClass(
-  "QuantRes",
-  slots = c(
-    samples_metadata = "data.frame",
-    compounds_metadata = "data.frame",
-    quanttab = "list",
-    linearity = "list",
-    suitability = "list",
-    resEstim = "list"
-  )
-)
-
+#' @include class.R generics.R
 
 check_quantRes <- function(object) {
   ## check quanttab
@@ -397,7 +386,6 @@ update_rel_response <- function(quantres) {
 }
 
 
-
 prefilter_precision_data.QuantRes <- function(
   x,
   type,
@@ -417,8 +405,7 @@ prefilter_precision_data.QuantRes <- function(
   prefilter_precision_data(df, type = type, acc_cutoff = acc_cutoff, dev_cutoff = dev_cutoff)
 }
 
-
-#' rdname prefilter_precision_data
+#' @rdname prefilter_precision_data
 #' @export
 setMethod(
   "prefilter_precision_data",
@@ -442,7 +429,7 @@ prefilter_precision_data.data.frame <- function(x, type, acc_cutoff = 0.2, dev_c
     dplyr::filter(dplyr::between(rel_deviation(.data$conc, .data$stdconc, percent = FALSE), -dev_cutoff, dev_cutoff))
 }
 
-#' rdname prefilter_precision_data
+#' @rdname prefilter_precision_data
 #' @export
 setMethod(
   "prefilter_precision_data",

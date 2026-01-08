@@ -9,6 +9,8 @@ read_chrom(dir, format = "waters_raw", method)
 \arguments{
 \item{dir}{directory for chromatraograms}
 
+\item{format}{format of the chromatogram files. Options are "waters_raw" and "mzML".}
+
 \item{method}{LC-MS/MS method ID saved available in the database.}
 }
 \description{

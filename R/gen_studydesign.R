@@ -558,8 +558,10 @@ get_study_name <- function(study_id) {
 
 
 #' Create a metabolic study layout
+#' @param study study name
 #' @param cmpds vector of compounds, including any standards
 #' @param time_points vector of time points
+#' @param dose dose amount. Default is NA
 #' @param n_NAD number of NAD positive samples. Default is 3
 #' @param n_noNAD number of NAD negative samples. Default is 2
 #'

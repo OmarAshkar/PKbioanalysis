@@ -650,7 +650,7 @@ plot_residuals <- function(quantres, compound_id) {
     ) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
     geom_smooth(
-      aes(x = stdconc, y = residual_response),
+      aes(x = .data$stdconc, y = .data$residual_response),
       method = "loess",
       linetype = "dashed",
       se = FALSE
@@ -699,7 +699,7 @@ plot_deviations <- function(quantres, compound_id) {
     ) +
     geom_hline(yintercept = 0, color = "red") +
     geom_smooth(
-      aes(x = stdconc, y = dev_conc, linetype = "dashed"),
+      aes(x = .data$stdconc, y = .data$dev_conc, linetype = "dashed"),
       method = "loess",
       se = FALSE
     ) +

@@ -108,8 +108,6 @@ update_peak_area_from_df <- function(chrom_res, df) {
 #' @param chrom_res ChromRes object. Must have observed RT values
 #' @param compound_id Compound ID
 #' @param samples_ids Sample ID. If NULL, all samples will be used
-#' @param peak_start Minimum RT value. If NULL, all RT values will be used
-#' @param peak_end Maximum RT value. If NULL, all RT values will be used
 #' @param smoothed Logical. If TRUE, use smoothed chromatogram. Default is TRUE
 #' @export
 integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
@@ -127,7 +125,7 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
   # this first filter for performance using empirical cutoffs
   filtered_peaks <- .filter_peak(
     chrom_res = chrom_res,
-    transition = transition_id,
+    transition_id = transition_id,
     samples_ids = samples_ids,
     peak_start = min_bound,
     peak_end = max_bound,
@@ -161,7 +159,7 @@ integerate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
       .data$observed_peak_height
     ) |>
     dplyr::filter(
-      .data$RT >= observed_peak_start & .data$RT <= observed_peak_end
+      .data$RT >= .data$observed_peak_start & .data$RT <= .data$observed_peak_end
     ) |>
     dplyr::mutate(
       observed_peak_height = max(.data[[paste0("T", transition_id)]])
@@ -426,8 +424,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 # }
 
 #' @title Find transition ID for a compound
-#' @import checkmate
-#' @import dplyr
+#' @noRd
 .which_transition <- function(chrom_res, compound_id) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertCount(compound_id, positive = TRUE)
@@ -496,7 +493,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
       ),
       by = "sample_id"
     ) |>
-    dplyr::filter(RT >= .data$peak_start & RT <= .data$peak_end) |>
+    dplyr::filter(.data$RT >= .data$peak_start & .data$RT <= .data$peak_end) |>
     dplyr::select(-c("peak_start", "peak_end"))
 
   if (!(transition_id %in% colnames(intensities))) {
@@ -518,7 +515,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 
   col_i <- colnames(intensities)[2] |> as.symbol()
   intensities |>
-    dplyr::slice_max(!!col_i, with_ties = FALSE, by = sample_id) |>
+    dplyr::slice_max(!!col_i, with_ties = FALSE, by = "sample_id") |>
     dplyr::rename(peak_height = !!col_i)
 }
 
@@ -625,8 +622,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 }
 
 #' @title Integerate Next Peak
-#' @import checkmate
-#' @import dplyr
+#' @noRd
 .integerate_next_slack <- function(
   chrom_res,
   compound_id,
@@ -668,8 +664,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 }
 
 #' @title Integerate single sample
-#' @import checkmate
-#' @import dplyr
+#' @noRd
 .integerate_individual_slack <- function(
   chrom_res,
   compound_id,
@@ -788,14 +783,13 @@ apply_area_cutoff <- function(chrom_res, cutoff, compound_id) {
 #' @title Manually Update Observed RT for either all compounds, all next samples, or single compound and sample
 #' @description Update RT for either all compounds, all next samples, or single compound and sample
 #' @param chrom_res ChromRes object
-#' @param compound Compound ID
-#' @param sample Sample ID
+#' @param compound_id Compound ID
+#' @param sample_id Sample ID
 #' @param peak_start Minimum RT value
 #' @param peak_end Maximum RT value
-#' @param target Target of update. Options are "single", "all", "all_next"
 #' @param manual Manual update. Default is FALSE
+#' @param target Target of update. Options are "single", "all", "all_next"
 #' @param force Force update if previous peak exists. Default is FALSE
-#' @param cutoff Cutoff value for peak height
 #' @details Only target = "all" will update the expected RT for all compounds.
 #' @export
 #' @examples
@@ -903,80 +897,6 @@ update_RT <- function(
 }
 
 
-#' @title Calculate Initial Peak
-#' @description Calculate initial peak in chromatogram. This function will use the dataframe with min and max RT values to calculate the initial peak in the chromatogram.
-#' @param chrom_res ChromRes object with single sample and multiple compounds
-#' @import checkmate
-#' @import dplyr
-#' @author Omar Elashkar
-.auto_peak <- function(chrom_res, RT_df = NULL, cutoff = 1e2) {
-  checkmate::assertClass(chrom_res, "ChromRes")
-  checkmate::assertDataFrame(RT_df, null.ok = TRUE, ncols = 4) # if null, will use the min and max from the chromatogram
-  dat <- chrom_res@res
-  compounds_id <- unique(dat@compound_id)
-  samples_id <- unique(dat@sample_id)
-  peaktab <- chrom_res@peaktab
-  vendor <- chrom_res@vendor
-  smoothed <- chrom_res@smoothed
-
-  if (is.null(RT_df)) {
-    peaktab_default <- dat |>
-      dplyr::group_by(.data$compound_id, .data$sample_id, .data$compound, .data$sample) |>
-      dplyr::summarize(
-        expected_peak_end = max(.data$RT),
-        expected_peak_start = min(.data$RT),
-        expected_peak_RT = (max(.data$RT) + min(.data$RT)) / 2
-      )
-    if (
-      "expected_peak_start" %in%
-        colnames(peaktab) &&
-        "expected_peak_end" %in% colnames(peaktab)
-    ) {
-      message("Peaktab provided. Using min and max from peaktab to find peak.")
-      peaktab <- peaktab # FIXME there is not way to get if there are define and undefined peaks. Only pre-define all first
-    } else {
-      message(
-        "No RT_df provided. Using min and max from chromatogram to find peak."
-      )
-      peaktab <- peaktab_default
-    }
-  } else if (!is.null(RT_df) && ncol(RT_df) == 4) {
-    message("RT_df provided. Using min and max from RT_df to find peak.")
-    peaktab <- RT_df |>
-      dplyr::rename(expected_peak_start = "RT_min", expected_peak_end = "RT_max") |>
-      dplyr::mutate(expected_peak_RT = (.data$RT_min + .data$RT_max) / 2)
-  } else {
-    (stop(
-      "RT_df should be a dataframe with columns: sample_id, compound_id, RT_min, RT_max"
-    ))
-  }
-
-  # loop to find the peak and area for each compound
-  # I need a loop. Apply with not work as I need to keep overriding chrom_res
-  # Note don't refer to the updated chrom_res$res. It will be updated in the loop
-  for (i in seq_len(nrow(peaktab))) {
-    chrom_res <- find_peak(
-      chrom_res = chrom_res,
-      min = peaktab$expected_peak_start[i],
-      max = peaktab$expected_peak_end[i],
-      compound_id = peaktab$compound_id[i],
-      sample_id = peaktab$sample_id[i],
-      cutoff = cutoff
-    )
-  }
-  chrom_res <- new(
-    "ChromResBase",
-    metadata = chrom_res$metadata,
-    peaks = chrom_res$exp_peaktab,
-    transitions = chrom_res$exp_transitions,
-    compounds = chrom_res$exp_compounds,
-    linearity = chrom_res$linearity,
-    pk_metadata = chrom_res$pk_metadata,
-    suitability = chrom_res$suitability,
-    vendor = vendor
-  )
-}
-
 
 #' @title Automatic Peak Boundary Detection
 #' @description Find peak in chromatogram. This function will use the dataframe with min and max RT values to find the peak in the chromatogram.
@@ -1075,7 +995,11 @@ update_RT <- function(
 
 #' @title Set Expected RT Bounds
 #' @description Updates only RT from chrom_res
-update_expected_bounds <- function(chrom_res, method_id, df) {
+#' @param chrom_res ChromRes object
+#' @param method_id Method ID in the method database
+#' @param df Dataframe with compound_id, expected_rt
+#' @noRd
+update_expected_bounds <- function(chrom_res, method_id, compound_id, expected_rt) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertCount(compound_id, positive = TRUE)
   # compound_id <- .cmpds_string_handler(compound_id)
@@ -1086,14 +1010,15 @@ update_expected_bounds <- function(chrom_res, method_id, df) {
     stop("Compound ID not found in compounds")
   }
 
-  compounds <- compounds |>
-    dplyr::mutate(
-      expected_rt = ifelse(
-        .data$compound_id == !!compound_id,
-        expected_rt,
-        expected_rt
-      )
-    )
+  # compounds <- compounds |>
+  #   dplyr::mutate(
+  #     expected_rt = ifelse(
+  #       .data$compound_id == !!compound_id,
+  #       .data$expected_rt,
+  #       .data$expected_rt 
+  #     )
+  #   )
+  stop("Not implemented yet") # TODO fix
 
   chrom_res@compounds <- compounds
   validObject(chrom_res)

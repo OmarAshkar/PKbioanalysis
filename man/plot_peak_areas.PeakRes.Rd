@@ -7,13 +7,12 @@
 plot_peak_areas.PeakRes(
   peaks_res,
   normalize = TRUE,
+  blanks = TRUE,
   compounds = NULL,
-  blanks = T,
-  analytes = T,
-  standards = T,
-  QCs = T,
-  type = "bar",
-  ...
+  analytes = TRUE,
+  standards = TRUE,
+  QCs = TRUE,
+  type = "bar"
 )
 }
 \arguments{
@@ -22,6 +21,8 @@ plot_peak_areas.PeakRes(
 \item{normalize}{logical. If TRUE, normalize the peak area by the IS area.}
 
 \item{blanks}{logical. If TRUE, plot blanks}
+
+\item{compounds}{numeric vector of compound numbers to include. If NULL, include all compounds}
 
 \item{analytes}{logical. If TRUE, plot analytes}
 

@@ -199,7 +199,7 @@ peakres_to_chromres <- function(peakres, method = NA) {
       "cmpd_name"
     ) |>
     mutate(across(
-      c(PEAK_area, PEAK_foundrt, PEAK_startrt, PEAK_endrt, PEAK_height),
+      c("PEAK_area", "PEAK_foundrt", "PEAK_startrt", "PEAK_endrt", "PEAK_height"),
       as.numeric
     )) |>
     filter(.data$PEAK_chromtrace != "") |>
@@ -321,12 +321,12 @@ peakres_to_chromres <- function(peakres, method = NA) {
     dplyr::bind_rows(x) |>
       mutate(across(
         c(
-          PEAK_startrt,
-          PEAK_endrt,
-          PEAK_foundrt,
-          PEAK_area,
-          ISPEAK_area,
-          PEAK_foundscan
+          "PEAK_startrt",
+          "PEAK_endrt",
+          "PEAK_foundrt",
+          "PEAK_area",
+          "ISPEAK_area",
+          "PEAK_foundscan"
         ),
         as.numeric
       )) |>

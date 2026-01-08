@@ -270,7 +270,7 @@ injec_seq_block_server <- function(
     ns <- session$ns
     observeEvent(methodsdb(), {
       updateSelectInput(
-        session = getDefaultReactiveDomain(),
+        session = shiny::getDefaultReactiveDomain(),
         inputId = paste0("inlet_method_select_prot", number),
         choices = methodsdb()$method
       )
@@ -278,7 +278,7 @@ injec_seq_block_server <- function(
 
     observeEvent(currplate(), {
       updateSelectInput(
-        session = getDefaultReactiveDomain(),
+        session = shiny::getDefaultReactiveDomain(),
         inputId = paste0("a_group", number),
         choices = get_plate_a_groups(currplate()),
         selected = get_plate_a_groups(currplate())
@@ -289,7 +289,7 @@ injec_seq_block_server <- function(
     #### methods
     observeEvent(methodsdb(), {
       updateSelectInput(
-        session,
+        session = shiny::getDefaultReactiveDomain(),
         inputId = paste0("inlet_method_select_prot", number),
         choices = methodsdb()$method
       )
@@ -338,7 +338,7 @@ injec_seq_block_server <- function(
 
 ui <- bslib::page_navbar(
   title = "Study Management",
-  shinyjs::useShinyjs(),
+  header = shinyjs::useShinyjs(),
   bslib::nav_panel(title = "Dashboard", uiOutput("plate_creation_ui")),
   bslib::nav_panel(
     title = "Study Design",
@@ -797,7 +797,7 @@ study_app_server <- function(input, output, session) {
 
   current_sample_list_metatable <- reactiveVal(.get_samplesdb_metadata())
   output$sample_list_metatable_DT <- DT::renderDT({
-    validate(need(
+    shiny::validate(shiny::need(
       nrow(current_sample_list_metatable()) > 0,
       "No Sample Lists in Database"
     ))
@@ -821,7 +821,7 @@ study_app_server <- function(input, output, session) {
   })
 
   output$sample_list_filtered_DT <- DT::renderDT({
-    validate(need(
+    shiny::validate(shiny::need(
       nrow(current_visible_sample_db()) > 0,
       "No Samples in Selected List"
     ))
@@ -901,7 +901,7 @@ study_app_server <- function(input, output, session) {
   })
 
   output$studies_db_RT <- reactable::renderReactable({
-    validate(need(nrow(all_studies_db()) > 0, "No Studies in Database"))
+    shiny::validate(shiny::need(nrow(all_studies_db()) > 0, "No Studies in Database"))
     reactable::reactable(
       all_studies_db(),
       resizable = TRUE,
@@ -943,9 +943,9 @@ study_app_server <- function(input, output, session) {
 
   output$studyarms_RT <- rhandsontable::renderRHandsontable({
     req(currStudyid())
-    validate(
-      need(currStudyid() != "", "No Study Selected"),
-      need(nrow(curr_dosing_db()) > 0, "No Dosing Arms in Database")
+    shiny::validate(
+      shiny::need(currStudyid() != "", "No Study Selected"),
+      shiny::need(nrow(curr_dosing_db()) > 0, "No Dosing Arms in Database")
     )
 
     curr_dosing_db() |>
@@ -1035,8 +1035,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$subjects_RT <- rhandsontable::renderRHandsontable({
-    validate(
-      need(currStudyid(), "No Study Selected")
+    shiny::validate(
+      shiny::need(currStudyid(), "No Study Selected")
     )
 
     currSubjectTable() |>
@@ -1140,8 +1140,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$sample_log_RT <- rhandsontable::renderRHandsontable({
-    validate(
-      need(currStudyid(), "No Study Selected")
+    shiny::validate(
+      shiny::need(currStudyid(), "No Study Selected")
     )
     currSampleLogTable() |>
       rhandsontable::rhandsontable(
@@ -1213,9 +1213,9 @@ study_app_server <- function(input, output, session) {
   })
 
   output$study_chart_plot <- DiagrammeR::renderGrViz({
-    validate(
-      need(currStudyid(), "No Study Selected"),
-      need(nrow(currSampleLogTable()) > 0, "No samples in sample log")
+    shiny::validate(
+      shiny::need(currStudyid(), "No Study Selected"),
+      shiny::need(nrow(currSampleLogTable()) > 0, "No samples in sample log")
     )
     currSampleLogTable()
     currSubjectTable()
@@ -1224,8 +1224,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$analysed_samples_RT <- reactable::renderReactable({
-    validate(
-      need(currStudyid(), "No Study Selected")
+    shiny::validate(
+      shiny::need(currStudyid(), "No Study Selected")
     )
 
     exported_list() # listen to changes saving
@@ -1431,8 +1431,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$plate_design_plotOutput <- renderPlot({
-    validate(
-      need(curr_gen_plate_starter(), "Create new plate")
+    shiny::validate(
+      shiny::need(curr_gen_plate_starter(), "Create new plate")
     )
     curr_gen_plate_starter() |>
       samples_naming_style(
@@ -1951,12 +1951,12 @@ study_app_server <- function(input, output, session) {
   output$plate_design_samples_selector_RT <- rhandsontable::renderRHandsontable(
     {
       req(curr_gen_plate_starter())
-      validate(
-        need(
+      shiny::validate(
+        shiny::need(
           currStudyid(),
           "Select a study to be able to add samples to current plate."
         ),
-        need(
+        shiny::need(
           nrow(curr_plate_sample_log_dil()) > 0,
           "No samples in sample log to add to plate."
         )
@@ -1975,16 +1975,16 @@ study_app_server <- function(input, output, session) {
   )
 
   observeEvent(input$plate_design_nav, {
-    validate(
-      need(
+    shiny::validate(
+      shiny::need(
         curr_gen_plate_starter(),
         "Create new plate"
       ),
-      need(
+      shiny::need(
         currStudyid(),
         "Select a study to be able to add samples to current plate."
       ),
-      need(
+      shiny::need(
         nrow(curr_plate_sample_log_dil()) > 0,
         "No samples in sample log to add to plate."
       )
@@ -2267,8 +2267,8 @@ study_app_server <- function(input, output, session) {
   )
 
   output$plate_db_RT <- reactable::renderReactable({
-    validate(
-      need(
+    shiny::validate(
+      shiny::need(
         nrow(plate_db()) > 0,
         "No plates in database. Create and save new plates to get started."
       )
@@ -2292,8 +2292,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$plate_map_plot1 <- renderPlot({
-    validate(
-      need(current_plate_row(), "Select a plate from the table")
+    shiny::validate(
+      shiny::need(current_plate_row(), "Select a plate from the table")
     )
     plate_db()[current_plate_row(), ]$id |> selected_ids()
 
@@ -3084,8 +3084,8 @@ study_app_server <- function(input, output, session) {
   })
 
   output$methods_dt <- DT::renderDT({
-    validate(
-      need(
+    shiny::validate(
+      shiny::need(
         nrow(methodsdb()) > 0,
         "No methods in the database. Please add a method"
       )
@@ -3099,12 +3099,12 @@ study_app_server <- function(input, output, session) {
 
   output$cmpd_methods_dt <- DT::renderDT({
     # get the method_id from the methodsdb
-    validate(
-      need(
+    shiny::validate(
+      shiny::need(
         nrow(methodsdb()) > 0,
         "No methods in the database. Please add a method"
       ),
-      need(
+      shiny::need(
         length(input$methods_dt_rows_selected) == 1,
         "Please select a method"
       )

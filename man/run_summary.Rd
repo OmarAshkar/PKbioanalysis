@@ -2,12 +2,15 @@
 % Please edit documentation in R/quant_misc.R
 \name{run_summary}
 \alias{run_summary}
+\alias{run_summary.PeakRes}
 \title{Get Summary of an object}
 \usage{
 run_summary(object)
+
+\method{run_summary}{PeakRes}(object)
 }
 \arguments{
-\item{object}{An object to summarize}
+\item{object}{A PeakRes object}
 }
 \description{
 Get Summary of an object

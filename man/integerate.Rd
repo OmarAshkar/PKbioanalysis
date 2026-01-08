@@ -14,10 +14,6 @@ integerate(chrom_res, compound_id, samples_ids, smoothed = TRUE)
 \item{samples_ids}{Sample ID. If NULL, all samples will be used}
 
 \item{smoothed}{Logical. If TRUE, use smoothed chromatogram. Default is TRUE}
-
-\item{peak_start}{Minimum RT value. If NULL, all RT values will be used}
-
-\item{peak_end}{Maximum RT value. If NULL, all RT values will be used}
 }
 \description{
 Integerate Peak with trapzoid method given start and end

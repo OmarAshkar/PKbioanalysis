@@ -19,3 +19,16 @@ setClass(
         runs = "list"
     )
 )
+
+
+setClass(
+    "QuantRes",
+    slots = c(
+        samples_metadata = "data.frame",
+        compounds_metadata = "data.frame",
+        quanttab = "list",
+        linearity = "list",
+        suitability = "list",
+        resEstim = "list"
+    )
+)

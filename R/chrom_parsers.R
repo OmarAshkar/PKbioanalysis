@@ -231,12 +231,12 @@ dir_or_files_to_files <- function(dir, file_pattern) {
   new_chrom <- do.call(rbind, new_chrom) |>
     as.data.frame() |>
     dplyr::mutate(type = as.character(NA)) |>
-    dplyr::mutate(filename = tools::file_path_sans_ext(filename)) |> # remove any file extensions
+    dplyr::mutate(filename = tools::file_path_sans_ext(.data$filename)) |> # remove any file extensions
     dplyr::mutate(std_rep = as.character(NA)) |>
     dplyr::mutate(sample_location = as.character(NA)) |>
     dplyr::mutate(inj_vol = as.numeric(NA)) |>
     dplyr::mutate(dilution_factor = as.numeric(NA)) |>
-    dplyr::mutate(sample_id = as.character(sample_id)) |>
+    dplyr::mutate(sample_id = as.character(.data$sample_id)) |>
     dplyr::mutate(subject_id = as.character(NA)) |>
     dplyr::mutate(sampling_time = as.numeric(NA)) |>
     dplyr::mutate(invitro_conc = as.numeric(NA)) |>
@@ -340,10 +340,10 @@ dir_or_files_to_files <- function(dir, file_pattern) {
   # join filename and compound
   chrom_res$exp_peaktab <- chrom_res$exp_peaktab |>
     dplyr::left_join(
-      chrom_res$metadata |> dplyr::select(sample_id, filename),
+      chrom_res$metadata |> dplyr::select("sample_id", "filename"),
       by = c("sample_id" = "sample_id")
     ) |>
-    dplyr::mutate(filename = tools::file_path_sans_ext(filename)) |> # remove any file extensions
+    dplyr::mutate(filename = tools::file_path_sans_ext(.data$filename)) |> # remove any file extensions
     dplyr::select(
       "sample_id",
       "filename",
@@ -383,7 +383,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
 
   peaks <- peaks |>
     dplyr::left_join(
-      res$metadata |> dplyr::select(filename, sample_id),
+      res$metadata |> dplyr::select("filename", "sample_id"),
       by = c("filename" = "filename")
     )
 
@@ -414,11 +414,11 @@ dir_or_files_to_files <- function(dir, file_pattern) {
       "observed_peak_end" = "peak_end"
     ) |>
     dplyr::mutate(
-      observed_peak_start = as.numeric(observed_peak_start),
-      observed_peak_end = as.numeric(observed_peak_end)
+      observed_peak_start = as.numeric(.data$observed_peak_start),
+      observed_peak_end = as.numeric(.data$observed_peak_end)
     ) |>
     dplyr::mutate(
-      observed_rt = (observed_peak_start + observed_peak_end) / 2
+      observed_rt = (.data$observed_peak_start + .data$observed_peak_end) / 2
     ) |>
     dplyr::mutate(observed_peak_height = as.numeric(NA)) |>
     dplyr::mutate(area = as.numeric(NA)) |>
@@ -552,9 +552,9 @@ dir_or_files_to_files <- function(dir, file_pattern) {
     } else if (nrow(query) == 1) {
       # update the transition id and labels
 
-      new_transition_id <- query |> dplyr::pull(transition_id) |> as.character()
+      new_transition_id <- query |> dplyr::pull("transition_id") |> as.character()
       transition_label <- query |>
-        dplyr::pull(transition_label) |>
+        dplyr::pull("transition_label") |>
         as.character()
     }
 

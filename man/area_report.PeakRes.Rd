@@ -7,10 +7,10 @@
 area_report.PeakRes(
   peaks_res,
   normalize = TRUE,
-  blanks = T,
-  analytes = T,
-  standards = T,
-  QCs = T,
+  blanks = TRUE,
+  analytes = TRUE,
+  standards = TRUE,
+  QCs = TRUE,
   compounds = NULL
 )
 }

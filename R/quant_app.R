@@ -707,7 +707,7 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
 quantapp_ui <- function() {
   bslib::page_navbar(
     title = "Quantification App",
-    shinyjs::useShinyjs(),
+    header = shinyjs::useShinyjs(),
     bslib::nav_panel(
       "Upload",
       id = "upload_page",
@@ -1004,7 +1004,6 @@ quantapp_server <- function(input, output, session) {
 
 #' @title Quantification App
 #' @description This function creates a shiny app for quantification after peak integeration
-#' @param quantres A QuantRes object
 #' @export
 quant_app <- function() {
   # user input

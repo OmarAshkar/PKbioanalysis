@@ -159,6 +159,7 @@ setValidity("ChromRes", function(object) {
 #' @title Read Chromatogram Files
 #' @description This function reads chromatogram files from a directory and returns a data frame with the chromatogram data.
 #' @param dir directory for chromatraograms
+#' @param format format of the chromatogram files. Options are "waters_raw" and "mzML".
 #' @param method LC-MS/MS method ID saved available in the database.
 #' @export
 #' @examples
@@ -279,9 +280,9 @@ plot_chrom <- function(
     dplyr::mutate(sample_id = as.numeric(sample_id))
 
   transitions <- chrom_res@transitions |>
-    mutate(transition_id = paste0("T", transition_id))
+    mutate(transition_id = paste0("T", .data$transition_id))
   compounds <- chrom_res@compounds |>
-    dplyr::mutate(transition_id = paste0("T", transition_id))
+    dplyr::mutate(transition_id = paste0("T", .data$transition_id))
 
   if (smoothed) {
     if (!is_smoothed(chrom_res)$smoothed[1]) {
@@ -387,8 +388,8 @@ plot_chrom <- function(
       ggplot2::geom_area(
         mapping = aes(
           x = ifelse(
-            RT >= observed_peak_start & RT <= observed_peak_end,
-            RT,
+            .data$RT >= .data$observed_peak_start & .data$RT <= .data$observed_peak_end,
+            .data$RT,
             NA
           )
         ),
@@ -397,8 +398,8 @@ plot_chrom <- function(
       ) +
       ggplot2::geom_text(
         mapping = aes(
-          x = observed_rt,
-          y = observed_peak_height,
+          x = .data$observed_rt,
+          y = .data$observed_peak_height,
           label = cmpd_lab
         ),
         check_overlap = T,
@@ -526,6 +527,7 @@ filter_chrom <- function(
 #' @title Smooth Chromatogram Peaks
 #' @export
 #' @description This function smooths chromatogram peaks using different algorithms.
+#' @param chrom_res ChromRes object
 #' @param filter Filter to use. Options are "mean", "median", "savgol", "gaussian"
 #' @param window Window size for the filter
 #' @param iter Number of iterations. If 0, no smoothing is applied.
@@ -554,7 +556,7 @@ smooth_chrom <- function(chrom_res, filter = "mean", window = 2, iter = 2) {
 
   dat <- lapply(dat, \(x) {
     x$smoothed <- x[[1]] |>
-      dplyr::mutate(across(-RT, \(x) {
+      dplyr::mutate(across(-"RT", \(x) {
         smooth_peaks(
           x,
           filter,
@@ -638,7 +640,7 @@ print.ChromRes <- function(x, ...) {
   return(invisible(x))
 }
 
-#'rdname is_integrated
+#' @rdname is_integrated
 setMethod(
   "is_integrated",
   signature(chrom_res = "ChromRes"),
@@ -647,7 +649,7 @@ setMethod(
   }
 )
 
-#'rdname is_integrated
+#' @rdname is_integrated
 setMethod(
   "is_integrated",
   signature(chrom_res = "ChromResBase"),

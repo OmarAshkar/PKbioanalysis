@@ -57,10 +57,9 @@ make_sequence_names <- function(df){
     stop("A group does not have any blanks. Cannot add blank at the end.")
   }
   blanks_df <- tmpseq$Blank |>
-    filter(.data$injec_rep == min(.data$injec_rep) & .data$e_rep == max(.data$e_rep))
+    dplyr::filter(.data$injec_rep == min(.data$injec_rep) & .data$e_rep == max(.data$e_rep))
 
   tmpseq$last_blank <- blanks_df
-
   tmpseq
 }
 
@@ -74,8 +73,7 @@ make_sequence_names <- function(df){
   }
 
   blanks_df <- tmpseq$Blank |>
-    filter(.data$injec_rep == min(.data$injec_rep) & e_rep == max(.data$e_rep))
-
+    filter(.data$injec_rep == min(.data$injec_rep) & .data$e_rep == max(.data$e_rep))
   if (!is.null(tmpseq$CS)) {
     dummy <- paste0(
       tmpseq$CS$e_rep,
