@@ -10,3 +10,4 @@ clear_python_deps()
 Removes the ephemeral Python environments and cached artifacts managed 
 by reticulate and uv.
 }
+\keyword{internal}

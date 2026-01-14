@@ -93,7 +93,7 @@ install_py_dep <- function(..., envname = "PKbioanalysis") {
 #'
 #' Removes the ephemeral Python environments and cached artifacts managed 
 #' by reticulate and uv.
-#' @export
+#' @keywords internal
 clear_python_deps <- function() {
   cache_path <- tools::R_user_dir("reticulate", "cache")
   
