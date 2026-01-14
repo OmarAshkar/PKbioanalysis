@@ -88,8 +88,26 @@ install_py_dep <- function(..., envname = "PKbioanalysis") {
   reticulate::py_install("pandas", env = envname, pip = TRUE)
 }
 
-py <- NULL
 
+#' Clear Managed Python Environments
+#'
+#' Removes the ephemeral Python environments and cached artifacts managed 
+#' by reticulate and uv.
+#' @keywords internal
+clear_python_deps <- function() {
+  cache_path <- tools::R_user_dir("reticulate", "cache")
+  
+  if (dir.exists(cache_path)) {
+    message("Clearing reticulate cache at: ", cache_path)
+    # unlink removes the directory and its contents recursively
+    unlink(cache_path, recursive = TRUE)
+    message("Python dependencies cleared. They will be re-installed on next initialization.")
+  } else {
+    message("No managed reticulate cache found.")
+  }
+}
+
+py <- NULL
 
 .onLoad <- function(libname, pkgname) {
   # Set the default options for the package
@@ -100,45 +118,41 @@ py <- NULL
   )
   options(
     PKbioanalysis.cache_dir = file.path(
-      options("PKbioanalysis.data_dir"),
+      getOption("PKbioanalysis.data_dir"),
       "plates_cache"
     )
   )
 
   # Set the environment variable for the package
-  PKbioanalysis_env$data_dir <- options("PKbioanalysis.data_dir") |> unlist()
-  PKbioanalysis_env$cache_dir <- options("PKbioanalysis.cache_dir") |> unlist()
+  PKbioanalysis_env$data_dir <- getOption("PKbioanalysis.data_dir")
+  PKbioanalysis_env$cache_dir <- getOption("PKbioanalysis.cache_dir") 
 
   refresh_config()
 
   PKbioanalysis_env$api_key <- Sys.getenv("OPENAI_API_KEY")
 
   if (!dir.exists(PKbioanalysis_env$data_dir)) {
-    dir.create(PKbioanalysis_env$data_dir, showWarnings = F, recursive = T)
+    dir.create(PKbioanalysis_env$data_dir, showWarnings = FALSE, recursive = TRUE)
   }
 
-  if (!dir.exists(file.path(PKbioanalysis_env$data_dir, "plates_cache"))) {
+  if (!dir.exists(PKbioanalysis_env$cache_dir)){
     dir.create(
-      file.path(PKbioanalysis_env$data_dir, "plates_cache"),
-      showWarnings = T,
-      recursive = T
+      PKbioanalysis_env$cache_dir,
+      showWarnings = TRUE,
+      recursive = TRUE
     )
   }
 
-  # reticulate::configure_environment(pkgname, force = TRUE)
   py_packages <- c("rainbow_api", "numpy", "scipy", "pandas")
   reticulate::py_require(py_packages)
 
   pysrc_path <- system.file("pysrc", package = pkgname)
-  if (dir.exists(pysrc_path)) {
+  if (nzchar(pysrc_path) && dir.exists(pysrc_path)) {
     py <<- reticulate::import_from_path(
       module = "src",
       path = pysrc_path,
       delay_load = TRUE
     )
-    numpy <<- reticulate::import_from_path("numpy", delay_load = TRUE)
-    scipy <<- reticulate::import_from_path("scipy", delay_load = TRUE)
-    pandas <<- reticulate::import_from_path("pandas", delay_load = TRUE)
   } else {
     warning("Python source directory not found: ", pysrc_path)
     py <<- NULL
