@@ -4,8 +4,6 @@ PKbioanalysis supports interactive dilution scheme generation.
 
 ``` r
 library(PKbioanalysis)
-#> Warning in readLines(file, warn = readLines.warn): incomplete final line found
-#> on '/home/runner/.config/R/PKbioanalysis/config.yaml'
 #> 
 #> Attaching package: 'PKbioanalysis'
 #> The following object is masked from 'package:stats':

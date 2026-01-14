@@ -7,8 +7,6 @@ for the study.
 
 ``` r
 library(PKbioanalysis)
-#> Warning in readLines(file, warn = readLines.warn): incomplete final line found
-#> on '/home/runner/.config/R/PKbioanalysis/config.yaml'
 #> 
 #> Attaching package: 'PKbioanalysis'
 #> The following object is masked from 'package:stats':
@@ -44,7 +42,7 @@ print(plate)
 #>  Last Fill: A,1 
 #>  Remaining Empty Spots: 96 
 #>  Description:  
-#>  Last Modified: 2026-01-08 20:31:59.033344 
+#>  Last Modified: 2026-01-14 16:53:54.336893 
 #>  Scheme h 
 #>  Plate ID: 1_1 
 #>  Registered: FALSE 
@@ -268,7 +266,7 @@ plates <- make_metabolic_study(
     n_NAD = 3, 
     n_noNAD = 2
 )
-#> ℹ Created study with ID: a86d356d-9f44-4d00-8f3d-b96f528418a1
+#> ℹ Created study with ID: ba88d317-11ef-407c-9b85-a2a522bc436f
 #> ℹ Adding dosing and subjects information...
 #> ✔ Dosing information added.
 #> ℹ Adding subjects information...
