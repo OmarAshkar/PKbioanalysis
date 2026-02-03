@@ -144,27 +144,29 @@ chromapp_ui <- function() {
       id = "auto_peak",
       h2("Peak integration"),
       fluidPage(
-        bslib::layout_column_wrap(
-          width = NULL,
-          style = bslib::css(grid_template_columns = "1fr 2fr 1fr"),
+        bslib::layout_columns(
+          col_widths = c(8, 4),
           height = "100px",
-          actionButton("prev_sample", label = "", icon = icon("caret-left")),
           uiOutput("sample_id_uioutput"),
-          actionButton("next_sample", label = "", icon = icon("caret-right")),
-
-          actionButton(
-            "prev_compound_btn",
-            label = "",
-            icon = icon("caret-left")
-          ),
           uiOutput("compound_id_uioutput"),
-          actionButton(
-            "next_compound_btn",
-            label = "",
-            icon = icon("caret-right")
-          )
+          bslib::layout_columns(
+            col_widths = c(6, 6),
+            actionButton("prev_sample", label = "", icon = icon("caret-left")),
+            actionButton("next_sample", label = "", icon = icon("caret-right"))
+          ),
+          bslib::layout_columns(
+            col_widths = c(6, 6),
+            actionButton(
+              "prev_compound_btn",
+              label = "",
+              icon = icon("caret-left")
+            ),
+            actionButton(
+              "next_compound_btn",
+              label = "",
+              icon = icon("caret-right")
+          ))
         ),
-
         tabsetPanel(
           type = "tabs",
           id = "integration_tabs",
@@ -177,11 +179,12 @@ chromapp_ui <- function() {
                 "integration",
                 choices = c("Save as default (all)" = "all")
               ),
-              shinyWidgets::prettySwitch(
-                "manual_peak_toggle",
-                "manual",
-                fill = TRUE,
-                value = FALSE
+              shiny::radioButtons(
+                "integration_mode_checkbox",
+                "Mode",
+                choices = c("Manual" = "manual", "Automatic" = "auto", "AI" = "ai"),
+                selected = "auto",
+                inline = TRUE
               ),
               actionButton("save_peak", "Save Peak"),
 
@@ -943,10 +946,10 @@ chromapp_server <- function(input, output, session) {
         "transition: ",
         get_trans_label_from_id(peaksobj(), current_trans_id())
       ),
-      tags$p("Manual Peak: ", input$manual_peak_toggle),
-      tags$p(paste0("Peak Start: ", min(selected_peak_range()$x))),
-      tags$p(paste0("Peak End: ", max(selected_peak_range()$x))),
-      tags$p(paste0("save option:", input$integration_menu)),
+      tags$p("Mode: ", toupper(input$integration_mode_checkbox)),
+      tags$p(paste0("Peak Search Start: ", min(selected_peak_range()$x))),
+      tags$p(paste0("Peak Search End: ", max(selected_peak_range()$x))),
+      tags$p(paste0("Save option: ", toupper(input$integration_menu))),
       title = "Add Compound",
       easyClose = TRUE,
       footer = tagList(
@@ -961,6 +964,15 @@ chromapp_server <- function(input, output, session) {
     req(input$sample_file_input)
     req(input$compound_trans_input)
     req(selected_peak_range())
+
+    removeModal()
+
+    showModal(modalDialog(
+      tags$h2("Processing"),
+      tags$p("Updating integration parameters..."),
+      footer = NULL,
+      easyClose = FALSE
+    ))
 
     # set sample name to NULL if all is selected.
     if (input$integration_menu == "all") {
@@ -980,7 +992,7 @@ chromapp_server <- function(input, output, session) {
       peak_start = min(selected_peak_range()$x),
       peak_end = max(selected_peak_range()$x),
       target = input$integration_menu,
-      manual = input$manual_peak_toggle
+      mode = input$integration_mode_checkbox
     ) |>
       peaksobj()
 
@@ -1238,36 +1250,52 @@ chromapp_server <- function(input, output, session) {
 
   ########################################################################################
 
-  ## buttons for next and previous sample ####
+  ## buttons for next and previous navigation ####
+  # Generic helper function to navigate through items
+  navigate_items <- function(current_value, items_vector, direction = 1) {
+    req(current_value)
+    item_idx <- which(items_vector == current_value)
+    
+    if (length(item_idx) == 0) return(NULL)
+    
+    new_idx <- item_idx + direction
+    
+    # Check bounds
+    if (new_idx < 1 || new_idx > length(items_vector)) {
+      return(NULL)
+    }
+    
+    return(items_vector[new_idx])
+  }
+
+  # Sample navigation
   observeEvent(input$next_sample, {
-    current_sample <- input$sample_id
-    sample_idx <- which(samples_df()$sample == current_sample)
-    next_sample <- samples_df()$sample[sample_idx + 1]
-    updateSelectInput(session, "sample_file_input", selected = next_sample)
+    new_sample <- navigate_items(input$sample_file_input, samples_df()$sample, direction = 1)
+    if (!is.null(new_sample)) {
+      updateSelectInput(session, "sample_file_input", selected = new_sample)
+    }
   })
 
   observeEvent(input$prev_sample, {
-    current_sample <- input$sample_id
-    sample_idx <- which(samples_df()$sample == current_sample)
-    prev_sample <- samples_df()$sample[sample_idx - 1]
-    updateSelectInput(session, "sample_file_input", selected = prev_sample)
+    new_sample <- navigate_items(input$sample_file_input, samples_df()$sample, direction = -1)
+    if (!is.null(new_sample)) {
+      updateSelectInput(session, "sample_file_input", selected = new_sample)
+    }
   })
 
-  ## button for next and previous transition #####
-  observeEvent(input$next_cmpd, {
-    current_cmpd <- input$compound_trans_input
-    cmpd_names <- list_compound_names(peaksobj())
-    cmpd_idx <- which(cmpd_names == current_cmpd)
-    next_cmpd <- cmpd_names[cmpd_idx + 1]
-    updateSelectInput(session, "cmpd_id", selected = next_cmpd)
+  # Compound/Transition navigation
+  observeEvent(input$next_compound_btn, {
+    new_cmpd <- navigate_items(input$compound_trans_input, current_cmpds_df()$compound_trans, direction = 1)
+    if (!is.null(new_cmpd)) {
+      updateSelectInput(session, "compound_trans_input", selected = new_cmpd)
+    }
   })
 
-  observeEvent(input$prev_trans, {
-    current_cmpd <- input$compound_trans_input
-    cmpd_names <- list_compound_names(peaksobj())
-    cmpd_idx <- which(cmpd_names == current_cmpd)
-    prev_cmpd <- cmpd_names[cmpd_idx - 1]
-    updateSelectInput(session, "cmpd_id", selected = prev_cmpd)
+  observeEvent(input$prev_compound_btn, {
+    new_cmpd <- navigate_items(input$compound_trans_input, current_cmpds_df()$compound_trans, direction = -1)
+    if (!is.null(new_cmpd)) {
+      updateSelectInput(session, "compound_trans_input", selected = new_cmpd)
+    }
   })
 
   ##################################################################

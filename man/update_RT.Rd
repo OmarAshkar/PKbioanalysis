@@ -12,7 +12,10 @@ update_RT(
   peak_end,
   manual = FALSE,
   target = "single",
-  force = FALSE
+  force = FALSE,
+  comment = "",
+  flag = FALSE,
+  ai = FALSE
 )
 }
 \arguments{
@@ -31,6 +34,15 @@ update_RT(
 \item{target}{Target of update. Options are "single", "all", "all_next"}
 
 \item{force}{Force update if previous peak exists. Default is FALSE}
+
+\item{comment}{Comment for the update. Default is an empty string}
+
+\item{flag}{Flag the peak after update. Default is FALSE}
+
+\item{ai}{Flag if the update is from AI. Default is FALSE}
+}
+\value{
+Updated ChromRes object
 }
 \description{
 Update RT for either all compounds, all next samples, or single compound and sample
@@ -40,7 +52,7 @@ Only target = "all" will update the expected RT for all compounds.
 }
 \examples{
 \dontrun{
-update_RT(chrom_res, compound_id = 1, sample_id = 1, 
+update_RT(chrom_res, compound_id = 1, sample_id = 1,
           peak_start = 1, peak_end = 2, target = "single")
 }
 }

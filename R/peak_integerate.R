@@ -131,7 +131,6 @@ integrate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
     peak_end = max_bound,
     smoothed = smoothed
   )
-  
 
   checkmate::assertDataFrame(filtered_peaks, min.rows = 1, ncols = 3)
   checkmate::assertNames(
@@ -160,7 +159,8 @@ integrate <- function(chrom_res, compound_id, samples_ids, smoothed = TRUE) {
       .data$observed_peak_height
     ) |>
     dplyr::filter(
-      .data$RT >= .data$observed_peak_start & .data$RT <= .data$observed_peak_end
+      .data$RT >= .data$observed_peak_start &
+        .data$RT <= .data$observed_peak_end
     ) |>
     dplyr::mutate(
       observed_peak_height = max(.data[[paste0("T", transition_id)]])
@@ -528,41 +528,30 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   compound_id,
   peak_start,
   peak_end,
-  manual = TRUE
+  mode = "auto"
 ) {
   checkmate::assertClass(chrom_res, "ChromRes")
-
-  # compound_id <- .cmpds_string_handler(compound_id)
   checkmate::assertNumber(peak_start, lower = 0)
   checkmate::assertNumber(peak_end, lower = peak_start)
+  checkmate::assertChoice(mode, choices = c("manual", "auto", "ai"))
 
-  dat <- chrom_res@runs
-  compounds <- chrom_res@compounds
-  peaktab <- chrom_res@peaks
+  message("Updating expected RT for all samples for compound ", compound_id, " in mode ", mode)
 
-  compound_id_filter <- compound_id
+  # Update expected RT for the compound (applies to all samples)
+  chrom_res <- .update_expected_rt(
+    chrom_res,
+    compound_id,
+    sample_ids = NULL,
+    peak_start,
+    peak_end,
+    mode = mode
+  )
 
-  # on which transition the compound
-  transition_id <- .which_transition(chrom_res, compound_id_filter)
+  # Get all sample IDs
+  all_sample_ids <- names(chrom_res@runs$files)
 
-  compounds <- compounds |>
-    dplyr::mutate(
-      expected_peak_start = ifelse(
-        .data$compound_id == compound_id_filter,
-        peak_start,
-        .data$expected_peak_start
-      ),
-      expected_peak_end = ifelse(
-        .data$compound_id == compound_id_filter,
-        peak_end,
-        .data$expected_peak_end
-      ),
-      expected_rt = ifelse(
-        .data$compound_id == compound_id_filter,
-        (peak_start + peak_end) / 2,
-        .data$expected_rt
-      )
-    )
+  # Filter peak data for all samples
+  transition_id <- .which_transition(chrom_res, compound_id)
   obs_rt <- .filter_peak(
     chrom_res,
     transition_id,
@@ -571,57 +560,233 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     peak_end = peak_end
   )
 
-  if (manual) {
-    # integrate obs_rt
-    # update observed_peak_start, observed_peak_end
+  # Update observed RT values for all samples
+  chrom_res@peaks <- .update_observed_rt(
+    chrom_res@peaks,
+    obs_rt,
+    compound_id,
+    all_sample_ids,
+    peak_start,
+    peak_end,
+    mode = mode
+  )
 
-    # set area to NA
-    # set manual to TRUE
-    peaktab <- dplyr::rows_update(
-      peaktab,
-      data.frame(
-        sample_id = names(dat$files),
-        observed_rt = as.numeric(NA),
-        observed_peak_start = peak_start,
-        observed_peak_end = peak_end,
-        compound_id = compound_id_filter,
-        observed_peak_height = NA,
-        area = as.numeric(NA),
-        manual = manual
+  # Integrate for all samples
+  integrate(chrom_res, compound_id, samples_ids = NULL)
+}
+
+#' @title Update expected RT values (observed and expected bounds)
+#' @description Helper function to update both observed and expected RT values
+#' @param chrom_res ChromRes object
+#' @param compound_id Compound ID to update
+#' @param sample_ids Sample IDs to update (NULL for all samples)
+#' @param peak_start New peak start RT value
+#' @param peak_end New peak end RT value
+#' @param mode Integration mode: "manual", "auto", or "ai"
+#' @return Updated ChromRes object
+#' @noRd
+.update_expected_rt <- function(
+  chrom_res,
+  compound_id,
+  sample_ids = NULL,
+  peak_start,
+  peak_end,
+  mode = "auto"
+) {
+  checkmate::assertClass(chrom_res, "ChromRes")
+  checkmate::assertNumber(peak_start, lower = 0)
+  checkmate::assertNumber(peak_end, lower = peak_start)
+  checkmate::assertChoice(mode, choices = c("manual", "auto", "ai"))
+
+  # Update expected RT for the compound (both observed and expected bounds)
+  chrom_res@compounds <- chrom_res@compounds |>
+    dplyr::mutate(
+      expected_peak_start = ifelse(
+        .data$compound_id == compound_id,
+        peak_start,
+        .data$expected_peak_start
       ),
-      by = c("sample_id", "compound_id")
+      expected_peak_end = ifelse(
+        .data$compound_id == compound_id,
+        peak_end,
+        .data$expected_peak_end
+      ),
+      expected_rt = ifelse(
+        .data$compound_id == compound_id,
+        (peak_start + peak_end) / 2,
+        .data$expected_rt
+      )
     )
 
-    # FIXME commented out peak height till I understand it better
-    # obs_rt <- obs_rt |>
-    #     .find_max_intensity() |> # get max intensity
-    #     mutate(compound_id = compound_id_filter)  |>
-    #     dplyr::rename(observed_peak_height = peak_height) |>
-    #     dplyr::rename(observed_rt = RT)
-    # # join by sample_id and compound_id
-    # peaktab <- dplyr::rows_patch(peaktab, obs_rt, by = c("sample_id", "compound_id"))
-  } else {
-    x <- split(obs_rt, obs_rt$sample_id)
-    fp <- py$peak_integrate$find_peak2_d
-    append_peaktab <- fp(x, 1)
-    # append_peaktab$compound_id <- compound_id_filter
+  chrom_res
+}
 
-    append_peaktab$sample_id <- as.character(append_peaktab$sample_id)
-    append_peaktab$manual <- FALSE
-    append_peaktab$area <- NA
-    append_peaktab$compound_id <- compound_id_filter
+## ---- Observed RT update helpers (DRY) ----
+#' @title Apply manual bounds to peaks table
+#' @noRd
+.apply_manual_bounds <- function(
+  peaktab,
+  sample_ids,
+  compound_id,
+  peak_start,
+  peak_end,
+  comment = "",
+  flag = FALSE
+) {
+  dplyr::rows_update(
+    peaktab,
+    data.frame(
+      sample_id = as.character(sample_ids),
+      compound_id = compound_id,
+      observed_rt = as.numeric(NA),
+      observed_peak_start = peak_start,
+      observed_peak_end = peak_end,
+      observed_peak_height = as.numeric(NA),
+      area = as.numeric(NA),
+      manual = TRUE,
+      flag = flag,
+      comment = comment
+    ),
+    by = c("sample_id", "compound_id")
+  )
+}
 
-    peaktab <- dplyr::rows_update(
-      peaktab,
-      append_peaktab,
-      by = c("compound_id", "sample_id")
-    )
+#' @title Detect peaks by mode
+#' @description Helper function to detect peaks based on the specified mode (auto or ai)
+#' @param obs_rt Observed RT data
+#' @param mode Integration mode: "auto" or "ai"
+#' @noRd
+.detect_peaks_by_mode <- function(obs_rt, mode = "auto") {
+  if (is.null(obs_rt) || nrow(obs_rt) == 0) {
+    return(NULL)
   }
 
-  chrom_res@peaks <- peaktab
-  chrom_res@compounds <- compounds
+  x <- split(obs_rt, obs_rt$sample_id)
 
-  integrate(chrom_res, compound_id, samples_ids = NULL) # in all
+  fp <- switch(
+    mode,
+    "auto" = py$peak_integrate$find_peak2_d,
+    "ai" = integrate_ai,
+    NULL
+  
+  )
+
+  if (is.null(fp)) {
+    return(NULL)
+  }
+
+  fp(x, 1)
+}
+
+#' @title Apply detected peaks to peaks table
+#' @noRd
+.apply_detected_peaks <- function(peaktab, detected, compound_id) {
+  if (is.null(detected) || nrow(detected) == 0) {
+    return(peaktab)
+  }
+
+  detected$compound_id <- compound_id
+  detected$sample_id <- as.character(detected$sample_id)
+  detected$manual <- FALSE
+  detected$area <- NA
+
+  dplyr::rows_update(
+    peaktab,
+    detected,
+    by = c("sample_id", "compound_id"),
+    unmatched = "ignore"
+  )
+}
+
+#' @title Update observed RT values in peaks table
+#' @description Helper function to update observed RT values based on mode
+#' @param peaktab Peaks table to update
+#' @param obs_rt Observed RT data
+#' @param compound_id Compound ID to update
+#' @param sample_ids Sample IDs to update
+#' @param peak_start Peak start RT value
+#' @param peak_end Peak end RT value
+#' @param mode Integration mode: "manual", "auto", or "ai"
+#' @param comment Comment for manual updates
+#' @param flag Whether to flag the peak
+#' @return Updated peaks table
+#' @noRd
+.update_observed_rt <- function(
+  peaktab,
+  obs_rt,
+  compound_id,
+  sample_ids,
+  peak_start,
+  peak_end,
+  mode = "manual",
+  comment = "",
+  flag = FALSE
+) {
+  checkmate::assertDataFrame(peaktab)
+  checkmate::assertChoice(mode, choices = c("manual", "auto", "ai"))
+
+  if (mode == "manual") {
+    peaktab <- .apply_manual_bounds(
+      peaktab,
+      sample_ids,
+      compound_id,
+      peak_start,
+      peak_end,
+      comment = comment,
+      flag = flag
+    )
+
+    if (!is.null(obs_rt) && nrow(obs_rt) > 0) {
+      obs_rt <- obs_rt |>
+        .find_max_intensity() |>
+        mutate(compound_id = compound_id) |>
+        dplyr::rename(observed_peak_height = "peak_height") |>
+        dplyr::rename(observed_rt = "RT")
+
+      peaktab <- dplyr::rows_patch(
+        peaktab,
+        obs_rt,
+        by = c("sample_id", "compound_id")
+      )
+    }
+
+    return(peaktab)
+  }
+
+  # For auto and ai modes
+  if (mode == "ai") {
+    # For AI mode, apply the refined bounds with comment and flag
+    peaktab <- .apply_manual_bounds(
+      peaktab,
+      sample_ids,
+      compound_id,
+      peak_start,
+      peak_end,
+      comment = comment,
+      flag = flag
+    )
+    
+    # Find and patch max intensity from filtered peak data
+    if (!is.null(obs_rt) && nrow(obs_rt) > 0) {
+      obs_rt <- obs_rt |>
+        .find_max_intensity() |>
+        mutate(compound_id = compound_id) |>
+        dplyr::rename(observed_peak_height = "peak_height") |>
+        dplyr::rename(observed_rt = "RT")
+
+      peaktab <- dplyr::rows_patch(
+        peaktab,
+        obs_rt,
+        by = c("sample_id", "compound_id")
+      )
+    }
+    
+    return(peaktab)
+  }
+
+  # For auto mode, use Python peak detection
+  detected <- .detect_peaks_by_mode(obs_rt, mode = mode)
+  .apply_detected_peaks(peaktab, detected, compound_id)
 }
 
 #' @title integrate Next Peak
@@ -632,19 +797,15 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   sample_id,
   peak_start,
   peak_end,
-  manual = TRUE
+  mode = "auto"
 ) {
   # >=sample_id
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertNumber(peak_start, lower = 0)
   checkmate::assertNumber(peak_end, lower = peak_start)
-  # compound_id <- .cmpds_string_handler(compound_id)
+  checkmate::assertChoice(mode, choices = c("manual", "auto", "ai"))
 
-  dat <- chrom_res@runs
-  compounds <- chrom_res@compounds
-  peaktab <- chrom_res@peaks
-
-  compound_id_filter <- compound_id
+  message("Updating RT for all samples starting from sample ", sample_id, " for compound ", compound_id, " in mode ", mode)
 
   if (!has_default_bounds(chrom_res, compound_id)) {
     stop(
@@ -652,14 +813,22 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     )
   }
 
-  for (i in sample_id) {
+  all_sample_ids <- names(chrom_res@runs$files)
+  start_idx <- match(as.character(sample_id), all_sample_ids)
+  if (is.na(start_idx)) {
+    stop("Sample ID not found in chromatogram")
+  }
+
+  target_sample_ids <- all_sample_ids[start_idx:length(all_sample_ids)]
+
+  for (i in target_sample_ids) {
     chrom_res <- .integrate_individual_slack(
       chrom_res,
       compound_id,
       i,
       peak_start,
       peak_end,
-      manual = manual
+      mode = mode
     )
   }
 
@@ -667,6 +836,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 }
 
 #' @title integrate single sample
+#' @details This is a unified integration function that handles manual, auto, and ai modes
 #' @noRd
 .integrate_individual_slack <- function(
   chrom_res,
@@ -674,95 +844,69 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   sample_id,
   peak_start,
   peak_end,
-  manual = TRUE, 
-  comment = "", 
-  flag = FALSE,
-  ai = FALSE
+  mode = "auto",
+  comment = "",
+  flag = FALSE
 ) {
-  # >=sample_id
   checkmate::assertClass(chrom_res, "ChromRes")
-  # compound_id <- .cmpds_string_handler(compound_id)
   checkmate::assertNumber(peak_start, lower = 0)
   checkmate::assertNumber(peak_end, lower = peak_start)
-  checkmate::assertLogical(manual)
+  checkmate::assertChoice(mode, choices = c("manual", "auto", "ai"))
   checkmate::assertString(comment)
   checkmate::assertLogical(flag)
-  checkmate::assertLogical(ai)
 
-  dat <- chrom_res@runs
-  compounds <- chrom_res@compounds
-  peaktab <- chrom_res@peaks
+  message("Updating RT for sample ", sample_id, " for compound ", compound_id, " in mode ", mode)
 
-  compound_id_filter <- compound_id
-
-  if (!has_default_bounds(chrom_res, compound_id_filter) & !manual) {
+  # Check if expected bounds exist for auto mode
+  if (!has_default_bounds(chrom_res, compound_id) & mode == "auto") {
     stop(
       "Expected RT not set. Use target = 'all' to set expected RT for the first time"
     )
   }
 
-  # on which transition the compound
-  transition_id <- .which_transition(chrom_res, compound_id_filter)
+  # For AI mode, call integrate_ai to get refined bounds and metadata
+  if (mode == "ai") {
+    transition_id <- .which_transition(chrom_res, compound_id)
+    ai_result <- integrate_ai(
+      chrom_res,
+      transition_id = transition_id,
+      sample_id = sample_id,
+      peak_start = peak_start,
+      peak_end = peak_end
+    )
+    
+    # Use AI-refined bounds and metadata
+    peak_start <- ai_result$peak_start
+    peak_end <- ai_result$peak_end
+    comment <- ai_result$comment
+    flag <- ai_result$flagged
+  }
 
-  samples_ids <- sample_id
+  # Find transition and filter peak data
+  transition_id <- .which_transition(chrom_res, compound_id)
   obs_rt <- .filter_peak(
     chrom_res,
     transition_id,
-    samples_ids = samples_ids,
+    samples_ids = sample_id,
     peak_start = peak_start,
     peak_end = peak_end
   )
 
+  # Update observed RT values in peaks table
+  chrom_res@peaks <- .update_observed_rt(
+    chrom_res@peaks,
+    obs_rt,
+    compound_id,
+    sample_id,
+    peak_start,
+    peak_end,
+    mode = mode,
+    comment = comment,
+    flag = flag
+  )
 
-  if (manual) {
-    # integrate obs_rt
-    peaktab <- dplyr::rows_update(
-      peaktab,
-      data.frame(
-        sample_id = as.character(samples_ids),
-        compound_id = compound_id_filter,
-        observed_rt = as.numeric(NA),
-        observed_peak_start = peak_start,
-        observed_peak_end = peak_end,
-        observed_peak_height = as.numeric(NA),
-        area = as.numeric(NA),
-        manual = manual & !ai,
-        flag = flag,
-        comment = comment
-      ),
-      by = c("sample_id", "compound_id")
-    )
-
-    obs_rt <- obs_rt |>
-      .find_max_intensity() |>
-      mutate(compound_id = compound_id_filter) |>
-      dplyr::rename(observed_peak_height = "peak_height") |>
-      dplyr::rename(observed_rt = "RT")
-    # join by sample_id and compound_id
-    peaktab <- dplyr::rows_patch(
-      peaktab,
-      obs_rt,
-      by = c("sample_id", "compound_id")
-    )
-  } else {
-    x <- split(obs_rt, obs_rt$sample_id)
-    fp <- py$peak_integrate$find_peak2_d
-    append_peaktab <- fp(x, 1)
-    append_peaktab$compound_id <- compound_id_filter
-
-    append_peaktab$manual <- FALSE
-    append_peaktab$area <- NA
-
-    peaktab <- dplyr::rows_update(
-      peaktab,
-      append_peaktab,
-      by = c("sample_id", "compound_id"),
-      unmatched = "ignore"
-    )
-  }
-
-  chrom_res@peaks <- peaktab
-  integrate(chrom_res, compound_id, samples_ids = samples_ids) 
+  # Integrate the peaks
+  integrate(chrom_res, compound_id, samples_ids = sample_id)
 }
 
 
@@ -793,19 +937,29 @@ apply_area_cutoff <- function(chrom_res, cutoff, compound_id) {
 #' @description Update RT for either all compounds, all next samples, or single compound and sample
 #' @param chrom_res ChromRes object
 #' @param compound_id Compound ID
-#' @param sample_id Sample ID
+#' @param sample_id Sample ID (required for "single" and "all_next", must be NULL for "all")
 #' @param peak_start Minimum RT value
 #' @param peak_end Maximum RT value
-#' @param manual Manual update. Default is FALSE
-#' @param target Target of update. Options are "single", "all", "all_next"
+#' @param mode Mode of update. Options are "auto", "manual", "ai". Default is "auto"
+#' @param target Target of update. Options are "single", "all", "all_next". Default is "single"
 #' @param force Force update if previous peak exists. Default is FALSE
 #' @param comment Comment for the update. Default is an empty string
-#' @details Only target = "all" will update the expected RT for all compounds.
+#' @param flag Flag the peak after update. Default is FALSE
+#' @return Updated ChromRes object
+#' @details 
+#' - target = "single": Updates RT for one compound and sample
+#' - target = "all": Updates expected RT for all samples (sets expected bounds)
+#' - target = "all_next": Updates RT for specified sample and subsequent samples
+#' 
+#' All modes affect both observed and expected RT values:
+#' - "manual": Sets exact peak bounds, marks as manual
+#' - "auto": Auto-detects peaks within bounds
+#' - "ai": AI-based peak detection
 #' @export
 #' @examples
 #' \dontrun{
-#' update_RT(chrom_res, compound_id = 1, sample_id = 1, 
-#'           peak_start = 1, peak_end = 2, target = "single")
+#' update_RT(chrom_res, compound_id = 1, sample_id = 1,
+#'           peak_start = 0.1, peak_end = 1, target = "single")
 #' }
 update_RT <- function(
   chrom_res,
@@ -813,98 +967,55 @@ update_RT <- function(
   sample_id = NULL,
   peak_start,
   peak_end,
-  manual = FALSE,
+  mode = "auto",
   target = "single",
-  force = FALSE, 
-  comment = "", # TODO add to peaktab
-  flag = FALSE,
-  ai = FALSE
+  force = FALSE,
+  comment = "",
+  flag = FALSE
 ) {
+  # Input validation
   checkmate::assertClass(chrom_res, "ChromRes")
-  # compound_id <- .cmpds_string_handler(compound_id)
   checkmate::assertNumber(sample_id, lower = 1, null.ok = TRUE)
   checkmate::assertNumber(peak_start, lower = 0)
   checkmate::assertNumber(peak_end, lower = peak_start)
   checkmate::assert_choice(target, choices = c("single", "all", "all_next"))
-  checkmate::assertLogical(manual)
+  checkmate::assertChoice(mode, choices = c("auto", "manual", "ai"))
   checkmate::assertLogical(force)
   checkmate::assertString(comment)
-  ### check RT
+  checkmate::assertLogical(flag)
+
   stopifnot(peak_start < peak_end)
 
-  # check sample exist
+  # Check compound exists
+  if (!(compound_id %in% chrom_res@compounds$compound_id)) {
+    stop("Compound ID not found in compounds. Use add_compound() to add compound.")
+  }
+
+  # Check and validate sample_id requirement based on target
+  .validate_update_rt_params(chrom_res, sample_id, target)
+
+  # Route to appropriate integration strategy
+  switch(target,
+    "single" = .integrate_individual_slack(chrom_res, compound_id, sample_id, peak_start, peak_end, mode, comment, flag),
+    "all" = .integrate_all_slack(chrom_res, compound_id, peak_start, peak_end, mode),
+    "all_next" = .integrate_next_slack(chrom_res, compound_id, sample_id, peak_start, peak_end, mode)
+  )
+}
+
+#' @title Validate update_RT parameters
+#' @noRd
+.validate_update_rt_params <- function(chrom_res, sample_id, target) {
   if (!is.null(sample_id)) {
     if (!(sample_id %in% names(chrom_res@runs$files))) {
       stop("Sample ID not found in chromatogram")
     }
-  } else if (is.null(sample_id)) {
-    if (target == "single") {
-      stop("Sample ID not specified. You can only use 'all' for target")
-    }
-    if (target == "all_next") {
-      stop("Sample ID not specified. You can only use 'all' for target")
+  } else {
+    # sample_id is NULL
+    if (target %in% c("single", "all_next")) {
+      stop("Sample ID not specified. You can only use 'all' for target when sample_id is NULL")
     }
   }
-  ## check compound_id in compounds
-  if (!(compound_id %in% chrom_res@compounds$compound_id)) {
-    stop(
-      "Compound ID not found in compounds. Use add_compound() to add compound."
-    )
-  }
-
-  compound_id_iloc <- compound_id
-  sample_id_iloc <- sample_id
-
-  # on which transition the compound is
-  trans_id <- .which_transition(chrom_res, compound_id_iloc)
-  filter_intensity <- .filter_peak(
-    chrom_res,
-    trans_id,
-    sample_id_iloc,
-    peak_start,
-    peak_end
-  )
-
-  if (target == "single") {
-    stopifnot(!is.null(sample_id_iloc))
-    message("Updating RT for single compound and sample")
-    chrom_res <- .integrate_individual_slack(
-      chrom_res,
-      compound_id_iloc,
-      sample_id_iloc,
-      peak_start,
-      peak_end,
-      manual, 
-      comment,
-      flag,
-      ai
-    )
-  } else if (target == "all") {
-    stopifnot(is.null(sample_id_iloc))
-
-    chrom_res <- .integrate_all_slack(
-      chrom_res,
-      compound_id_iloc,
-      peak_start,
-      peak_end,
-      manual
-    )
-  } else if (target == "all_next") {
-    stopifnot(!is.null(sample_id_iloc))
-    chrom_res <- .integrate_next_slack(
-      chrom_res,
-      compound_id_iloc,
-      sample_id_iloc,
-      peak_start,
-      peak_end,
-      manual
-    )
-  }
-
-  validObject(chrom_res)
-  chrom_res
 }
-
 
 
 #' @title Automatic Peak Boundary Detection
@@ -992,7 +1103,12 @@ update_RT <- function(
       peak_area = calculated_peak_area
     )
   ) |> # rbind closed here
-    dplyr::group_by(.data$compound_id, .data$sample_id, .data$compound, .data$sample) |>
+    dplyr::group_by(
+      .data$compound_id,
+      .data$sample_id,
+      .data$compound,
+      .data$sample
+    ) |>
     dplyr::slice_tail(n = 1) |>
     dplyr::ungroup()
 
@@ -1018,20 +1134,27 @@ extract_peak_bounds <- function(chrom_res, compound_id, samples_ids = NULL) {
   if (!(compound_id %in% compounds$compound_id)) {
     stop("Compound ID not found in compounds")
   }
-  if( is.null(samples_ids)){
+  if (is.null(samples_ids)) {
     samples_ids <- names(chrom_res@runs$files)
   } else {
     samples_ids <- sample_ids_handler(samples_ids, chrom_res)
   }
 
-  if (!has_observed_bounds(chrom_res, compound_id, samples_ids) & !has_default_bounds(chrom_res, compound_id)) {
-    stop("Compound must have either observed or expected peak boundaries to proceed")
+  if (
+    !has_observed_bounds(chrom_res, compound_id, samples_ids) &
+      !has_default_bounds(chrom_res, compound_id)
+  ) {
+    stop(
+      "Compound must have either observed or expected peak boundaries to proceed"
+    )
   }
 
   peaktab <- chrom_res@peaks
   peaktab <- peaktab |>
-    dplyr::filter(.data$compound_id == !!compound_id, 
-                  .data$sample_id %in% !!samples_ids)
+    dplyr::filter(
+      .data$compound_id == !!compound_id,
+      .data$sample_id %in% !!samples_ids
+    )
 
   res <- data.frame(
     compound_id = peaktab$compound_id,
@@ -1071,5 +1194,5 @@ has_observed_bounds <- function(chrom_res, compound_id, samples_ids = NULL) {
     peaktab <- peaktab |>
       dplyr::filter(.data$sample_id %in% !!samples_ids)
   }
-  all(!is.na(peaktab$observed_peak_start) & !is.na(peaktab$observed_peak_end)) 
+  all(!is.na(peaktab$observed_peak_start) & !is.na(peaktab$observed_peak_end))
 }

@@ -70,7 +70,7 @@ test_that("update_RT", {
       compound_id = "C1",
       target = "all",
       force = FALSE,
-      manual = FALSE,
+      mode = "auto",
       peak_start = 0.1,
       peak_end = 1
     )
@@ -83,7 +83,7 @@ test_that("update_RT", {
     compound_id = "C1",
     target = "all",
     force = FALSE,
-    manual = FALSE,
+    mode = "auto",
     peak_start = 0.8,
     peak_end = 1
   )@peaks$observed_peak_start >=
@@ -103,7 +103,7 @@ test_that("next_RT_update", {
     sample_id = "5",
     peak_start = 0.2,
     peak_end = 1.1,
-    manual = TRUE
+    mode = "manual"
   ) |>
     expect_error("Expected RT not set")
 
@@ -112,16 +112,16 @@ test_that("next_RT_update", {
     compound_id = 1,
     peak_start = 0.5,
     peak_end = 1.4,
-    manual = TRUE
+    mode = "manual"
   )
 
   x <- .integrate_next_slack(
     x,
-    compound_id = "C1",
+    compound_id = 1,
     sample_id = 5,
     peak_start = 0.2,
     peak_end = 1.1,
-    manual = TRUE
+    mode = "manual"
   )
 
   is_integrated(x, sample_id = 4, compound_id = 1) |> expect_true()
@@ -157,7 +157,7 @@ test_that("next_RT_update", {
       compound_id = 1,
       target = "all_next",
       force = FALSE,
-      manual = TRUE,
+      mode = "manual",
       peak_start = 0.5,
       peak_end = 1.5
     )
@@ -170,7 +170,7 @@ test_that("next_RT_update", {
       compound_id = 1,
       target = "all_next",
       force = FALSE,
-      manual = FALSE,
+      mode = "auto",
       peak_start = 0.5,
       peak_end = 1
     )
@@ -186,7 +186,7 @@ test_that("individual_RT_update", {
     sample_id = 4,
     peak_start = 0.1,
     peak_end = 1,
-    manual = TRUE
+    mode = "manual"
   ) |>
     expect_error("Expected RT not set")
 
@@ -196,7 +196,7 @@ test_that("individual_RT_update", {
     sample_id = 5,
     peak_start = 0.3,
     peak_end = 1.2,
-    manual = TRUE
+    mode = "manual"
   )
 
   is_integrated(x, sample_id = 4, compound_id = 1) |> expect_true()
@@ -230,7 +230,7 @@ test_that("individual_RT_update", {
       compound_id = 1,
       target = "single",
       force = FALSE,
-      manual = TRUE,
+      mode = "manual",
       peak_start = 0.2,
       peak_end = 1.2
     )
@@ -243,7 +243,7 @@ test_that("individual_RT_update", {
       compound_id = 1,
       target = "single",
       force = FALSE,
-      manual = FALSE,
+      mode = "auto",
       peak_start = 0.85,
       peak_end = 1
     )
@@ -264,7 +264,7 @@ test_that("individual_RT_update", {
       compound_id = 1,
       target = "all",
       force = FALSE,
-      manual = FALSE,
+      mode = "auto",
       peak_start = 1,
       peak_end = 2
     )
