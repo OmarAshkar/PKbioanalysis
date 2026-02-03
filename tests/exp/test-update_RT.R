@@ -53,9 +53,9 @@ test_that("update_RT", {
   expect_false(is_integrated(dat, sample_id = 4, compound_id = 20))
 
   # check expected RT
-  expect_false(has_default_RT(dat, compound_id = 20))
+  expect_false(has_default_bounds(dat, compound_id = 20))
 
-  expect_error(has_default_RT(dat, compound_id = 23), "Compound ID not found")
+  expect_error(has_default_bounds(dat, compound_id = 23), "Compound ID not found")
 
   # start integration and setting default
   # update RT and integrate (update_RT)
@@ -94,7 +94,7 @@ test_that("update_RT", {
 
 test_that("next_RT_update", {
   ##################################################
-  has_default_RT(main, compound_id = 1) |> expect_false()
+  has_default_bounds(main, compound_id = 1) |> expect_false()
 
   # test integrate_all_slack_next logic
   .integrate_next_slack(

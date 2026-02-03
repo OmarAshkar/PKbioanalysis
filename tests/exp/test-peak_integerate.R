@@ -76,22 +76,41 @@ test_that("integrate_all", {
 })
 
 
-test_that("set_expected_bounds", {})
-
-
-test_that("set_observed_bounds", {})
-
-
 test_that("extract_peak_bounds", {
-  bounds <- extract_peak_bounds(main, compound_id = 1)
+
+  extract_peak_bounds(main, compound_id = 1) |> expect_error("Compound must have")
+
+  # set expected bounds
+  # x <- update_RT(
+  #   main,
+  #   sample_id = NULL,
+  #   compound_id = "C1",
+  #   target = "all",
+  #   force = FALSE,
+  #   manual = FALSE,
+  #   peak_start = 0.1,
+  #   peak_end = 1
+  # )
+
+  # set observed bounds 
+  
+  x <- .integrate_all_slack(
+    main,
+    compound_id = 20,
+    peak_start = 0.1,
+    peak_end = 1,
+    manual = TRUE
+  )
+
+  bounds <- extract_peak_bounds(x, compound_id = 20)
   bounds |> expect_type("list")
+  length(bounds$min) |> expect_equal(7)
   bounds$min |> expect_type("double")
   bounds$max |> expect_type("double")
-  bounds$min |> expect_equal(0.5)
-  bounds$max |> expect_equal(1.5)
 
-  extract_peak_bounds(main, compound_id = 2) |>
-    expect_error("No observed RT values found for the specified compound_id.")
+  bounds$min |> unique() |> expect_equal(0.1)
+  bounds$max |> unique() |> expect_equal(1)
+
 })
 
 

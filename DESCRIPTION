@@ -45,7 +45,7 @@ Imports:
     yaml,
     rhandsontable,
     methods,
-    reticulate,
+    reticulate (>= 1.44.1),
     RTMB,
     janitor,
     tibble,

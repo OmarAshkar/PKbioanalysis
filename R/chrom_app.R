@@ -898,7 +898,7 @@ chromapp_server <- function(input, output, session) {
 
       # has default RT +> any ok
       if (
-        has_default_RT(
+        has_default_bounds(
           peaksobj(),
           .get_compound_id_from_compound_trans(
             current_cmpds_df(),

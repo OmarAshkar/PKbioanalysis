@@ -1,5 +1,6 @@
 test_that("pydeps", {
-  reticulate::py_config()
+  skip_if_no_py()
+  skip_on_cran()
   expect_true(reticulate::py_module_available("numpy"))
   expect_true(reticulate::py_module_available("scipy"))
   expect_true(reticulate::py_module_available("pandas"))

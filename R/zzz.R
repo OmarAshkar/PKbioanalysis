@@ -23,7 +23,9 @@ refresh_config <- function() {
   if (!file.exists(configfile)) {
     reset_config()
   }
-  config <- yaml::read_yaml(configfile)
+  suppressWarnings(
+    config <- yaml::read_yaml(configfile)
+  )
   PKbioanalysis_env$api_base_url <- config$api_base_url
   PKbioanalysis_env$api_key <- config$api_key
   PKbioanalysis_env$ai_model <- config$ai_model
@@ -46,7 +48,9 @@ update_config <- function(
       "Config file not found. Please run reset_config() to create a default config file."
     )
   }
-  config <- yaml::read_yaml(configfile)
+  suppressWarnings(
+    config <- yaml::read_yaml(configfile)
+  )
 
   if (!is.null(base_url)) {
     config$api_base_url <- base_url
@@ -82,10 +86,10 @@ install_py_dep <- function(..., envname = "PKbioanalysis") {
 
   reticulate::virtualenv_create(envname, python = python_exec)
 
+  reticulate::py_install("pandas<3", env = envname, pip = TRUE)
   reticulate::py_install("rainbow-api", env = envname, pip = TRUE)
   reticulate::py_install("numpy", env = envname, pip = TRUE)
   reticulate::py_install("scipy", env = envname, pip = TRUE)
-  reticulate::py_install("pandas", env = envname, pip = TRUE)
 }
 
 
@@ -143,7 +147,7 @@ py <- NULL
     )
   }
 
-  py_packages <- c("rainbow_api", "numpy", "scipy", "pandas")
+  py_packages <- c("pandas<3", "rainbow_api", "numpy", "scipy")
   reticulate::py_require(py_packages)
 
   pysrc_path <- system.file("pysrc", package = pkgname)
@@ -179,3 +183,5 @@ py <- NULL
 
   invisible()
 }
+
+

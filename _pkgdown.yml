@@ -83,7 +83,7 @@ reference:
   - get_compound_ID 
   - get_sample_ID 
   - get_sample_names 
-  - has_default_RT 
+  - has_default_bounds 
   - is_smoothed 
   - is_integrated
   - read_experiment_results 
