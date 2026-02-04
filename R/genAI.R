@@ -88,6 +88,7 @@ integrate_ai <- function(
     jsonlite::toJSON(intensities),
     "Return only json string with the following fields: observed_retention_time (most intense point), peak_start, peak_end, flagged (TRUE if peak is not acceptable, FALSE if peak is acceptable), and a short",
     "comment in 50 words max commenting on the peak shape, peak start, peak end, and observed retention time (most intense point), and if the peak is acceptable or not (flagged).",
+    "A peak is considered a peak if it has a clear apex, resonable peak width, and more importantly, the S/N is above 10 from surrounding baseline. If the S/N is below 10, it should be flagged as not acceptable. If the peak is not acceptable, give a brief comment on why it is not acceptable.",
     "If no peak observed return flagged TRUE, write breif comment, and return NA for the rest of the json fields. Not a single word not in json format."
   )
 
