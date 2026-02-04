@@ -113,8 +113,12 @@
 <span>        cv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">conc</span><span class="op">)</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">conc</span><span class="op">)</span><span class="op">*</span><span class="fl">100</span>,</span>
 <span>        n <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span></span>
 <span>    <span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `summarise()` has grouped output by 'TYPE'. You can override using the</span></span>
-<span><span class="co">## `.groups` argument.</span></span></code></pre>
+<pre><code><span><span class="co">## `summarise()` has regrouped the output.</span></span>
+<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> Summaries were computed grouped by <span style="color: #0000BB;">TYPE</span> and <span style="color: #0000BB;">stdconc</span>.</span></span>
+<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> Output is grouped by <span style="color: #0000BB;">TYPE</span>.</span></span>
+<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> Use `summarise(.groups = "drop_last")` to silence this message.</span></span>
+<span><span class="co">## <span style="color: #00BBBB;">ℹ</span> Use `summarise(.by = c(TYPE, stdconc))` for per-operation grouping</span></span>
+<span><span class="co">##   (`?dplyr::dplyr_by`) instead.</span></span></code></pre>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">only_qc</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>

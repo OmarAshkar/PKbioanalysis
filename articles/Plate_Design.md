@@ -42,7 +42,7 @@ print(plate)
 #>  Last Fill: A,1 
 #>  Remaining Empty Spots: 96 
 #>  Description:  
-#>  Last Modified: 2026-01-14 16:53:54.336893 
+#>  Last Modified: 2026-02-04 22:56:07.156404 
 #>  Scheme h 
 #>  Plate ID: 1_1 
 #>  Registered: FALSE 
@@ -266,7 +266,7 @@ plates <- make_metabolic_study(
     n_NAD = 3, 
     n_noNAD = 2
 )
-#> ℹ Created study with ID: ba88d317-11ef-407c-9b85-a2a522bc436f
+#> ℹ Created study with ID: 4948441e-ea1e-4c55-a242-997b9801c85c
 #> ℹ Adding dosing and subjects information...
 #> ✔ Dosing information added.
 #> ℹ Adding subjects information...

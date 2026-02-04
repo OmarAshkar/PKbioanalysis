@@ -154,7 +154,7 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
   : Find Sample ID from sample Name
 - [`get_sample_names()`](https://omarashkar.github.io/PKbioanalysis/reference/get_sample_names.md)
   : Find sample names for all samples
-- [`has_default_RT()`](https://omarashkar.github.io/PKbioanalysis/reference/has_default_RT.md)
+- [`has_default_bounds()`](https://omarashkar.github.io/PKbioanalysis/reference/has_default_bounds.md)
   : check if default expected RT is set for a compound
 - [`is_smoothed()`](https://omarashkar.github.io/PKbioanalysis/reference/is_smoothed.md)
   : Return an indicator if the chromatogram is smoothed

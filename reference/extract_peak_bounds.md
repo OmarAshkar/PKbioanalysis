@@ -1,11 +1,11 @@
 # Extract Peak Boundaries
 
-Extract peak boundaries for a given compound ID
+Extract peak boundaries for all samples for a given compound ID
 
 ## Usage
 
 ``` r
-extract_peak_bounds(chrom_res, compound_id)
+extract_peak_bounds(chrom_res, compound_id, samples_ids = NULL)
 ```
 
 ## Arguments
@@ -16,9 +16,14 @@ extract_peak_bounds(chrom_res, compound_id)
 
 - compound_id:
 
-  Compound ID The function automatically priortizes observed peak
-  boundaries (manual integration) over expected ones. If observed
-  boundaries are not available, it falls back to expected boundaries.
+  Compound ID
+
+- samples_ids:
+
+  Sample IDs. If NULL, all samples will be used The function
+  automatically priortizes observed peak boundaries (manual integration)
+  over expected ones. If observed boundaries are not available, it falls
+  back to expected boundaries.
 
 ## Value
 

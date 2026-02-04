@@ -24,11 +24,15 @@ CRAN release: 2025-05-21
 
 ## Version 0.4.0
 
+CRAN release: 2026-01-14
+
 - Import Waters raw data files and plot chromatograms.
 
 - Allow replications for samples.
 
 - ## Version 0.5.0
+
+  CRAN release: 2026-01-14
 
 - Bioanalytical `group` adding allowing more systematic injection
   sequence creation.

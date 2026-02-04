@@ -12,9 +12,11 @@ update_RT(
   sample_id = NULL,
   peak_start,
   peak_end,
-  manual = FALSE,
+  mode = "auto",
   target = "single",
-  force = FALSE
+  force = FALSE,
+  comment = "",
+  flag = FALSE
 )
 ```
 
@@ -30,7 +32,8 @@ update_RT(
 
 - sample_id:
 
-  Sample ID
+  Sample ID (required for "single" and "all_next", must be NULL for
+  "all")
 
 - peak_start:
 
@@ -40,27 +43,47 @@ update_RT(
 
   Maximum RT value
 
-- manual:
+- mode:
 
-  Manual update. Default is FALSE
+  Mode of update. Options are "auto", "manual", "ai". Default is "auto"
 
 - target:
 
-  Target of update. Options are "single", "all", "all_next"
+  Target of update. Options are "single", "all", "all_next". Default is
+  "single"
 
 - force:
 
   Force update if previous peak exists. Default is FALSE
 
+- comment:
+
+  Comment for the update. Default is an empty string
+
+- flag:
+
+  Flag the peak after update. Default is FALSE
+
+## Value
+
+Updated ChromRes object
+
 ## Details
 
-Only target = "all" will update the expected RT for all compounds.
+\- target = "single": Updates RT for one compound and sample - target =
+"all": Updates expected RT for all samples (sets expected bounds) -
+target = "all_next": Updates RT for specified sample and subsequent
+samples
+
+All modes affect both observed and expected RT values: - "manual": Sets
+exact peak bounds, marks as manual - "auto": Auto-detects peaks within
+bounds - "ai": AI-based peak detection
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-update_RT(chrom_res, compound_id = 1, sample_id = 1, 
-          peak_start = 1, peak_end = 2, target = "single")
+update_RT(chrom_res, compound_id = 1, sample_id = 1,
+          peak_start = 0.1, peak_end = 1, target = "single")
 } # }
 ```

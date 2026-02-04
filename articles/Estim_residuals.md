@@ -55,8 +55,12 @@ only_qc <- only_qc  |>
     )
 ```
 
-    ## `summarise()` has grouped output by 'TYPE'. You can override using the
-    ## `.groups` argument.
+    ## `summarise()` has regrouped the output.
+    ## ℹ Summaries were computed grouped by TYPE and stdconc.
+    ## ℹ Output is grouped by TYPE.
+    ## ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+    ## ℹ Use `summarise(.by = c(TYPE, stdconc))` for per-operation grouping
+    ##   (`?dplyr::dplyr_by`) instead.
 
 ``` r
 only_qc
