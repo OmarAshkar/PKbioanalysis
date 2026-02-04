@@ -54,7 +54,7 @@ Imports:
     data.tree,
     nloptr,
     forcats,
-    ggiraph,
+    ggiraph (>= 0.9.3),
     gt,
     plotly,
     pracma,

@@ -387,7 +387,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
 #     validObject(chrom_res)
 #     chrom_res
 
-#     }
+# }
 
 # #' @title Remove a compound from quantification
 # #' @description Remove a compound from quantification. This function will remove a compound from quantification in the chromatogram.
@@ -550,7 +550,22 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   # Get all sample IDs
   all_sample_ids <- names(chrom_res@runs$files)
 
-  # Filter peak data for all samples
+  # For AI mode, loop through each sample individually
+  if (mode == "ai") {
+    for (i in all_sample_ids) {
+      chrom_res <- .integrate_individual_slack(
+        chrom_res,
+        compound_id,
+        i,
+        peak_start,
+        peak_end,
+        mode = mode
+      )
+    }
+    return(chrom_res)
+  }
+
+  # For manual and auto modes, use batch processing
   transition_id <- .which_transition(chrom_res, compound_id)
   obs_rt <- .filter_peak(
     chrom_res,
@@ -666,9 +681,7 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
   fp <- switch(
     mode,
     "auto" = py$peak_integrate$find_peak2_d,
-    "ai" = integrate_ai,
     NULL
-  
   )
 
   if (is.null(fp)) {
