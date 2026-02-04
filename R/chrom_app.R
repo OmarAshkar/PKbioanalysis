@@ -1053,7 +1053,7 @@ chromapp_server <- function(input, output, session) {
       tags$p(paste0("Peak Search Start: ", min(selected_peak_range()$x))),
       tags$p(paste0("Peak Search End: ", max(selected_peak_range()$x))),
       tags$p(paste0("Save option: ", toupper(input$integration_menu))),
-      title = "Add Compound",
+      title = "Verify Peak Integration",
       easyClose = TRUE,
       footer = tagList(
         actionButton("verify_integration_button", "save"),
