@@ -1,3 +1,5 @@
+skip_if_no_py()
+
 test_that("filtering_works_2way", {
   # expect_no_error(print(main))
 

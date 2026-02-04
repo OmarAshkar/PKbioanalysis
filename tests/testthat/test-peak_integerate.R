@@ -1,3 +1,5 @@
+skip_if_no_py()
+
 test_that(".which_transition", {
   .which_transition(main, 1) |> expect_equal(1)
   .which_transition(main, 2) |> expect_equal(2)
