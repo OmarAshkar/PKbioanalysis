@@ -180,20 +180,20 @@ test_that("next_RT_update", {
 test_that("individual_RT_update", {
   #################################################
   # test integrate_single logic
-  .integrate_individual_slack(
+  x <- .integrate_individual_slack(
     main,
     compound_id = 1,
     sample_id = 4,
     peak_start = 0.1,
     peak_end = 1,
-    mode = "manual"
+    mode = "auto"
   ) |>
     expect_error("Expected RT not set")
 
   x <- .integrate_individual_slack(
     x,
     compound_id = 1,
-    sample_id = 5,
+    sample_id = 4,
     peak_start = 0.3,
     peak_end = 1.2,
     mode = "manual"

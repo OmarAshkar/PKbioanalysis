@@ -66,7 +66,7 @@ test_that("integrate_all", {
     compound_id = 20,
     peak_start = 0.1,
     peak_end = 1,
-    manual = TRUE
+    mode = "manual"
   )
 
   is_integrated(x, sample_id = 6, compound_id = 20) |> expect_true()
@@ -99,7 +99,7 @@ test_that("extract_peak_bounds", {
     compound_id = 20,
     peak_start = 0.1,
     peak_end = 1,
-    manual = TRUE
+    mode = "manual"
   )
 
   bounds <- extract_peak_bounds(x, compound_id = 20)
@@ -115,7 +115,18 @@ test_that("extract_peak_bounds", {
 
 
 test_that("integrate function", {
-  integrate(main, 1, NULL)
+  x <- update_RT(
+    main,
+    compound_id = 1,
+    sample_id = NULL,
+    peak_start = 0.5,
+    peak_end = 1.5,
+    target = "all",
+    mode = "manual"
+  ) |> expect_no_error()
+
+  is_integrated(x, sample_id = 4, compound_id = 1) |> expect_true()
+  integrate(x, compound_id = 1, samples_ids = NULL) |> expect_no_error()
 })
 
 
@@ -128,17 +139,18 @@ test_that("small_peak_filter", {
     peak_start = 1,
     peak_end = 2,
     target = "all",
-    manual = F
+    mode = "auto"
   )
   apply_area_cutoff(main2, 10**3, 1)
 
   main2 <- update_RT(
     main,
-    "C2",
+    2,
     peak_start = 1,
     peak_end = 2,
     target = "all",
-    manual = F
+    mode = "auto"
   )
-  apply_area_cutoff(main2, 10**3, "C2")
+  apply_area_cutoff(main2, 10**3, 2)  |> expect_no_error()
+
 })
