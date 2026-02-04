@@ -180,16 +180,30 @@ test_that("next_RT_update", {
 test_that("individual_RT_update", {
   #################################################
   # test integrate_single logic
-  x <- .integrate_individual_slack(
+  
+  # First, test that calling with mode = "auto" without expected bounds throws an error
+  expect_error(
+    .integrate_individual_slack(
+      main,
+      compound_id = 1,
+      sample_id = 4,
+      peak_start = 0.1,
+      peak_end = 1,
+      mode = "auto"
+    ),
+    "Expected RT not set"
+  )
+
+  # Set up expected bounds first using integrate_all_slack
+  x <- .integrate_all_slack(
     main,
     compound_id = 1,
-    sample_id = 4,
     peak_start = 0.1,
     peak_end = 1,
-    mode = "auto"
-  ) |>
-    expect_error("Expected RT not set")
+    mode = "manual"
+  )
 
+  # Now integrate individual sample with different bounds
   x <- .integrate_individual_slack(
     x,
     compound_id = 1,
