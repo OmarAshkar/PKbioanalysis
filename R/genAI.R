@@ -91,7 +91,7 @@ integrate_ai <- function(
     "A peak is considered a peak if it has width between 0.05 and 0.5 minutes maximum",
     "Also, peak max should be at least 1M to be considered a peak.", 
     "S/N is defined as the ratio of the most intense point in the peak to the average intensity of the baseline (the region between 0.5 minutes before peak start and 0.5 minutes after peak end).", 
-    "A peak is considered a peak if it has a clear apex, resonable peak width, and more importantly, the S/N is above 10 from surrounding baseline. If the S/N is below 10, it should be flagged as not acceptable. If the peak is not acceptable, give a brief comment on why it is not acceptable.",
+    "A peak is considered a peak if it has a clear apex, reasonable peak width, and more importantly, the S/N is above 10 from surrounding baseline. If the S/N is below 10, it should be flagged as not acceptable. If the peak is not acceptable, give a brief comment on why it is not acceptable.",
     "If no peak observed return flagged TRUE, write brief comment, and return NA for the rest of the json fields. Not a single word not in json format."
   )
 
