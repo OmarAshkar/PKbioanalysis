@@ -53,7 +53,7 @@ dir_or_files_to_files <- function(dir, file_pattern) {
   rawreadr <- function(file) {
     f <- py$masslynx_parser$read_waters(file) # pycall
 
-    ## Describtion of f elements:
+    ## Description of f elements:
     # 1: chrom data points df, 2: cmpds, 3: run meta vec, 4: q1 transitions, 5: q3 transitions
 
     f[[1]] <- cbind(as.data.frame(f[[1]]), 
