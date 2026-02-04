@@ -1,6 +1,6 @@
 skip_if_no_py <- function() {
   if (!reticulate::py_module_available("src"))
-    skip("scipy not available for testing")
+    skip("Python module 'src' not available for testing")
 }
 
 
