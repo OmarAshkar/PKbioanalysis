@@ -1192,7 +1192,13 @@ extract_peak_bounds <- function(chrom_res, compound_id, samples_ids = NULL) {
   res
 }
 
-# ' @title Check if samples has observed bounds for specific compounds
+#' @title Check if samples have observed bounds for a specific compound
+#' @description Check whether all selected samples have observed peak boundaries
+#'   (both start and end) for the given compound. Optionally filters by sample IDs.
+#' @param chrom_res ChromRes object containing peak information
+#' @param compound_id Compound ID to check
+#' @param samples_ids Sample IDs. If NULL, all samples for the compound are used
+#' @noRd
 has_observed_bounds <- function(chrom_res, compound_id, samples_ids = NULL) {
   checkmate::assertClass(chrom_res, "ChromRes")
   checkmate::assertCount(compound_id, positive = TRUE)
