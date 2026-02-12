@@ -36,6 +36,7 @@ refresh_config <- function() {
 
 
 update_config <- function(
+  logkey = NULL,
   base_url = NULL,
   api_key = NULL,
   model = NULL,
@@ -52,6 +53,9 @@ update_config <- function(
     config <- yaml::read_yaml(configfile)
   )
 
+  if (!is.null(logkey)) {
+    config$logkey <- logkey
+  }
   if (!is.null(base_url)) {
     config$api_base_url <- base_url
   }
@@ -124,12 +128,22 @@ py <- NULL
     PKbioanalysis.cache_dir = file.path(
       getOption("PKbioanalysis.data_dir"),
       "plates_cache"
+    ), 
+    PKbioanalysis.chrom_cache = file.path(
+      getOption("PKbioanalysis.data_dir"),
+      "chrom_cache"
+    ),
+    PKbioanalysis.quant_cache = file.path(
+      getOption("PKbioanalysis.data_dir"),
+      "quant_cache"
     )
   )
 
   # Set the environment variable for the package
   PKbioanalysis_env$data_dir <- getOption("PKbioanalysis.data_dir")
   PKbioanalysis_env$cache_dir <- getOption("PKbioanalysis.cache_dir") 
+  PKbioanalysis_env$chrom_cache <- getOption("PKbioanalysis.chrom_cache")
+  PKbioanalysis_env$quant_cache <- getOption("PKbioanalysis.quant_cache")
 
   refresh_config()
 

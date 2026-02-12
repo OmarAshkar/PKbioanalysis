@@ -146,3 +146,87 @@
     mutate(IS = "dopamine-d4") |>
     write.csv(imported_peaks_path, row.names = F)
 }
+
+
+write_test_pkset <- function(){
+
+  # load extdata 
+  d <- read.csv(system.file("extdata", "08122019_MTG_injeclist_parsed.csv", package = "PKbioanalysis"))
+  d <- d |> dplyr::filter(index != 1)
+
+  # clean and sanitize
+
+  # Create pesudo study
+  study <- create_new_study(
+    data.frame(type = "SD", title = "Kartom Study", description = "", subject_type = "Animal", pkstudy = FALSE)
+  )
+
+  # write subjects
+  add_dosing_db(study$id, data.frame(group_label = "13.5mg/kg", 
+                                    dose_amount = 13.5, 
+                                    dose_unit = "mg", 
+                                    route = "PO", 
+                                    period_number = 1,
+                                    dose_freq = 1, 
+                                    dose_addl = 0, 
+                                    formulation = "solution"
+                                    ))
+
+  add_subjects_db(study$id, data.frame(
+    study_id = study$id,
+    subject_id = unique(d$subject_id)[unique(d$subject_id) != ""],
+    group_label = "13.5mg/kg",
+    sex = "M"
+    ))
+
+
+  subjectdf <- d |> 
+    dplyr::filter(type == "analyte") |> 
+    dplyr::mutate(dilution = as.numeric(gsub("X", "", dilution)))
+
+  # create and write log PK dataset 
+  log_ids <- add_sample_log(study$id, data.frame(
+    subject_id = subjectdf$subject_id,
+    nominal_time = subjectdf$time
+  ))
+
+  # create and write injection sequence
+  plate <- generate_96() |>
+    add_blank() |>
+    add_cs_curve(c(1, 2, 5, 10, 20, 50)) |>
+    add_samples_db(logIds = log_ids$log_id, dil = subjectdf$dilution) |>
+    register_plate()
+
+  injec_seq <- build_injec_seq(
+    plate,
+    rep_suitability = 0,
+    injec_vol = 5,
+    tray = "1",
+    method = 1,
+    prefix = "2024-06-10"
+  )
+  write_injec_seq(injec_seq)
+
+  # query the database manually to change injec_id to match d$Index 
+  db <- .connect_to_db()
+  on.exit(.close_db(db, TRUE), add = TRUE)
+  injsq <- injec_seq$injec_list |> 
+    dplyr::filter(TYPE == "Analyte")
+  dd <- d |> 
+    dplyr::filter(type == "analyte")
+  stopifnot(nrow(injsq) == nrow(dd))
+
+  for (i in seq_along(injsq$FILE_NAME)) {
+    DBI::dbExecute(
+      db,
+      paste0(
+        "UPDATE samples SET injec_id = '",
+        dd$index[i],
+        "' WHERE file_name = '",
+        injsq$FILE_NAME[i],
+        "'"
+      )
+    )
+  }
+
+}

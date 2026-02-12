@@ -20,7 +20,7 @@ Imports:
     dplyr,
     tidyselect,
     stringr (>= 1.5.1),
-    ggplot2 (>= 3.5.1),
+    ggplot2,
     ggforce (>= 0.4.1),
     tidyr,
     glue (>= 1.6.2),

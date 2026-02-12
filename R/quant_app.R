@@ -74,20 +74,19 @@ res_ui <- function(id) {
 res_tab_server <- function(id, quantres, cmpds_vec) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
     output$method_var_plot <- renderPlot({
       req(quantres())
 
       tryCatch(
         {
           x <- prefilter_precision_data(
-            quantres(),
-            input$filter_type,
-            input$accuracy_threshold,
-            input$compound_id
+            x = quantres(),
+            type = input$filter_type,
+            acc_cutoff = input$accuracy_threshold,
+            compound_id = input$compound_id
           )
           x <- calc_var_summary(x)
-          plot_var_pattern(x, title = input$compound_id)
+          plot_var_pattern(x, title = input$compound_id) & ggplot2::theme_bw()
         },
         error = function(e) {
           showNotification(
@@ -109,10 +108,10 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
       tryCatch(
         {
           x <- prefilter_precision_data(
-            quantres(),
-            input$filter_type,
-            input$accuracy_threshold,
-            input$compound_id
+            x = quantres(),
+            type = input$filter_type,
+            acc_cutoff = input$accuracy_threshold,
+            compound_id = input$compound_id
           )
           calc_var_summary(x) |>
             reactable::reactable()
@@ -138,10 +137,10 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
       tryCatch(
         {
           x <- prefilter_precision_data(
-            quantres(),
-            input$filter_type,
-            input$accuracy_threshold,
-            input$compound_id
+            x = quantres(),
+            type = input$filter_type,
+            acc_cutoff = input$accuracy_threshold,
+            compound_id = input$compound_id
           )
           fit_var(x) |>
             dplyr::select(
@@ -190,18 +189,23 @@ res_tab_server <- function(id, quantres, cmpds_vec) {
 pk_ui <- function(id) {
   ns <- NS(id)
   bslib::page_fillable(
-    actionButton("update_pk_btn", "Merge"),
-    bslib::navset_underline(
-      bslib::nav_panel(
-        title = "PK Profiles",
-        bslib::card(ggiraph::girafeOutput(ns("pk_profs_plot"))),
-        full_screen = TRUE
+    actionButton(ns("update_pk_btn"), "Merge"),
+    bslib::layout_sidebar(
+      sidebar = sidebar(
+        selectInput(ns("compound_id"), "Compound", choices = NA)
       ),
-      bslib::nav_panel(
-        title = "PK parameters",
-        verbatimTextOutput(ns("pk_parameters_output"))
-      ),
-      bslib::nav_panel(title = "Exports", p("Export"))
+      bslib::navset_underline(
+        bslib::nav_panel(
+          title = "PK Profiles",
+          bslib::card(ggiraph::girafeOutput(ns("pk_profs_plot"))),
+          full_screen = TRUE
+        ),
+        bslib::nav_panel(
+          title = "PK parameters",
+          reactable::reactableOutput(ns("pk_parameters_output"))
+        ),
+        bslib::nav_panel(title = "Exports", p("Export"))
+      )
     )
   )
 }
@@ -211,11 +215,29 @@ pk_server <- function(id, quantres, cmpd_trans_df) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    observeEvent(input$update_pk_btn, {
+      req(quantres())
+      tryCatch({
+        pkmerge(quantres()) |>
+          quantres()
+      }, error = function(e) {
+        showNotification(
+          paste("Error in pkmerge:", e$message),
+          type = "error"
+        )
+      }, warning = function(e) {
+        showNotification(
+          paste(e$warning),
+          type = "warning"
+        )
+      })
+
+    })
+
     output$pk_profs_plot <- ggiraph::renderGirafe({
       tryCatch(
         {
-          extract_pk_profiles(quantres()) |> quantres()
-          plot_pk_profiles(quantres())
+          plot_pk_profiles(quantres(), compound_id = input$compound_id)
         },
         error = function(e) {
           print(e)
@@ -226,10 +248,10 @@ pk_server <- function(id, quantres, cmpd_trans_df) {
       )
     })
 
-    output$pk_parameters_output <- renderPrint({
+    output$pk_parameters_output <- reactable::renderReactable({
       tryCatch(
         {
-          nca_table(quantres())
+          nca_table(quantres(), compound_id = input$compound_id)
         },
         error = function(e) {
           print(e)
@@ -774,13 +796,6 @@ quantapp_ui <- function() {
       res_ui("resmod")
     ),
     bslib::nav_panel("Merge", id = "pk_page", pk_ui("pkmod")),
-    bslib::nav_panel(
-      "Reports",
-      id = "exports_settings",
-      h2("Exports tab content"),
-      DTOutput("exports_table"),
-      downloadButton("downloadData", "Download")
-    ),
     bslib::nav_menu(
       title = "more",
       align = "right",

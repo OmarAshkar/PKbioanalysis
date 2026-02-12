@@ -18,7 +18,8 @@
 read_experiment_results <- function(
   x,
   drop_prefix = FALSE,
-  vendor = "targetlynx_xml"
+  vendor = "targetlynx_xml", 
+  logkey = "Index"
 ) {
   checkmate::assertFileExists(x)
   checkmate::assertChoice(
@@ -63,12 +64,14 @@ read_experiment_results <- function(
         "peak_end",
         "SN",
         "IS_name",
-        "RT"
+        "RT", 
+        logkey
       ) |>
       dplyr::mutate(across(
         c("stdconc", "area", "height", "peak_start", "peak_end", "SN", "RT"),
         as.numeric
-      ))
+      )) |> 
+      dplyr::rename(injec_id = !!sym(logkey))
   } else if (vendor == "generic") {
     stop("Vendor not supported")
   } else {

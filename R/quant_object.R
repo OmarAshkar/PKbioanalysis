@@ -17,7 +17,8 @@ check_quantRes <- function(object) {
         "peak_end",
         "SN",
         "IS_name",
-        "RT"
+        "RT", 
+        "injec_id"
       )
     )
   })
@@ -64,7 +65,7 @@ check_quantRes <- function(object) {
   checkmate::assertDataFrame(object@samples_metadata)
   checkmate::assertNames(
     names(object@samples_metadata),
-    must.include = c("filename", "vial", "type")
+    must.include = c("filename", "vial", "type", "injec_id")
   )
 
   lapply(object@quanttab, function(x) {
@@ -123,7 +124,8 @@ create_quant_object <- function(df, method_id = NULL) {
       "peak_end",
       "SN",
       "IS_name",
-      "RT"
+      "RT", 
+      "injec_id"
     ),
     type = "unique"
   )
@@ -141,7 +143,8 @@ create_quant_object <- function(df, method_id = NULL) {
       "peak_end",
       "SN",
       "IS_name",
-      "RT"
+      "RT", 
+      "injec_id"
     ) |>
     split(f = df$compound)
 
@@ -149,6 +152,7 @@ create_quant_object <- function(df, method_id = NULL) {
   linearitylist <- .construct_linearity(quantlist)
   suitabilitylist <- .construct_suitability(quantlist)
   resEstimlist <- .construct_resEstim(quantlist)
+  pklist <- .construct_pkdata(quantlist)
 
   cmpd_metadata <- data.frame(compound = names(quantlist))
   res <- new(
@@ -158,7 +162,8 @@ create_quant_object <- function(df, method_id = NULL) {
     quanttab = quantlist,
     linearity = linearitylist,
     suitability = suitabilitylist,
-    resEstim = resEstimlist
+    resEstim = resEstimlist,
+    pkdata = pklist
   )
   if (!is.null(method_id)) {
     res <- update_IS_info(res, method_id)
@@ -172,7 +177,9 @@ create_quant_object <- function(df, method_id = NULL) {
 
 
 .construct_samples_metadata <- function(quantlist) {
-  quantlist[[1]] |> dplyr::select("filename", "vial", "type") |> distinct()
+  quantlist[[1]] |> 
+    dplyr::select("filename", "vial", "type", "injec_id") |> 
+    distinct() 
 }
 
 .construct_linearity <- function(quantlist) {
@@ -218,6 +225,13 @@ create_quant_object <- function(df, method_id = NULL) {
   resEstim
 }
 
+.construct_pkdata <- function(quantlist) {
+  # for each compound, make empty dataframe with id, time, conc, filename, sex, dose, arm
+  pkdata <- lapply(quantlist, function(x) {
+    NA
+  })
+  pkdata
+}
 
 update_IS_info <- function(quantres, method_id) {
   checkmate::assertClass(quantres, "QuantRes")

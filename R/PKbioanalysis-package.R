@@ -79,6 +79,7 @@
 #' @importFrom ggplot2 margin
 #' @importFrom ggplot2 rel
 #' @importFrom ggplot2 sec_axis
+#' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 unit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom grDevices colors
