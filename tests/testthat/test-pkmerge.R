@@ -33,13 +33,27 @@ test_that("pkmerge_works", {
     has_pk_profiles(res, "7OH-MITRA") |> expect_true()
 
 
-    plot_pk_profiles(res, "MITRAGYNINE") |> expect_no_error()
-    plot_pk_profiles(res) |> expect_no_error()
+    plotconfig <- expand.grid(
+                            shape = c(NA, "dil"),
+                            stratify_by = c(NA, "group_label", "route", "extra_factors", "subject_id", "sex"), 
+                            compound_id = c("MITRAGYNINE", "7OH-MITRA"),
+                            stringsAsFactors = FALSE
+                            )
+    for(i in seq_len(nrow(plotconfig))){
+        print(i)
+        row <- plotconfig[i,]
+        expect_no_error({
+            plot_pk_profiles(res, compound_id = row$compound_id, 
+                            stratify_by = row$stratify_by, 
+                            shape = row$shape)
+        })
+    }
 
-    export_pk_profiles()
+    plot_pk_profiles(res)  |> expect_no_error()
+    
+    export_pk_profiles(res, "MITRAGYNINE", "nonmem")
 
     nca_table(res, "MITRAGYNINE") |> expect_class("data.frame")
-
 
 }
 )

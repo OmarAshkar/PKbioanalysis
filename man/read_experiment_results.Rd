@@ -4,7 +4,12 @@
 \alias{read_experiment_results}
 \title{Read experiment results}
 \usage{
-read_experiment_results(x, drop_prefix = FALSE, vendor = "targetlynx_xml")
+read_experiment_results(
+  x,
+  drop_prefix = FALSE,
+  vendor = "targetlynx_xml",
+  logkey = "Index"
+)
 }
 \arguments{
 \item{x}{path to experiment results. See details}

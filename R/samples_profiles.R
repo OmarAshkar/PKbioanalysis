@@ -110,10 +110,10 @@ has_pk_profiles <- function(x, compound_id) {
   !is.null(x@pkdata[[compound_id]]) && inherits(x@pkdata[[compound_id]], "data.frame") 
 }
 
-plot_pk_profiles <- function(x, compound_id = NULL, stratify_by = NULL, shape = "dil") {
+plot_pk_profiles <- function(x, compound_id= NULL, stratify_by = NA, shape = "dil") {
   checkmate::assert_class(x, "QuantRes")
-  checkmate::assertChoice(stratify_by, c("dosage", "factor", "compound_id", "subject_id"), null.ok = TRUE)
-  checkmate::assertChoice(shape, c("dil"), null.ok = TRUE)
+  checkmate::assertChoice(stratify_by, c("group_label", "route", "extra_factors", "subject_id", "sex", NA_character_))
+  checkmate::assertChoice(shape, c("dil", NA_character_))
 
   
   if (is.null(compound_id)) {
@@ -143,10 +143,14 @@ plot_pk_profiles <- function(x, compound_id = NULL, stratify_by = NULL, shape = 
       ggplot2::aes(group = .data$subject_id),
       linewidth = 1
     ) +
-    ggplot2::geom_point(
-      ggplot2::aes(shape = .data[[shape]]),
-      size = 2
-    ) +
+    (if (!is.na(shape) && shape %in% colnames(data_to_plot)) {
+      ggplot2::geom_point(
+        ggplot2::aes(shape = .data[[shape]]),
+        size = 2
+      )
+    } else {
+      ggplot2::geom_point(size = 2)
+    }) +
     ggplot2::labs(
       title = "PK Profiles",
       x = "Nominal Sampling Time",
@@ -154,7 +158,7 @@ plot_pk_profiles <- function(x, compound_id = NULL, stratify_by = NULL, shape = 
     ) +
     ggplot2::theme_minimal()
 
-  if (!is.null(stratify_by)) {
+  if (!is.na(stratify_by)) {
     p <- p +
       ggplot2::facet_wrap(
         as.formula(paste("compound_id~", stratify_by)),
@@ -185,14 +189,117 @@ plot_pk_profiles <- function(x, compound_id = NULL, stratify_by = NULL, shape = 
 }
 
 
-export_pk_profiles <- function(x, compound_id, format = "nonmem") {
+#' Export PK profiles for a given compound in a specified format
+#' Currently supports "nonmem" format. The exported file will include a CSV with the PK data and an Excel file with the codebook.
+#' @param x QuantRes object
+#' @param compound_id Compound ID for which to export PK profiles
+#' @param format Format to export (currently only "NONMEM" supported)
+#' @param filename Name of the output zip file (default: "data.zip")
+#' @author Omar I. Elashkar
+#' @export
+export_pk_profiles <- function(x, compound_id, format = "NONMEM", filename = "data.zip") {
+  checkmate::assertClass(x, "QuantRes")
+  checkmate::assertChoice(compound_id, names(x@pkdata))
+  checkmate::assertChoice(format, c("NONMEM"))
+
+  if(!has_pk_profiles(x, compound_id)){
+    stop(paste0("No PK profiles available for compound: ", compound_id))
+  }
+
+
+  dosedf <-  x@pkdata[[compound_id]] |>
+      dplyr::select("subject_id", "group_label", "route", "dose_amount", "dose_unit") |> 
+      dplyr::distinct()
+
+  obsdf <-  x@pkdata[[compound_id]] |> 
+      dplyr::select("subject_id", "nominal_time", "conc", "dil", "group_label", 
+                    "sex", "age", "race", "extra_factors")  |>
+      dplyr::rename(
+        ID = "subject_id",
+        TIME = "nominal_time",
+        DV = "conc",
+        DIL = "dil"
+      ) |> 
+      dplyr::select(dplyr::where( \(x) !all(is.na(x)))) # remove columns with all NA
+
+    
+
+
+    filelist <- c()
+
+    # temp paths
+    tmp_dir <- tempdir()
+
+    if(format == "NONMEM"){
+
+    # merge dosing and obs data 
+      nmdata <- obsdf |> 
+        dplyr::left_join(dosedf, by = c("ID" = "subject_id", "group_label" = "group_label")) |> 
+        dplyr::group_by(.data$ID, .data$group_label) |>
+        # add dosing records at time 0 for each subject
+        dplyr::summarise(
+          ID = c(unique(.data$ID), rep(unique(.data$ID), dplyr::n())),
+          group_label = c(unique(.data$group_label), rep(unique(.data$group_label), n())),
+          TIME = c(0, .data$TIME),
+          DV = c(NA, .data$DV),
+          DIL = c(NA, .data$DIL),
+          route = c(unique(.data$route), rep(NA, n())),
+          dose_amount = c(unique(.data$dose_amount), rep(NA, n())),
+          dose_unit = c(unique(.data$dose_unit), rep(NA, n()))) |> 
+        dplyr::arrange(.data$ID, .data$TIME, .data$group_label) |> 
+        dplyr::ungroup()
+
+      # recode as codebook 
+      codebook_descr <- nmdata |> 
+        dplyr::filter(.data$TIME == 0) |>
+        dplyr::select(-c("TIME", "DV", "DIL")) |> 
+        dplyr::distinct() |>
+        dplyr::mutate(ID = paste0(.data$ID, "= ", as.numeric(as.factor(.data$ID)))) |>
+        dplyr::mutate(group_label = paste0(.data$group_label, "= ", as.numeric(as.factor(.data$group_label)))) |>
+        dplyr::mutate(route = paste0(.data$route, "= ", as.numeric(as.factor(.data$route)))) |>
+        dplyr::mutate(dose_amount = paste5(.data$dose_amount, " ", .data$dose_unit, "= ", as.numeric(as.factor(.data$dose_amount))))
+
+      
+      codebook_colnames <- data.frame(code_name = c("ID", "group_label", "route", "AMT")) |>
+        dplyr::mutate(description = 
+            dplyr::case_when(
+                code_name == "ID" ~ "Unique subject identifier",
+                code_name == "group_label" ~ "Group label",
+                code_name == "route" ~ "Route of administration",
+                code_name == "AMT" ~ "Dose amount"
+            ))
+
+      # transform data to numeric and create codebook
+      nmdata <- nmdata |> 
+        dplyr::mutate(across(dplyr::everything(), \(x) if(is.character(x)) as.numeric(as.factor(x)) else x)) |> 
+        dplyr::select(-"dose_unit") |> 
+        dplyr::rename(AMT = "dose_amount") |> 
+        dplyr::relocate("ID", "TIME", "AMT", "DV") |> 
+        dplyr::rename_with(toupper)
+
+      csv_file <- file.path(tmp_dir, "data.csv")
+      codebook_file <- file.path(tmp_dir, "codebook.xlsx")
+
+      # ---- write  ----
+      write.csv(nmdata, csv_file, row.names = FALSE, na = ".")
+      writexl::write_xlsx(list(Data_codebook = codebook_descr, Columns = codebook_colnames),
+        path = codebook_file)
+      filelist <- c(filelist, csv_file, codebook_file)
+    } 
+
+    # ---- zip them ----
+    zip::zip(
+      zipfile = filename,
+      files = filelist,
+      mode = "cherry-pick"
+    )
 
 }
 
 
 #' Calculate Cmax, Tmax and AUC for each subject given a compound's PK profiles
 nca_table <- function(x, compound_id){
-  checkmate::assert_class(x, "QuantRes")
+  checkmate::assertClass(x, "QuantRes")
   checkmate::assertChoice(compound_id, names(x@pkdata))
 
   if (!has_pk_profiles(x, compound_id)) {

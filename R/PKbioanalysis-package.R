@@ -221,6 +221,7 @@
 #' @importFrom utils read.delim
 #' @importFrom utils write.csv
 #' @importFrom uuid UUIDgenerate
+#' @importFrom writexl write_xlsx
 #' @importFrom xml2 xml_attrs
 #' @importFrom xml2 xml_child
 #' @importFrom xml2 xml_children

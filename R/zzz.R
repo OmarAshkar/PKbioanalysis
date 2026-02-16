@@ -129,11 +129,11 @@ py <- NULL
       getOption("PKbioanalysis.data_dir"),
       "plates_cache"
     ), 
-    PKbioanalysis.chrom_cache = file.path(
+    PKbioanalysis.chrom_cache_dir = file.path(
       getOption("PKbioanalysis.data_dir"),
       "chrom_cache"
     ),
-    PKbioanalysis.quant_cache = file.path(
+    PKbioanalysis.quant_cache_dir = file.path(
       getOption("PKbioanalysis.data_dir"),
       "quant_cache"
     )
@@ -142,8 +142,8 @@ py <- NULL
   # Set the environment variable for the package
   PKbioanalysis_env$data_dir <- getOption("PKbioanalysis.data_dir")
   PKbioanalysis_env$cache_dir <- getOption("PKbioanalysis.cache_dir") 
-  PKbioanalysis_env$chrom_cache <- getOption("PKbioanalysis.chrom_cache")
-  PKbioanalysis_env$quant_cache <- getOption("PKbioanalysis.quant_cache")
+  PKbioanalysis_env$chrom_cache_dir <- getOption("PKbioanalysis.chrom_cache_dir")
+  PKbioanalysis_env$quant_cache_dir <- getOption("PKbioanalysis.quant_cache_dir")
 
   refresh_config()
 
