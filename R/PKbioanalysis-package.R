@@ -42,6 +42,7 @@
 #' @importFrom dplyr left_join
 #' @importFrom dplyr n
 #' @importFrom dplyr pull
+#' @importFrom dplyr reframe
 #' @importFrom dplyr row_number
 #' @importFrom dplyr rowwise
 #' @importFrom dplyr summarise

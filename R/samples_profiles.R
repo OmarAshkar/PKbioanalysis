@@ -246,7 +246,7 @@ export_pk_profiles <- function(x, compound_id, format = "NONMEM", filename = "da
         dplyr::left_join(dosedf, by = c("ID" = "subject_id", "group_label" = "group_label")) |> 
         dplyr::group_by(.data$ID, .data$group_label) |>
         # add dosing records at time 0 for each subject
-        dplyr::summarise(
+        dplyr::reframe(
           ID = c(unique(.data$ID), rep(unique(.data$ID), dplyr::n())),
           group_label = c(unique(.data$group_label), rep(unique(.data$group_label), n())),
           TIME = c(0, .data$TIME),

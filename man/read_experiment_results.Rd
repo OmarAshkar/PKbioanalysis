@@ -17,6 +17,8 @@ read_experiment_results(
 \item{drop_prefix}{logical. If TRUE, drop the prefix from the sample name}
 
 \item{vendor}{vendor name. Currently only "targetlynx_xml" or "targetlynx_csv" are supported.}
+
+\item{logkey}{character. The column name in the targetlynx CSV file that contains the injection sequence or log key. Default is "Index" which is the default column in targetlynx CSV exports, but it can be customized if the user has a different column name for the injection sequence.}
 }
 \value{
 QuantRes object with the results of the experiment.

@@ -39,17 +39,22 @@ test_that("pkmerge_works", {
                             compound_id = c("MITRAGYNINE", "7OH-MITRA"),
                             stringsAsFactors = FALSE
                             )
-    for(i in seq_len(nrow(plotconfig))){
-        print(i)
-        row <- plotconfig[i,]
-        expect_no_error({
-            plot_pk_profiles(res, compound_id = row$compound_id, 
-                            stratify_by = row$stratify_by, 
-                            shape = row$shape)
-        })
-    }
+
+    suppressWarnings({
+        for(i in seq_len(nrow(plotconfig))){
+            print(i)
+            row <- plotconfig[i,]
+            expect_no_error({
+                plot_pk_profiles(res, compound_id = row$compound_id, 
+                                stratify_by = row$stratify_by, 
+                                shape = row$shape)
+            })
+        }
 
     plot_pk_profiles(res)  |> expect_no_error()
+    
+    })
+
     
     export_pk_profiles(res, "MITRAGYNINE", "NONMEM") |> expect_no_error()
 

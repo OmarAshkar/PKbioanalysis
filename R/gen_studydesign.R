@@ -522,13 +522,14 @@ retrieve_log_by_injecid <- function(injec_ids) {
   db <- .connect_to_db()
   on.exit(.close_db(db), add = TRUE)
 
-
-  injec_query <- DBI::sqlInterpolate(
+  # Retrieve samples table for given injection IDs
+  injec_df <- DBI::dbGetQuery(
     db,
-    "SELECT injec_id, log_id, dil, file_name FROM samples WHERE injec_id IN (?injec_ids)",
-    injec_ids = injec_ids
+    sprintf(
+      "SELECT injec_id, log_id, dil, file_name FROM samples WHERE injec_id IN (%s)",
+      paste(sprintf("'%s'", injec_ids), collapse = ",")
+    )
   )
-  injec_df <- DBI::dbGetQuery(db, injec_query)
 
   if (nrow(injec_df) == 0) {
     stop("No matching injection IDs found in samples table.")

@@ -32,10 +32,12 @@ reference:
 - title: Installations 
   contents: 
   - install_py_dep
-- title: Study Design 
+- title: Study and Plate Design 
+- subtitle: Application 
+  contents: study_app
+- subtitle: Create New Study
   contents:
   - create_new_study
-- title: Plate Design
 - subtitle: Generate Plate
   contents: generate_96
 - subtitle: Add Entries to Plate
@@ -73,9 +75,10 @@ reference:
   - combine_injec_lists
   - write_injec_seq
   - download_sample_list
-- title: UI for Injection Sequence and Dilution Scheme
-  contents: study_app
 - title: Chromatogram Analysis
+- subtitle: Chromatogram Application
+  contents: chrom_app
+- subtitle: Chromatogram Processing
   contents:
   - read_chrom
   - plot_chrom
@@ -93,7 +96,6 @@ reference:
   - export_integration
   - extract_peak_bounds
   - check_chrom_cmpds
-  - chrom_app
   - area_report.PeakRes
   - integrate
   - plot_peak_areas.PeakRes
@@ -123,5 +125,10 @@ reference:
   contents:
   - reverse_predict
   - response_to_conc
+- subtitle: PK Profiles
+  contents:
+  - pk_merge
+  - export_pk_profiles
+  - nca_table
 
 

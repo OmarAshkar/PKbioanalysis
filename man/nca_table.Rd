@@ -6,6 +6,17 @@
 \usage{
 nca_table(x, compound_id)
 }
+\arguments{
+\item{x}{QuantRes object with PK profiles extracted}
+
+\item{compound_id}{Compound ID for which to calculate NCA parameters}
+}
+\value{
+data frame with columns: subject_id, cmax, tmax, auc_last, compound_id
+}
 \description{
 Calculate Cmax, Tmax and AUC for each subject given a compound's PK profiles
+}
+\details{
+This function calculates Cmax, Tmax and AUC for each subject given a compound's PK profiles.
 }
