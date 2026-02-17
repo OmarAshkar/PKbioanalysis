@@ -9,7 +9,7 @@
 [![CRAN total downloads](https://cranlogs.r-pkg.org/badges/grand-total/PKbioanalysis)](https://cran.r-project.org/package=PKbioanalysis)
 [![CRAN monthly downloads](https://cranlogs.r-pkg.org/badges/PKbioanalysis)](https://cran.r-project.org/package=PKbioanalysis)
 
-**PKbioanalysis** is a comprehensive R package designed to streamline pharmacokinetic (PK) and bioanalytical workflows from study design through data analysis and reporting. Built on regulatory best practices, it provides an integrated solution for managing bioanalytical experiments with persistent data storage, interactive visualizations, and AI-assisted quality control.
+**PKbioanalysis** is a comprehensive R package designed to streamline pharmacokinetic (PK) and bioanalytical workflows from study design through data analysis and reporting. Built on regulatory best practices and [FAIR principles](https://www.nature.com/articles/sdata201618), it provides an integrated solution for managing bioanalytical experiments with persistent data storage, interactive visualizations, and AI-assisted quality control.
 
 ---
 
@@ -17,7 +17,7 @@
 
 ### 📊 Study Management & Design
 - **Comprehensive trial management system** with relational database architecture (DuckDB)
-- **Study design tools** for single-dose (SD), multiple-dose (MD), food-effect (FE), and bioequivalence (BE) studies
+- **Study design tools** for common PK studies such as single-dose (SD), multiple-dose (MD), food-effect (FE), and bioequivalence (BE) studies along with In Vitro studies support
 - **Subject tracking** with dosing schedules, sampling timepoints, and metadata management
 - **Sample log integration** linking bioanalytical data to study design
 
@@ -115,21 +115,20 @@ PKbioanalysis integrates AI-powered quality assessment and decision support thro
 - Validates peak shape and width according to analytical standards
 
 #### 2. **Linearity Assessment Assistant**
-- Reviews calibration curve statistics (R², %Dev, accuracy, precision)
+- Reviews calibration curve statistics
 - Identifies outliers and recommends exclusions
-- Checks intercept significance and heteroscedasticity
+- Checks intercept significance and heteroscedasticity (recommends weighting if needed)
 - Provides regulatory compliance feedback
 
 #### 3. **Suitability Evaluation**
 - Analyzes instrument response stabilization across runs
-- Calculates equilibration time based on RSD trends
+- Calculates equilibration time based on CV% trends
 - Flags experimental issues (insufficient replicates, high variability)
 
 #### 4. **Study Design Review**
 - Evaluates randomization, blocking, and control groups
 - Suggests improvements for sampling strategy
-- Recommends interim analysis plans
-- Assesses balance and statistical power
+- Assesses balance and potential confounding factors in the design
 
 #### 5. **Plate Design Optimization**
 - Reviews QC distribution and calibration curve coverage
@@ -143,7 +142,7 @@ PKbioanalysis integrates AI-powered quality assessment and decision support thro
 
 ### AI Configuration
 
-PKbioanalysis uses OpenAI-compatible APIs (including local models via Ollama or cloud providers).
+PKbioanalysis uses **OpenAI-compatible** APIs (including local models via Ollama or cloud providers).
 
 #### Setup via GUI
 1. Launch any app (`study_app()`, `chrom_app()`, or `quant_app()`)

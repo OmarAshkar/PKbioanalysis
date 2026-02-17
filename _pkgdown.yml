@@ -127,6 +127,6 @@ reference:
   - response_to_conc
 - subtitle: PK Profiles
   contents:
-  - pk_merge
+  - pkmerge
   - export_pk_profiles
   - nca_table
