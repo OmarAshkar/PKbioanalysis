@@ -55,6 +55,7 @@
 #' @importFrom DT formatStyle
 #' @importFrom DT renderDT
 #' @importFrom DT styleEqual
+#' @importFrom DT selectRows
 #' @importFrom duckdb dbConnect
 #' @importFrom duckdb dbDisconnect
 #' @importFrom duckdb dbSendQuery

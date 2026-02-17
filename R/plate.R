@@ -804,7 +804,8 @@ add_suitability <- function(plate, conc, label = "suitability", group = NA) {
 
   e_func <- ifelse(reg, stop, warning)
 
-  if (!(lqc_conc <= loq_conc * 3)) {
+  
+  if (!(lqc_conc <= loq_conc * 3) | lqc_conc == loq_conc) {
     e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc * 3), ")")
   }
 

@@ -1359,8 +1359,8 @@ chromapp_server <- function(input, output, session) {
     
     if (length(matching_row) > 0) {
       # Subtract 1 because DataTable uses 0-based indexing
-      dataTableProxy("integration_table") |>
-        selectRows(matching_row - 1)
+      DT::dataTableProxy("integration_table") |>
+        DT::selectRows(matching_row - 1)
     }
   }, priority = -100)  # Lower priority to avoid conflicts
 
