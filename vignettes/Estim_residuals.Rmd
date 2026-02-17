@@ -1,3 +1,13 @@
+---
+title: "Estimating Residual Variability and LLOQ"
+author: "Omar Elashkar"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Estimating Residual Variability and LLOQ}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 ```{r}
 library(PKbioanalysis)
 library(dplyr)

@@ -1,7 +1,7 @@
 Type: Package
 Package: PKbioanalysis
 Title: Pharmacokinetic Bioanalysis Experiments Design and Exploration
-Version: 0.4.0
+Version: 0.5.0
 Authors@R: c(
     person("Omar", "Elashkar", email = "omar.i.elashkar@gmail.com", 
       role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5505-778X"))
@@ -20,7 +20,7 @@ Imports:
     dplyr,
     tidyselect,
     stringr (>= 1.5.1),
-    ggplot2 (>= 3.5.1),
+    ggplot2,
     ggforce (>= 0.4.1),
     tidyr,
     glue (>= 1.6.2),
@@ -64,11 +64,11 @@ Imports:
     htmlwidgets,
     jsonlite,
     nlme,
-    pmxTools,
     scales,
     shinychat,
     uuid,
-    sortable
+    sortable,
+    writexl
 Suggests: 
     rxode2,
     knitr,
