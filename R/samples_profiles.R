@@ -110,6 +110,15 @@ has_pk_profiles <- function(x, compound_id) {
   !is.null(x@pkdata[[compound_id]]) && inherits(x@pkdata[[compound_id]], "data.frame") 
 }
 
+#' Plot PK profiles for a given compound
+#' @param x QuantRes object with PK profiles extracted
+#' @param compound_id Compound ID for which to plot PK profiles. If NULL, plots all compounds with PK profiles.
+#' @param stratify_by variable to stratify the plots by. Can be one of "group_label", "route", "extra_factors", "subject_id
+#' or "sex". If NA, no stratification is applied. Default is NA.
+#' @param shape variable to use for point shapes. Can be one of "dil
+#' or any other column in the PK data. If NA, no shapes are applied. Default is "dil".
+#' @details This function plots PK profiles for a given compound. It uses ggplot2 for plotting and ggiraph for interactivity. The x-axis is the nominal sampling time and the y-axis is the concentration. The lines are colored by subject ID. If stratify_by is specified, the plots are faceted by the specified variable. If shape is specified, points are shaped by the specified variable.
+#' @noRd
 plot_pk_profiles <- function(x, compound_id= NULL, stratify_by = NA, shape = "dil") {
   checkmate::assert_class(x, "QuantRes")
   checkmate::assertChoice(stratify_by, c("group_label", "route", "extra_factors", "subject_id", "sex", NA_character_))
@@ -288,16 +297,21 @@ export_pk_profiles <- function(x, compound_id, format = "NONMEM", filename = "da
     } 
 
     # ---- zip them ----
-    zip::zip(
+    utils::zip(
       zipfile = filename,
-      files = filelist,
-      mode = "cherry-pick"
+      files = filelist
+      # mode = "cherry-pick"
     )
 
 }
 
 
 #' Calculate Cmax, Tmax and AUC for each subject given a compound's PK profiles
+#' @param x QuantRes object with PK profiles extracted
+#' @param compound_id Compound ID for which to calculate NCA parameters
+#' @return data frame with columns: subject_id, cmax, tmax, auc_last, compound_id
+#' @details This function calculates Cmax, Tmax and AUC for each subject given a compound's PK profiles. 
+#' @export
 nca_table <- function(x, compound_id){
   checkmate::assertClass(x, "QuantRes")
   checkmate::assertChoice(compound_id, names(x@pkdata))

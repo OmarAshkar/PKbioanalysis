@@ -51,7 +51,7 @@ test_that("pkmerge_works", {
 
     plot_pk_profiles(res)  |> expect_no_error()
     
-    export_pk_profiles(res, "MITRAGYNINE", "nonmem")
+    export_pk_profiles(res, "MITRAGYNINE", "NONMEM") |> expect_no_error()
 
     nca_table(res, "MITRAGYNINE") |> expect_class("data.frame")
 

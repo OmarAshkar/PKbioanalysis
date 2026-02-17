@@ -36,7 +36,7 @@ PKbioanalysis is an R package designed to facilitate the integration of pharmaco
 ## Download and Install
 
 ### GUI only 
-`PKbioanalysis` is provides modular server-based applications for trial management, chromatography integration, and quantification. The applications runs locally with presistant data storage. Advanced setup is possible for larger organizations with multiple users.
+`PKbioanalysis` provides modular server-based applications for trial management, chromatography integration, and quantification. The applications runs locally with presistant data storage. Advanced setup is possible for larger organizations with multiple users.
 
 R is required to install the application, but no coding is required. 
 

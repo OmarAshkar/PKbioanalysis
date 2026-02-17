@@ -156,7 +156,7 @@ write_test_pkset <- function(){
 
   # clean and sanitize
 
-  # Create pesudo study
+  # Create pseudo study
   study <- create_new_study(
     data.frame(type = "SD", title = "Kartom Study", description = "", subject_type = "Animal", pkstudy = FALSE)
   )

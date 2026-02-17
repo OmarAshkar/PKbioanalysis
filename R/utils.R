@@ -368,7 +368,7 @@ studydesign_db <- function(con) {
     "
   CREATE TABLE IF NOT EXISTS quant_meta (
     quant_id     TEXT PRIMARY KEY, 
-    quant_date   DATE,
+    quant_date   DATE
   );
   "
   )

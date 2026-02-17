@@ -29,6 +29,7 @@
 #' @importFrom DBI dbExecute
 #' @importFrom DBI dbIsValid
 #' @importFrom DBI dbWriteTable
+#' @importFrom DBI sqlInterpolate
 #' @importFrom DiagrammeR get_edge_df
 #' @importFrom DiagrammeR render_graph
 #' @importFrom dplyr across

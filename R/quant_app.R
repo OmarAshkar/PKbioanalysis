@@ -930,7 +930,7 @@ quantapp_ui <- function() {
     ),
     bslib::nav_panel("Merge", id = "pk_page", pk_ui("pkmod")),
     bslib::nav_item(
-      actionButton("save_btn", "Save", style = "background-color:;color:white;")
+      actionButton("save_btn", "Save", style = "color:white;")
     ),
     bslib::nav_item(
       textOutput("curr_file_name")
