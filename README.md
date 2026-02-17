@@ -13,7 +13,7 @@ downloads](https://cranlogs.r-pkg.org/badges/grand-total/PKbioanalysis)](https:/
 [![CRAN monthly
 downloads](https://cranlogs.r-pkg.org/badges/PKbioanalysis)](https://cran.r-project.org/package=PKbioanalysis)
 
-PKbioanalysis is an R package designed to facilitate the integration of pharmacokinetic (PK) and bioanalytical data analysis. The overarching goal of this package is to provide a streamlined and standardized approach to chromatography-based pharmacokinetic studies starting from study design to PK analysis and reporting.
+PKbioanalysis is an R package designed to facilitate the integration of pharmacokinetic (PK) and bioanalytical data analysis. The overarching goal of this package is to provide a streamlined and standardized approach to pharmacokinetic studies starting from study design to PK analysis and reporting.
 
 
 
@@ -29,7 +29,7 @@ PKbioanalysis is an R package designed to facilitate the integration of pharmaco
 - Interactive dilution scheme with unit conversion
 - MLE of additive and proportional errors 
 - PKmerge to generate PK datasets from bioanalytical data and trial records
-- Export to PK profiles to NONMEM-formated or Phoenix-formatted datasets  along with associated codebook. 
+- Export to PK profiles to NONMEM-formated dataset along with associated codebook. 
 - 
 
 
@@ -38,7 +38,12 @@ PKbioanalysis is an R package designed to facilitate the integration of pharmaco
 ### GUI only 
 `PKbioanalysis` provides modular server-based applications for trial management, chromatography integration, and quantification. The applications runs locally with presistant data storage. Advanced setup is possible for larger organizations with multiple users.
 
-R is required to install the application, but no coding is required. 
+R is required to be installed to install `PKbioanalysis`, but no coding is required. 
+
+#### Windows 
+Download the installer and application shortcuts from (here)[https://drive.google.com/file/d/1jc927mIbMzTe7hrW6g_1ANy5m28fWE9A/view?usp=drive_link]. 
+
+Use the `install_PKbioanalysis.bat` file to install the package, and the `study_app.bat`, `chrom_app.bat`, and `quant_app.bat` shortcuts to launch the applications.
 
 
 ## R Installation

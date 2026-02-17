@@ -1,5 +1,8 @@
 #' Merge PK profiles into QuantRes object
 #' @param x QuantRes object
+#' @return QuantRes object with PK profiles merged into pkdata slot 
+#' @export
+#' @author Omar I. Elashkar
 pkmerge <- function(x){
     checkmate::assertClass(x, "QuantRes")
 
