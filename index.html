@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,7 +42,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/DilutionScheme.html">Dilution Scheme</a></li>
-    <li><a class="dropdown-item" href="articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
+    <li><a class="dropdown-item" href="articles/Estim_residuals.html">Estimating Residual Variability and LLOQ</a></li>
     <li><a class="dropdown-item" href="articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="articles/Plate_Design.html">Plate Design and Management</a></li>
     <li><a class="dropdown-item" href="articles/Study_Design.html">Study Design and Management</a></li>
@@ -72,41 +72,51 @@
 
 <p><!-- badges: end --></p>
 <p><a href="https://cran.r-project.org/package=PKbioanalysis" class="external-link"><img src="http://www.r-pkg.org/badges/version/PKbioanalysis" alt="CRAN version"></a> <a href="https://cran.r-project.org/package=PKbioanalysis" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/PKbioanalysis" alt="CRAN total downloads"></a> <a href="https://cran.r-project.org/package=PKbioanalysis" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/PKbioanalysis" alt="CRAN monthly downloads"></a></p>
-<p>PKbioanalysis is an R package designed to facilitate the integration of pharmacokinetic (PK) and bioanalytical data analysis. The overarching goal of this package is to provide a streamlined and standardized approach to chromatography-based pharmacokinetic studies starting from study design to PK analysis and reporting.</p>
+<p>PKbioanalysis is an R package designed to facilitate the integration of pharmacokinetic (PK) and bioanalytical data analysis. The overarching goal of this package is to provide a streamlined and standardized approach to pharmacokinetic studies starting from study design to PK analysis and reporting.</p>
 <div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<h2 id="main-features">Main Features<a class="anchor" aria-label="anchor" href="#main-features"></a>
 </h2>
-<p>You can install the released version of PKbioanalysis from CRAN with:</p>
+<ul>
+<li>Comprehensive and simple trial management system to store and manage all trial-related information</li>
+<li>96-well plate design and visualization</li>
+<li>Automatically propagate and design injection sequences</li>
+<li>Export injection sequences to CSV compatible with Masslynx and MassHunter</li>
+<li>Support interactive chromatography integration and visualization</li>
+<li>Linearity assessment with interactive visualization and reporting</li>
+<li>Bioanalytical suitability assessement</li>
+<li>Interactive dilution scheme with unit conversion</li>
+<li>MLE of additive and proportional errors</li>
+<li>PKmerge to generate PK datasets from bioanalytical data and trial records</li>
+<li>Export to PK profiles to NONMEM-formated dataset along with associated codebook.</li>
+<li>
+</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="download-and-install">Download and Install<a class="anchor" aria-label="anchor" href="#download-and-install"></a>
+</h2>
+<div class="section level3">
+<h3 id="gui-only">GUI only<a class="anchor" aria-label="anchor" href="#gui-only"></a>
+</h3>
+<p><code>PKbioanalysis</code> provides modular server-based applications for trial management, chromatography integration, and quantification. The applications runs locally with presistant data storage. Advanced setup is possible for larger organizations with multiple users.</p>
+<p>R is required to be installed to install <code>PKbioanalysis</code>, but no coding is required.</p>
+<div class="section level4">
+<h4 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
+</h4>
+<p>Download the installer and application shortcuts from (here)[<a href="https://drive.google.com/file/d/1jc927mIbMzTe7hrW6g_1ANy5m28fWE9A/view?usp=drive_link" class="external-link uri">https://drive.google.com/file/d/1jc927mIbMzTe7hrW6g_1ANy5m28fWE9A/view?usp=drive_link</a>].</p>
+<p>Use the <code>install_PKbioanalysis.bat</code> file to install the package, and the <code>study_app.bat</code>, <code>chrom_app.bat</code>, and <code>quant_app.bat</code> shortcuts to launch the applications.</p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="r-installation">R Installation<a class="anchor" aria-label="anchor" href="#r-installation"></a>
+</h2>
+<p>For more advanced users, you can install the released version of PKbioanalysis from CRAN with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"PKbioanalysis"</span><span class="op">)</span></span></code></pre></div>
 <p>Or the development version from GitHub with:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"OmarAshkar/PKbioanalysis"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="main-features">Main Features<a class="anchor" aria-label="anchor" href="#main-features"></a>
-</h2>
-<ul>
-<li>96-well plate design and visualization</li>
-<li>Support Pharmacokinetic samples attributes on the plate</li>
-<li>Automatically propagate and design injection sequences</li>
-<li>Export injection sequences to CSV compatible with Masslynx and MassHunter</li>
-<li>Interactive dilution scheme with unit conversion</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="milestones">Milestones<a class="anchor" aria-label="anchor" href="#milestones"></a>
-</h2>
-<ul>
-<li>Support import peak areas from TargetLynx or other formats</li>
-<li>Support interactive chromatography integration and visualization</li>
-<li>Linearity</li>
-<li>Suitability</li>
-<li>MLE of additive and proportional errors</li>
-<li>Automatically estimate LOD</li>
-<li>Estimate UAD (dilution threshold) recommendation</li>
-<li>Export to NONMEM-formated dataset</li>
-</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

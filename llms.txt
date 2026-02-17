@@ -10,12 +10,53 @@ downloads](https://cranlogs.r-pkg.org/badges/PKbioanalysis)](https://cran.r-proj
 PKbioanalysis is an R package designed to facilitate the integration of
 pharmacokinetic (PK) and bioanalytical data analysis. The overarching
 goal of this package is to provide a streamlined and standardized
-approach to chromatography-based pharmacokinetic studies starting from
-study design to PK analysis and reporting.
+approach to pharmacokinetic studies starting from study design to PK
+analysis and reporting.
 
-## Installation
+## Main Features
 
-You can install the released version of PKbioanalysis from CRAN with:
+- Comprehensive and simple trial management system to store and manage
+  all trial-related information
+- 96-well plate design and visualization
+- Automatically propagate and design injection sequences
+- Export injection sequences to CSV compatible with Masslynx and
+  MassHunter
+- Support interactive chromatography integration and visualization
+- Linearity assessment with interactive visualization and reporting
+- Bioanalytical suitability assessement
+- Interactive dilution scheme with unit conversion
+- MLE of additive and proportional errors
+- PKmerge to generate PK datasets from bioanalytical data and trial
+  records
+- Export to PK profiles to NONMEM-formated dataset along with associated
+  codebook.
+- 
+
+## Download and Install
+
+### GUI only
+
+`PKbioanalysis` provides modular server-based applications for trial
+management, chromatography integration, and quantification. The
+applications runs locally with presistant data storage. Advanced setup
+is possible for larger organizations with multiple users.
+
+R is required to be installed to install `PKbioanalysis`, but no coding
+is required.
+
+#### Windows
+
+Download the installer and application shortcuts from
+(here)\[<https://drive.google.com/file/d/1jc927mIbMzTe7hrW6g_1ANy5m28fWE9A/view?usp=drive_link>\].
+
+Use the `install_PKbioanalysis.bat` file to install the package, and the
+`study_app.bat`, `chrom_app.bat`, and `quant_app.bat` shortcuts to
+launch the applications.
+
+## R Installation
+
+For more advanced users, you can install the released version of
+PKbioanalysis from CRAN with:
 
 ``` r
 install.packages("PKbioanalysis")
@@ -27,26 +68,6 @@ Or the development version from GitHub with:
 remotes::install_github("OmarAshkar/PKbioanalysis")
 ```
 
-## Main Features
-
-- 96-well plate design and visualization
-- Support Pharmacokinetic samples attributes on the plate
-- Automatically propagate and design injection sequences
-- Export injection sequences to CSV compatible with Masslynx and
-  MassHunter
-- Interactive dilution scheme with unit conversion
-
-## Milestones
-
-- Support import peak areas from TargetLynx or other formats
-- Support interactive chromatography integration and visualization
-- Linearity
-- Suitability
-- MLE of additive and proportional errors
-- Automatically estimate LOD
-- Estimate UAD (dilution threshold) recommendation
-- Export to NONMEM-formated dataset
-
 # Package index
 
 ## Installations
@@ -54,12 +75,17 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
 - [`install_py_dep()`](https://omarashkar.github.io/PKbioanalysis/reference/install_py_dep.md)
   : Install Python dependencies for PKbioanalysis
 
-## Study Design
+## Study and Plate Design
+
+### Application
+
+- [`study_app()`](https://omarashkar.github.io/PKbioanalysis/reference/study_app.md)
+  : bioanalytic_app
+
+### Create New Study
 
 - [`create_new_study()`](https://omarashkar.github.io/PKbioanalysis/reference/create_new_study.md)
   : Create a new study in the database
-
-## Plate Design
 
 ### Generate Plate
 
@@ -135,12 +161,14 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
   : Download sample list from database to local spreadsheet with vendor
   specific format
 
-## UI for Injection Sequence and Dilution Scheme
-
-- [`study_app()`](https://omarashkar.github.io/PKbioanalysis/reference/study_app.md)
-  : bioanalytic_app
-
 ## Chromatogram Analysis
+
+### Chromatogram Application
+
+- [`chrom_app()`](https://omarashkar.github.io/PKbioanalysis/reference/chrom_app.md)
+  : chrom_apps
+
+### Chromatogram Processing
 
 - [`read_chrom()`](https://omarashkar.github.io/PKbioanalysis/reference/read_chrom.md)
   : Read Chromatogram Files
@@ -176,8 +204,6 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
 - [`check_chrom_cmpds()`](https://omarashkar.github.io/PKbioanalysis/reference/check_chrom_cmpds.md)
   : Check Matching of Compound and Transitions in chrom_res and method
   database
-- [`chrom_app()`](https://omarashkar.github.io/PKbioanalysis/reference/chrom_app.md)
-  : chrom_apps
 - [`area_report.PeakRes()`](https://omarashkar.github.io/PKbioanalysis/reference/area_report.PeakRes.md)
   : gt table of areas
 - [`integrate()`](https://omarashkar.github.io/PKbioanalysis/reference/integrate.md)
@@ -233,14 +259,26 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
 - [`response_to_conc()`](https://omarashkar.github.io/PKbioanalysis/reference/response_to_conc.md)
   : Convert response to concentration
 
+### PK Profiles
+
+- [`pkmerge()`](https://omarashkar.github.io/PKbioanalysis/reference/pkmerge.md)
+  : Merge PK profiles into QuantRes object
+- [`export_pk_profiles()`](https://omarashkar.github.io/PKbioanalysis/reference/export_pk_profiles.md)
+  : Export PK profiles for a given compound in a specified format
+  Currently supports "nonmem" format. The exported file will include a
+  CSV with the PK data and an Excel file with the codebook.
+- [`nca_table()`](https://omarashkar.github.io/PKbioanalysis/reference/nca_table.md)
+  : Calculate Cmax, Tmax and AUC for each subject given a compound's PK
+  profiles
+
 # Articles
 
 ### All vignettes
 
 - [Dilution
   Scheme](https://omarashkar.github.io/PKbioanalysis/articles/DilutionScheme.md):
-- [UNKNOWN
-  TITLE](https://omarashkar.github.io/PKbioanalysis/articles/Estim_residuals.md):
+- [Estimating Residual Variability and
+  LLOQ](https://omarashkar.github.io/PKbioanalysis/articles/Estim_residuals.md):
 - [Injection
   Sequences](https://omarashkar.github.io/PKbioanalysis/articles/InjectionSequences.md):
 - [Plate Design and

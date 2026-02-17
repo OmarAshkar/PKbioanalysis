@@ -5,12 +5,17 @@
 - [`install_py_dep()`](https://omarashkar.github.io/PKbioanalysis/reference/install_py_dep.md)
   : Install Python dependencies for PKbioanalysis
 
-## Study Design
+## Study and Plate Design
+
+### Application
+
+- [`study_app()`](https://omarashkar.github.io/PKbioanalysis/reference/study_app.md)
+  : bioanalytic_app
+
+### Create New Study
 
 - [`create_new_study()`](https://omarashkar.github.io/PKbioanalysis/reference/create_new_study.md)
   : Create a new study in the database
-
-## Plate Design
 
 ### Generate Plate
 
@@ -86,12 +91,14 @@
   : Download sample list from database to local spreadsheet with vendor
   specific format
 
-## UI for Injection Sequence and Dilution Scheme
-
-- [`study_app()`](https://omarashkar.github.io/PKbioanalysis/reference/study_app.md)
-  : bioanalytic_app
-
 ## Chromatogram Analysis
+
+### Chromatogram Application
+
+- [`chrom_app()`](https://omarashkar.github.io/PKbioanalysis/reference/chrom_app.md)
+  : chrom_apps
+
+### Chromatogram Processing
 
 - [`read_chrom()`](https://omarashkar.github.io/PKbioanalysis/reference/read_chrom.md)
   : Read Chromatogram Files
@@ -127,8 +134,6 @@
 - [`check_chrom_cmpds()`](https://omarashkar.github.io/PKbioanalysis/reference/check_chrom_cmpds.md)
   : Check Matching of Compound and Transitions in chrom_res and method
   database
-- [`chrom_app()`](https://omarashkar.github.io/PKbioanalysis/reference/chrom_app.md)
-  : chrom_apps
 - [`area_report.PeakRes()`](https://omarashkar.github.io/PKbioanalysis/reference/area_report.PeakRes.md)
   : gt table of areas
 - [`integrate()`](https://omarashkar.github.io/PKbioanalysis/reference/integrate.md)
@@ -183,3 +188,15 @@
   : Reverse predict concentration from response
 - [`response_to_conc()`](https://omarashkar.github.io/PKbioanalysis/reference/response_to_conc.md)
   : Convert response to concentration
+
+### PK Profiles
+
+- [`pkmerge()`](https://omarashkar.github.io/PKbioanalysis/reference/pkmerge.md)
+  : Merge PK profiles into QuantRes object
+- [`export_pk_profiles()`](https://omarashkar.github.io/PKbioanalysis/reference/export_pk_profiles.md)
+  : Export PK profiles for a given compound in a specified format
+  Currently supports "nonmem" format. The exported file will include a
+  CSV with the PK data and an Excel file with the codebook.
+- [`nca_table()`](https://omarashkar.github.io/PKbioanalysis/reference/nca_table.md)
+  : Calculate Cmax, Tmax and AUC for each subject given a compound's PK
+  profiles

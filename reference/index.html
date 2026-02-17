@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PKbioanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,7 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/DilutionScheme.html">Dilution Scheme</a></li>
-    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">UNKNOWN TITLE</a></li>
+    <li><a class="dropdown-item" href="../articles/Estim_residuals.html">Estimating Residual Variability and LLOQ</a></li>
     <li><a class="dropdown-item" href="../articles/InjectionSequences.html">Injection Sequences</a></li>
     <li><a class="dropdown-item" href="../articles/Plate_Design.html">Plate Design and Management</a></li>
     <li><a class="dropdown-item" href="../articles/Study_Design.html">Study Design and Management</a></li>
@@ -56,8 +56,29 @@
         </dt>
         <dd>Install Python dependencies for PKbioanalysis</dd>
       </dl></div><div class="section level2">
-      <h2 id="study-design">Study Design<a class="anchor" aria-label="anchor" href="#study-design"></a></h2>
+      <h2 id="study-and-plate-design">Study and Plate Design<a class="anchor" aria-label="anchor" href="#study-and-plate-design"></a></h2>
 
+
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="application">Application<a class="anchor" aria-label="anchor" href="#application"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="study_app.html">study_app()</a></code>
+
+        </dt>
+        <dd>bioanalytic_app</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="create-new-study">Create New Study<a class="anchor" aria-label="anchor" href="#create-new-study"></a></h3>
 
 
       <dl></dl></div><div class="section level2">
@@ -72,11 +93,6 @@
         </dt>
         <dd>Create a new study in the database</dd>
       </dl></div><div class="section level2">
-      <h2 id="plate-design">Plate Design<a class="anchor" aria-label="anchor" href="#plate-design"></a></h2>
-
-
-
-      <dl></dl></div><div class="section level2">
 
       <h3 id="generate-plate">Generate Plate<a class="anchor" aria-label="anchor" href="#generate-plate"></a></h3>
 
@@ -317,8 +333,13 @@
         </dt>
         <dd>Download sample list from database to local spreadsheet with vendor specific format</dd>
       </dl></div><div class="section level2">
-      <h2 id="ui-for-injection-sequence-and-dilution-scheme">UI for Injection Sequence and Dilution Scheme<a class="anchor" aria-label="anchor" href="#ui-for-injection-sequence-and-dilution-scheme"></a></h2>
+      <h2 id="chromatogram-analysis">Chromatogram Analysis<a class="anchor" aria-label="anchor" href="#chromatogram-analysis"></a></h2>
 
+
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="chromatogram-application">Chromatogram Application<a class="anchor" aria-label="anchor" href="#chromatogram-application"></a></h3>
 
 
       <dl></dl></div><div class="section level2">
@@ -328,13 +349,13 @@
 
       <dl><dt>
 
-          <code><a href="study_app.html">study_app()</a></code>
+          <code><a href="chrom_app.html">chrom_app()</a></code>
 
         </dt>
-        <dd>bioanalytic_app</dd>
+        <dd>chrom_apps</dd>
       </dl></div><div class="section level2">
-      <h2 id="chromatogram-analysis">Chromatogram Analysis<a class="anchor" aria-label="anchor" href="#chromatogram-analysis"></a></h2>
 
+      <h3 id="chromatogram-processing">Chromatogram Processing<a class="anchor" aria-label="anchor" href="#chromatogram-processing"></a></h3>
 
 
       <dl></dl></div><div class="section level2">
@@ -456,13 +477,6 @@
 
         <dt>
 
-          <code><a href="chrom_app.html">chrom_app()</a></code>
-
-        </dt>
-        <dd>chrom_apps</dd>
-
-        <dt>
-
           <code><a href="area_report.PeakRes.html">area_report.PeakRes()</a></code>
 
         </dt>
@@ -509,7 +523,7 @@
 
       <dl></dl></div><div class="section level2">
 
-      <h3 id="application">Application<a class="anchor" aria-label="anchor" href="#application"></a></h3>
+      <h3 id="application-1">Application<a class="anchor" aria-label="anchor" href="#application-1"></a></h3>
 
 
       <dl></dl></div><div class="section level2">
@@ -634,6 +648,36 @@
 
         </dt>
         <dd>Convert response to concentration</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="pk-profiles">PK Profiles<a class="anchor" aria-label="anchor" href="#pk-profiles"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="pkmerge.html">pkmerge()</a></code>
+
+        </dt>
+        <dd>Merge PK profiles into QuantRes object</dd>
+
+        <dt>
+
+          <code><a href="export_pk_profiles.html">export_pk_profiles()</a></code>
+
+        </dt>
+        <dd>Export PK profiles for a given compound in a specified format Currently supports "nonmem" format. The exported file will include a CSV with the PK data and an Excel file with the codebook.</dd>
+
+        <dt>
+
+          <code><a href="nca_table.html">nca_table()</a></code>
+
+        </dt>
+        <dd>Calculate Cmax, Tmax and AUC for each subject given a compound's PK profiles</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
