@@ -496,7 +496,7 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
         cmpd_id()
 
       quantres()@linearity[[cmpd_id()]]$linearitytab |>
-        select(
+        dplyr::select(
           "filename",
           "type",
           "include",
@@ -515,6 +515,13 @@ linearity_data_server <- function(id, quantres, cmpd_df) {
             dom = "ft",
             pageLength = 2000,
             rownames = FALSE
+          )
+        ) |> 
+        DT::formatStyle(
+          "passed",
+          backgroundColor = DT::styleEqual(
+            c(TRUE, FALSE),
+            c("lightgreen", "salmon")
           )
         )
     })
@@ -930,7 +937,7 @@ quantapp_ui <- function() {
     ),
     bslib::nav_panel("Merge", id = "pk_page", pk_ui("pkmod")),
     bslib::nav_item(
-      actionButton("save_btn", "Save", style = "color:white;")
+      actionButton("save_btn", "Save", style = "color:white; padding: 4px 12px; font-size: 12px;")
     ),
     bslib::nav_item(
       textOutput("curr_file_name")

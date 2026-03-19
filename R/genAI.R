@@ -15,6 +15,20 @@ chatfunc <- function() {
   chat
 }
 
+load_skill <- function(skill_name) {
+  skill_file <- file.path(config_path(), "skills", paste0(skill_name, ".md"))
+  if (!file.exists(skill_file)) {
+    stop(
+      paste(
+        "Skill file not found for",
+        skill_name,
+        "Please make sure the skill file exists in the skills directory."
+      )
+    )
+  }
+  readLines(skill_file) |> paste(collapse = "\n")
+}
+
 suitability_ai <- function(chat, quantres) {
   stopifnot(has_suitability_results(quantres))
 
@@ -22,9 +36,7 @@ suitability_ai <- function(chat, quantres) {
 
   chat$stream_async(
     paste(
-      "The suitability is judged based on stabilization of instrument response over multiple runs",
-      "Give hints if you suspect any experimental issues based on RSD, number of replicates, etc.",
-      "After how many runs did the instrument equilibrate?",
+      load_skill("skill_suitability"),
       jsonlite::toJSON(quantres@suitability[["results"]])
     )
   )
@@ -39,9 +51,7 @@ linearity_ai <- function(chat, quantres, compound_id) {
   x <- quantres@linearity[[compound_id[1]]]
   prompt <-
     paste(
-      "Give hints if you suspect any experimental issues based on %dev, accuracy, precision, back-calculated concentration, etc.",
-      "show table with parameter/ value/ comment",
-      "Comment on intercept",
+      load_skill("skill_linearity"),
       jsonlite::toJSON(quantres@linearity[[compound_id]]$results[-1]),
       # jsonlite::toJSON(quantres@linearity[[compound_id]]$results$modelobj),
       jsonlite::toJSON(
@@ -86,12 +96,8 @@ integrate_ai <- function(
     " minutes respectively.",
     "Here is the observed chromatographic intensities (time, intensity) in JSON format:",
     jsonlite::toJSON(intensities),
-    "Return only json string with the following fields: observed_retention_time (most intense point), peak_start, peak_end, flagged (TRUE if peak is not acceptable, FALSE if peak is acceptable), and a short",
-    "comment in 50 words max commenting on the peak shape, peak start, peak end, and observed retention time (most intense point), and if the peak is acceptable or not (flagged).",
-    "A peak is considered a peak if it has width between 0.05 and 0.5 minutes maximum",
-    "Also, peak max should be at least 1M to be considered a peak.", 
-    "S/N is defined as the ratio of the most intense point in the peak to the average intensity of the baseline (the region between 0.5 minutes before peak start and 0.5 minutes after peak end).", 
-    "A peak is considered a peak if it has a clear apex, reasonable peak width, and more importantly, the S/N is above 10 from surrounding baseline. If the S/N is below 10, it should be flagged as not acceptable. If the peak is not acceptable, give a brief comment on why it is not acceptable.",
+    "Return only json string with the following fields: observed_retention_time (most intense point), peak_start, peak_end, flagged (TRUE if peak is not acceptable, FALSE if peak is acceptable), and comment fields",
+    load_skill("skill_integration"),
     "If no peak observed return flagged TRUE, write brief comment, and return NA for the rest of the json fields. Not a single word not in json format."
   )
 
@@ -118,12 +124,7 @@ studydesign_ai <- function(chat, study_id) {
   samples <- retrieve_full_study_log(study_id)
 
   prompt <- paste(
-    "You are an expert in clinical trials design.",
-    "Given the following study details and sample log, provide a concise summary of the study design, including key elements such as balancing, blocking, control groups, and sampling strategy.",
-    "If the study is InVitro, ignore randomization.",
-    "Give suggestions to improve the study design if needed.",
-    "Give suggestion for interim analysis plan.",
-    "Highlight any potential issues or areas for improvement in the study design.",
+    load_skill("skill_studydesign"),
     "Note study subject type is ",
     get_study_subject_type(study_id),
     jsonlite::toJSON(study),
@@ -135,11 +136,7 @@ studydesign_ai <- function(chat, study_id) {
 plate_ai <- function(chat, plate) {
   df <- plate@df
   prompt <- paste(
-    "You are an expert in bioanalytical assay design and execution.",
-    "Given the following plate map, provide a concise summary of the assay design, including key elements such as controls, replicates, and sample distribution.",
-    "Is there is suitability vial in type?",
-    "Is there is QCs associated with each calibration curve that is covering the entire calibration range and follows regulatory guidelines?",
-    "Highlight any potential issues or areas for improvement in the plate design.",
+    load_skill("skill_plate_design"),
     jsonlite::toJSON(df)
   )
   chat$stream_async(prompt)
@@ -147,9 +144,7 @@ plate_ai <- function(chat, plate) {
 
 injeclist_ai <- function(chat, df) {
   prompt <- paste(
-    "You are an expert in bioanalytical assay execution.",
-    "Given the following injection list, provide a concise summary of the assay execution, including key elements such as run order, blanks, and sample distribution.",
-    "Highlight any potential issues or areas for improvement in the injection list design.",
+    load_skill("skill_injeclist"),
     jsonlite::toJSON(df)
   )
   chat$stream_async(prompt)

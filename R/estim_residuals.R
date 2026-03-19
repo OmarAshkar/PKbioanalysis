@@ -286,7 +286,7 @@ calc_var_summary <- function(df, col = "conc", acc_cutoff = 0.2, dev_cutoff = 0.
   )
 
   df |>
-    mutate(rel_dev = rel_deviation(.data$conc, .data$stdconc)) |>
+    mutate(rel_dev = rel_deviation(.data$conc, .data$stdconc, percent = FALSE)) |>
     mutate(accuracy = accuracy(.data$conc, .data$stdconc)) |>
     prefilter_precision_data(type = type, acc_cutoff = acc_cutoff, dev_cutoff = dev_cutoff) |>
     group_by(.data$stdconc) |>

@@ -153,7 +153,7 @@ injec_seq_block_protocol_ui <- function(id, number) {
     selectInput(
       ns(paste0("a_group", number)),
       "Analytical Group",
-      choices = c("A", "B", "C", "D"),
+      choices = NA,
       multiple = TRUE
     ) |>
       bslib::tooltip("Not supported. All groups will be included"),
@@ -277,12 +277,21 @@ injec_seq_block_server <- function(
     })
 
     observeEvent(currplate(), {
-      updateSelectInput(
-        session = shiny::getDefaultReactiveDomain(),
-        inputId = paste0("a_group", number),
-        choices = get_plate_a_groups(currplate()),
-        selected = get_plate_a_groups(currplate())
-      )
+      a_groups <- get_plate_a_groups(currplate())
+      # Update for all protocols
+      for (i in 1:12) {
+        tryCatch(
+          {
+            updateSelectInput(
+              session = shiny::getDefaultReactiveDomain(),
+              inputId = paste0("a_group", i),
+              choices = a_groups,
+              selected = a_groups
+            )
+          },
+          error = function(e) NULL
+        )
+      }
     })
 
     # for each protcol add, extra protocol accordion panel
@@ -320,7 +329,6 @@ injec_seq_block_server <- function(
         input[[paste0("injec_vol_prot", number)]],
         input[[paste0("descr_prot", number)]],
         input[[paste0("suffix_prot", number)]],
-        input[[paste0("tray_prot", number)]],
         input[[paste0("exploratory_samples_alg_prot", number)]],
         current_cmpd_df()
       ),
@@ -633,7 +641,7 @@ ui <- bslib::page_navbar(
               width = 500,
               textOutput("plate_ids_for_sample_list"),
               selectInput(
-                "tray_prot1",
+                "tray_number",
                 "Tray",
                 choices = as.character(1:12),
                 multiple = TRUE
@@ -2451,7 +2459,7 @@ study_app_server <- function(input, output, session) {
                 i
               )]],
               suffix = input[[paste0("prot", i, "-suffix_prot", i)]],
-              tray = input[[paste0("tray_prot", i)]],
+              tray = input$tray_number, # Tray is same for all protocols, filter by Analytical Group
               blank_after_top_conc = input[[paste0(
                 "prot",
                 i,
@@ -2821,8 +2829,12 @@ study_app_server <- function(input, output, session) {
 
   output$dil_graph_grviz_out <- DiagrammeR::renderGrViz({
     req(dil_graphs_observer())
-    dil_graphs_observer() |>
-      render_graph()
+    tryCatch({
+          dil_graphs_observer() |> render_graph()
+      },
+      error = function(e) {
+        showNotification(e$message, type = "warning")
+      })
   })
 
   dilution_factor_label <- reactiveVal(NULL)
@@ -2830,11 +2842,15 @@ study_app_server <- function(input, output, session) {
     dil_graphs_observer()
 
     node_id <- input$dil_graph_grviz_out_click
-    node_label <- ifelse(
-      length(node_id$nodeValues) == 3,
-      node_id$nodeValues[[3]],
-      node_id$nodeValues[[2]]
-    )
+    if(length(node_id$nodeValues) >= 3){
+      node_label <- node_id$nodeValues[[3]] 
+    } else if(length(node_id$nodeValues) == 2){
+      node_label <- node_id$nodeValues[[2]]
+    } else{
+      showNotification("No label found for this node", type = "warning")
+    }
+    
+
     DiagrammeR::get_edge_df(dil_graphs_observer()) |>
       dplyr::filter(.data$to == node_label) |>
       dplyr::pull("label") |>
@@ -2842,6 +2858,11 @@ study_app_server <- function(input, output, session) {
 
     if (length(dilution_factor_label()) == 0) {
       showNotification("Vial has no precedents", type = "warning")
+      output$selected_dilution_node_text <- renderText({
+        paste0(
+          "Selected Node: ",
+          node_id$nodeValues[[1]])
+          })
     } else {
       output$selected_dilution_node_text <- renderText({
         paste0(
