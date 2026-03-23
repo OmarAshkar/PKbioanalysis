@@ -15,6 +15,23 @@ chatfunc <- function() {
   chat
 }
 
+# Cache loaded skill text to avoid repeated disk I/O and string processing.
+.skill_cache <- new.env(parent = emptyenv())
+
+.prompt_join <- function(...) {
+  paste(..., sep = "\n\n")
+}
+
+.downsample_even <- function(df, max_points = 300L) {
+  n <- nrow(df)
+  if (n <= max_points) {
+    return(df)
+  }
+
+  idx <- unique(round(seq(1, n, length.out = max_points)))
+  df[idx, , drop = FALSE]
+}
+
 load_skill <- function(skill_name) {
   skill_file <- file.path(config_path(), "skills", paste0(skill_name, ".md"))
   if (!file.exists(skill_file)) {
@@ -26,8 +43,60 @@ load_skill <- function(skill_name) {
       )
     )
   }
-  readLines(skill_file) |> paste(collapse = "\n")
+
+  cache_key <- normalizePath(skill_file, winslash = "/", mustWork = TRUE)
+  file_mtime <- file.info(skill_file)$mtime
+
+  if (exists(cache_key, envir = .skill_cache, inherits = FALSE)) {
+    cached <- get(cache_key, envir = .skill_cache, inherits = FALSE)
+    if (identical(cached$mtime, file_mtime)) {
+      return(cached$text)
+    }
+  }
+
+  text <- readLines(skill_file, warn = FALSE) |> paste(collapse = "\n")
+  assign(
+    cache_key,
+    list(mtime = file_mtime, text = text),
+    envir = .skill_cache
+  )
+
+  text
 }
+
+#' Refresh the skill cache, either for a specific skill or for all skills.
+#' This is useful if you have edited a skill file and want to ensure the latest version is loaded without restarting the R session.
+#' @param skill_name Optional name of the skill to refresh. If NULL, all skills will be refreshed.
+#' @return TRUE after refreshing the cache.
+#' @noRd
+refresh_skill_environment <- function(skill_name = NULL) {
+  if (is.null(skill_name)) {
+    cache_items <- ls(envir = .skill_cache, all.names = TRUE)
+    if (length(cache_items) > 0) {
+      rm(list = cache_items, envir = .skill_cache)
+    }
+    return(TRUE)
+  }
+
+  skill_file <- file.path(config_path(), "skills", paste0(skill_name, ".md"))
+  if (!file.exists(skill_file)) {
+    stop(
+      paste(
+        "Skill file not found for",
+        skill_name,
+        "Please make sure the skill file exists in the skills directory."
+      )
+    )
+  }
+
+  cache_key <- normalizePath(skill_file, winslash = "/", mustWork = TRUE)
+  if (exists(cache_key, envir = .skill_cache, inherits = FALSE)) {
+    rm(list = cache_key, envir = .skill_cache)
+  }
+
+  TRUE
+}
+
 
 suitability_ai <- function(chat, quantres) {
   stopifnot(has_suitability_results(quantres))
@@ -35,7 +104,7 @@ suitability_ai <- function(chat, quantres) {
   x <- quantres@suitability$results
 
   chat$stream_async(
-    paste(
+    .prompt_join(
       load_skill("skill_suitability"),
       jsonlite::toJSON(quantres@suitability[["results"]])
     )
@@ -50,7 +119,7 @@ linearity_ai <- function(chat, quantres, compound_id) {
   }
   x <- quantres@linearity[[compound_id[1]]]
   prompt <-
-    paste(
+    .prompt_join(
       load_skill("skill_linearity"),
       jsonlite::toJSON(quantres@linearity[[compound_id]]$results[-1]),
       # jsonlite::toJSON(quantres@linearity[[compound_id]]$results$modelobj),
@@ -88,17 +157,54 @@ integrate_ai <- function(
   ) |>
     select(1, 2)
   colnames(intensities) <- c("time", "Signal")
-  prompt <- paste(
-    "What is the observed retention time, peak start and peak end for this chromatogram? Look for the between peak signal roughly between ",
-    peak_start,
-    "and ",
-    peak_end,
-    " minutes respectively.",
-    "Here is the observed chromatographic intensities (time, intensity) in JSON format:",
-    jsonlite::toJSON(intensities),
-    "Return only json string with the following fields: observed_retention_time (most intense point), peak_start, peak_end, flagged (TRUE if peak is not acceptable, FALSE if peak is acceptable), and comment fields",
+
+  intensities <- intensities |>
+    dplyr::filter(is.finite(.data$time), is.finite(.data$Signal))
+
+  roi <- intensities
+  if (
+    is.finite(peak_start) &&
+      is.finite(peak_end)
+  ) {
+    lo <- min(peak_start, peak_end)
+    hi <- max(peak_start, peak_end)
+    span <- abs(hi - lo)
+    margin <- max(0.5, span * 0.25)
+
+    roi <- intensities |>
+      dplyr::filter(
+        .data$time >= (lo - margin),
+        .data$time <= (hi + margin)
+      )
+
+    if (nrow(roi) < 30) {
+      roi <- intensities
+    }
+  }
+
+  roi <- .downsample_even(roi, max_points = 300L)
+  sig <- roi$Signal
+  signal_summary <- list(
+    min = if (length(sig)) min(sig, na.rm = TRUE) else NA_real_,
+    max = if (length(sig)) max(sig, na.rm = TRUE) else NA_real_,
+    median = if (length(sig)) stats::median(sig, na.rm = TRUE) else NA_real_
+  )
+
+  payload <- list(
+    expected_window = list(start = peak_start, end = peak_end),
+    n_points = nrow(roi),
+    signal_summary = signal_summary,
+    intensities = roi
+  )
+
+  prompt <- .prompt_join(
+    "Determine observed retention time, peak start, and peak end for this chromatogram.",
+    "Focus on a peak roughly within the expected window.",
+    "Input JSON:",
+    jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = 6),
+    "Return JSON only with fields: observed_retention_time, peak_start, peak_end, flagged, comment.",
     load_skill("skill_integration"),
-    "If no peak observed return flagged TRUE, write brief comment, and return NA for the rest of the json fields. Not a single word not in json format."
+    "If no acceptable peak is observed: flagged = TRUE, brief comment, and NA for observed_retention_time, peak_start, and peak_end."
   )
 
   res <- jsonlite::fromJSON(chat$chat(prompt))
@@ -128,14 +234,15 @@ studydesign_ai <- function(chat, study_id) {
     "Note study subject type is ",
     get_study_subject_type(study_id),
     jsonlite::toJSON(study),
-    jsonlite::toJSON(samples)
+    jsonlite::toJSON(samples),
+    sep = "\n\n"
   )
   chat$stream_async(prompt)
 }
 
 plate_ai <- function(chat, plate) {
   df <- plate@df
-  prompt <- paste(
+  prompt <- .prompt_join(
     load_skill("skill_plate_design"),
     jsonlite::toJSON(df)
   )
@@ -143,7 +250,7 @@ plate_ai <- function(chat, plate) {
 }
 
 injeclist_ai <- function(chat, df) {
-  prompt <- paste(
+  prompt <- .prompt_join(
     load_skill("skill_injeclist"),
     jsonlite::toJSON(df)
   )
@@ -223,3 +330,5 @@ ai_chat_module_server <- function(
     })
   })
 }
+
+

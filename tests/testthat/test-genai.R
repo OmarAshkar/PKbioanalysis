@@ -157,6 +157,44 @@ test_that("AI mode works with all_next target", {
     expect_true(all(nchar(peak_data$comment) > 0))
 })
 
+
+test_that("AI mode works with all targets", {
+    skip_if_no_py()
+
+    # Set expected bounds first
+    chrom_with_bounds <- update_RT(
+        main, 
+        compound_id = 1,
+        sample_id = NULL,
+        peak_start = 0.5,
+        peak_end = 0.7,
+        target = "all",
+        mode = "manual"
+    )
+
+    # Use AI for all_next
+    result <- update_RT(
+        chrom_with_bounds, 
+        compound_id = 1,
+        sample_id = 4,
+        peak_start = 0.5,
+        peak_end = 0.7,
+        target = "all",
+        mode = "ai"
+    )
+
+    # Check multiple samples were processed
+    peak_data <- result@peaks %>%
+        dplyr::filter(compound_id == 1, sample_id >= 4)
+
+    expect_true(nrow(peak_data) > 1)
+    
+    # All should have comments from AI
+    expect_true(all(!is.na(peak_data$comment)))
+    expect_true(all(nchar(peak_data$comment) > 0))
+})
+
+
 test_that("chrom_integration works end-to-end", {
     skip_if_no_py()
 
@@ -174,4 +212,8 @@ test_that("chrom_integration works end-to-end", {
 
     # Verify integration happened
     expect_true(is_integrated(y, compound_id = 1, sample_id = 4))
+})
+
+test_that("refresh skills env", {
+    refresh_skill_environment() |> expect_true()
 })

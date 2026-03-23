@@ -994,9 +994,47 @@ chromapp_server <- function(input, output, session) {
       req_peaksobj()
       req(input$compound_trans_input)
       req(input$sample_file_input)
-      # ...existing code...
-    }
-  )
+      if (
+        !is.null(selected_peak_range()) & !is.null(input$compound_trans_input)
+      ) {
+        print("enable")
+        shinyjs::enable("peak_menu")
+      } else {
+        print("disable")
+        shinyjs::disable("peak_menu")
+      }
+
+      # has default RT +> any ok
+      if (
+        has_default_bounds(
+          peaksobj(),
+          .get_compound_id_from_compound_trans(
+            current_cmpds_df(),
+            input$compound_trans_input
+          )
+        )
+      ) {
+        updateRadioButtons(
+          session,
+          "integration_menu",
+          choices = c(
+            "Save Peak" = "single",
+            "Save as default (all)" = "all",
+            "Save from current to all next" = "all_next"
+          ),
+          selected = "single"
+        )
+      } else {
+        updateRadioButtons(
+          session,
+          "integration_menu",
+          choices = c("Save as default (all)" = "all"),
+          selected = "all"
+        )
+      }
+    },
+    ignoreNULL = FALSE
+  ) 
 
   ## Firing integration logic ########
   ### select compound and verify changes ####
@@ -1049,22 +1087,34 @@ chromapp_server <- function(input, output, session) {
       sample_name <- iloc_sample()
     }
 
+    browser()
     # integrate peak(s)
-    update_RT(
-      peaksobj(),
-      compound_id = .get_compound_id_from_compound_trans(
-        current_cmpds_df(),
-        input$compound_trans_input
-      ),
-      sample_id = sample_name,
-      peak_start = min(selected_peak_range()$x),
-      peak_end = max(selected_peak_range()$x),
-      target = input$integration_menu,
-      mode = input$integration_mode_checkbox
-    ) |>
-      peaksobj()
+    tryCatch(
+      {
+      update_RT(
+        peaksobj(),
+        compound_id = .get_compound_id_from_compound_trans(
+          current_cmpds_df(),
+          input$compound_trans_input
+        ),
+        sample_id = sample_name,
+        peak_start = min(selected_peak_range()$x, na.rm = TRUE),
+        peak_end = max(selected_peak_range()$x, na.rm = TRUE),
+        target = input$integration_menu,
+        mode = input$integration_mode_checkbox
+      ) |>
+        peaksobj()
+    }, 
+    error = function(e) {
+      showNotification(paste("Error: ", e$message), type = "error")
+    },
+      warning = function(w) {
+        showNotification(paste("Warning: ", w$message), type = "warning")
+      }
+    )
 
     removeModal()
+
     # shinyjs::disable("peak_menu")
   })
 
