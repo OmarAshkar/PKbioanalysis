@@ -408,6 +408,7 @@ chromapp_server <- function(input, output, session) {
   "
 
   output$run_summary <- renderPrint({
+    req_peaksobj()
     print(peaksobj())
   })
 
@@ -416,11 +417,17 @@ chromapp_server <- function(input, output, session) {
   peaksobj <- reactiveVal(NULL)
   chrom_data_load_server("chrom_data_load", peaksobj)
 
+  # central guard for all reactives depending on peaksobj()
+  req_peaksobj <- function() {
+    req(peaksobj())
+    req(inherits(peaksobj(), "ChromRes"))
+  }
+
   samples_df <- reactiveVal(NULL)
   current_cmpds_df <- reactiveVal(NULL)
 
   observeEvent(peaksobj(), {
-    req(peaksobj())
+    req_peaksobj()
     sample_names <- get_sample_names(peaksobj())
     samples_df(sample_names)
     current_cmpds_df(.compound_trans_df(peaksobj()))
@@ -434,7 +441,7 @@ chromapp_server <- function(input, output, session) {
   ##  table for overview ####
   output$sample_table_overview <- rhandsontable::renderRHandsontable({
     validate(need(peaksobj(), "No peaks object available"))
-    req(peaksobj())
+    req_peaksobj()
     peaksobj()@metadata |>
       rhandsontable::rhandsontable() |>
       rhandsontable::hot_col(
@@ -479,7 +486,7 @@ chromapp_server <- function(input, output, session) {
   ##  Transition table ####
   output$trans_table_overview <- renderDT({
     validate(need(peaksobj(), "No peaks object available"))
-    req(peaksobj())
+    req_peaksobj()
     peaksobj()@transitions |>
       DT::datatable(
         selection = "none",
@@ -510,7 +517,7 @@ chromapp_server <- function(input, output, session) {
   ### Dynamic UI for compound modification ####
   output$cmpd_overview_ui <- renderUI({
     validate(need(peaksobj(), "No peaks object available"))
-    req(peaksobj())
+    req_peaksobj()
 
     fluidRow(
       selectizeInput(
@@ -859,20 +866,18 @@ chromapp_server <- function(input, output, session) {
   ## transition_id rendetext ####
   ## This should match whatever the compound is selected, retrive label
   output$transition_id <- renderText({
+    req_peaksobj()
     req(input$compound_trans_input)
-
     paste0("Transition Name: ", current_trans_id())
   })
 
-  ## renderUI: update compound list when new compound is added ####
   reactive({
-    req(peaksobj())
+    req_peaksobj()
     .compound_trans_df(peaksobj()) |> current_cmpds_df()
   })
 
-  # save trans_id to reactiveval ####
-  # used in filtering the chromatogram view
   observeEvent(input$compound_trans_input, {
+    req_peaksobj()
     req(input$compound_trans_input)
 
     get_trans_id_from_cmpd_id(
@@ -885,11 +890,9 @@ chromapp_server <- function(input, output, session) {
       current_trans_id()
   })
 
-  ## chromatogram plotly output ####
   output$chrom_plots <- renderPlotly({
     validate(need(peaksobj(), "No peaks object available"))
-
-    req(class(peaksobj()) == "ChromRes")
+    req_peaksobj()
     req(input$sample_file_input)
     req(input$compound_trans_input)
     req(is_smoothed(peaksobj())$smoothed[1]) # check if any moothed
@@ -973,13 +976,13 @@ chromapp_server <- function(input, output, session) {
       ) |>
       plotly::toWebGL() |>
       event_register("plotly_selecting")
+      
 
     p
   })
-
-  shinyjs::disable("peak_menu")
+  # shinyjs::disable("peak_menu")
   observe({
-    req(class(peaksobj()) == "ChromRes")
+    req_peaksobj()
     event_data("plotly_selecting") |> selected_peak_range()
   })
 
@@ -988,10 +991,9 @@ chromapp_server <- function(input, output, session) {
   observeEvent(
     c(input$compound_trans_input, selected_peak_range()),
     {
+      req_peaksobj()
       req(input$compound_trans_input)
       req(input$sample_file_input)
-      req(class(peaksobj()) == "ChromRes")
-
       if (
         !is.null(selected_peak_range()) & !is.null(input$compound_trans_input)
       ) {
@@ -1032,7 +1034,7 @@ chromapp_server <- function(input, output, session) {
       }
     },
     ignoreNULL = FALSE
-  )
+  ) 
 
   ## Firing integration logic ########
   ### select compound and verify changes ####
@@ -1040,6 +1042,7 @@ chromapp_server <- function(input, output, session) {
     req(input$sample_file_input)
     req(selected_peak_range())
     req(input$compound_trans_input)
+    req(input$integration_mode_checkbox)
 
     showModal(modalDialog(
       tags$h2("Verify Changes"),
@@ -1084,23 +1087,35 @@ chromapp_server <- function(input, output, session) {
       sample_name <- iloc_sample()
     }
 
+    browser()
     # integrate peak(s)
-    update_RT(
-      peaksobj(),
-      compound_id = .get_compound_id_from_compound_trans(
-        current_cmpds_df(),
-        input$compound_trans_input
-      ),
-      sample_id = sample_name,
-      peak_start = min(selected_peak_range()$x),
-      peak_end = max(selected_peak_range()$x),
-      target = input$integration_menu,
-      mode = input$integration_mode_checkbox
-    ) |>
-      peaksobj()
+    tryCatch(
+      {
+      update_RT(
+        peaksobj(),
+        compound_id = .get_compound_id_from_compound_trans(
+          current_cmpds_df(),
+          input$compound_trans_input
+        ),
+        sample_id = sample_name,
+        peak_start = min(selected_peak_range()$x, na.rm = TRUE),
+        peak_end = max(selected_peak_range()$x, na.rm = TRUE),
+        target = input$integration_menu,
+        mode = input$integration_mode_checkbox
+      ) |>
+        peaksobj()
+    }, 
+    error = function(e) {
+      showNotification(paste("Error: ", e$message), type = "error")
+    },
+      warning = function(w) {
+        showNotification(paste("Warning: ", w$message), type = "warning")
+      }
+    )
 
     removeModal()
-    shinyjs::disable("peak_menu")
+
+    # shinyjs::disable("peak_menu")
   })
 
   output$overview_heatmap_out <- ggiraph::renderGirafe({
@@ -1345,7 +1360,7 @@ chromapp_server <- function(input, output, session) {
 
   # Sync table highlight when inputs change
   observe({
-    req(peaksobj())
+    req_peaksobj()
     req(input$sample_file_input)
     req(input$compound_trans_input)
     
@@ -1359,8 +1374,8 @@ chromapp_server <- function(input, output, session) {
     
     if (length(matching_row) > 0) {
       # Subtract 1 because DataTable uses 0-based indexing
-      dataTableProxy("integration_table") |>
-        selectRows(matching_row - 1)
+      DT::dataTableProxy("integration_table") |>
+        DT::selectRows(matching_row - 1)
     }
   }, priority = -100)  # Lower priority to avoid conflicts
 

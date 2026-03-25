@@ -20,7 +20,9 @@ test_that("plate_registration", {
 
 test_that("reuse_plate", {
   skip_on_cran()
-  skip_on_ci()
+  # skip_on_ci()
+
+  # reuse plate will need the samples database if on the plate to render plots
 
   x <- generate_96() |> add_blank(TRUE, FALSE) |> register_plate()
   .is_registered(x) |> expect_equal(TRUE)
@@ -30,6 +32,8 @@ test_that("reuse_plate", {
   x <- reuse_plate(as.numeric(currid), 4)
   x |> add_blank() |> add_DB() |> expect_no_error()
   .is_registered(x) |> expect_equal(FALSE)
+
+  plot(x) |> expect_no_error()
 
   validObject(x) |> expect_equal(TRUE)
 })
@@ -320,6 +324,7 @@ test_that("add_from_db2", {
   })
 
   plot(x, "dil") |> expect_no_error()
+  plot(x) |> expect_no_error()
 
   x@df$value |> na.omit() |> length() |> expect_equal(length(df$log_id)*3)
 

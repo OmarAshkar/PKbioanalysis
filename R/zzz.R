@@ -3,6 +3,8 @@ PKbioanalysis_env <- new.env(parent = emptyenv())
 config_path <- function() {
   tools::R_user_dir("PKbioanalysis", "config")
 }
+
+
 reset_config <- function() {
   path <- config_path()
 
@@ -10,11 +12,24 @@ reset_config <- function() {
     unlink(path, recursive = TRUE)
   }
   dir.create(path, showWarnings = F, recursive = T)
+  dir.create(file.path(path, "skills"), showWarnings = F, recursive = T)
   # copy yaml template
   file.copy(
     system.file("extdata", "config.yaml", package = "PKbioanalysis"),
     file.path(path, "config.yaml")
   )
+
+  # copy 6 skill templates
+  skill_templates <- list.files(
+    system.file("skills", package = "PKbioanalysis"),
+    full.names = TRUE
+  )
+  file.copy(
+    skill_templates,
+    file.path(path, "skills"), 
+    overwrite = TRUE
+  )
+
 }
 
 refresh_config <- function() {
@@ -40,7 +55,14 @@ update_config <- function(
   base_url = NULL,
   api_key = NULL,
   model = NULL,
-  temperature = NULL
+  temperature = NULL, 
+  
+  suitability_skill = NULL,
+  linearity_skill = NULL,
+  integration_skill = NULL,
+  studydesign_skill = NULL,
+  plate_design_skill = NULL,
+  injeclist_skill = NULL
 ) {
   path <- config_path()
   configfile <- file.path(path, "config.yaml")
@@ -159,6 +181,34 @@ py <- NULL
       showWarnings = TRUE,
       recursive = TRUE
     )
+  }
+  # skills files copy 
+  skill_files <- list.files(
+    system.file("skills", package = pkgname),
+    full.names = TRUE
+  )
+
+  if(!dir.exists(file.path(config_path(), "skills"))) {
+    dir.create(
+      file.path(config_path(), "skills"),
+      showWarnings = TRUE,
+      recursive = TRUE
+    )
+
+    file.copy(
+      skill_files,
+      file.path(config_path(), "skills"),
+      overwrite = TRUE
+    )
+  }
+  actuall_skill_files <- list.files(file.path(config_path(), "skills"), full.names = TRUE)
+  # if any skill file is missing, copy that file only 
+  for (skill_file in skill_files) {
+    skill_filename <- basename(skill_file)
+    target_skill_file <- file.path(file.path(config_path(), "skills"), skill_filename)
+    if (!file.exists(target_skill_file)) {
+      file.copy(skill_file, target_skill_file)
+    }
   }
 
   py_packages <- c("pandas<3", "rainbow_api", "numpy", "scipy")

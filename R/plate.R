@@ -804,8 +804,9 @@ add_suitability <- function(plate, conc, label = "suitability", group = NA) {
 
   e_func <- ifelse(reg, stop, warning)
 
-  if (!(lqc_conc <= loq_conc * 3)) {
-    e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc * 3), ")")
+  
+  if (!(lqc_conc <= loq_conc * 3) | lqc_conc == loq_conc) {
+    e_func(paste("LQC should be less or equal 3xLOQ (<", loq_conc * 3), ")", "and not equal to LOQ (", loq_conc, ")")
   }
 
   if (!(mqc_conc >= quantrange[1] & mqc_conc <= quantrange[2])) {
@@ -1104,19 +1105,22 @@ plot.PlateObj <- function(
 
   descr <- plate@descr
   plate_df <- plate@df |> # zero if blanks, NA if empty cell. Conc otherwise
-    mutate(conc = as.character(.data$conc))
+    mutate(conc = as.character(.data$conc))  |>
+    dplyr::mutate(dilStr = dplyr::case_when(
+      is.na(.data$dil) ~ NA_character_,
+      TRUE ~ paste0(.data$dil, "X")
+    )) 
 
   # mutate(time = as.character(.data$time))  |>
   # mutate(dose = as.character(.data$dose)) |>
   # mutate(factor = as.character(.data$factor))
-
   samples_on_plate <- na.omit(unique(plate@df$log_id))
   if (length(samples_on_plate) > 0) {
     plate_df <- left_join(
-      plate_df |> dplyr::mutate(dilStr = paste0(.data$dil, "X")),
-      plate@samples_metadata,
+      x = plate_df ,
+      y = plate@samples_metadata,
       by = c("log_id", "study_id", "dilStr"),
-      relationship = "one-to-one"
+      relationship = "many-to-one" # many injections (dilution and repeat), one sample log entry
     )
   }
   color_actual <- switch(
@@ -1508,10 +1512,13 @@ reuse_plate <- function(id, extra_fill = 0) {
     plate <- add_samples(plate, rep("X", extra_fill), prefix = "")
   }
 
+
   # clear all metadata
   plate@df$value <- as.character(NA)
   plate@df$conc <- as.numeric(NA)
   plate@df$TYPE <- as.character(NA)
+  plate@df$a_group <- as.character(NA)
+
 
   plate
 }
@@ -1914,7 +1921,7 @@ samples_naming_style <- function(
       mutate(
         new_value = paste5(
           .data$new_value,
-          paste0(.data$dil, "X"),
+          unique(paste0(.data$dil, "X")),
           sep = "_",
           na.rm = TRUE
         )

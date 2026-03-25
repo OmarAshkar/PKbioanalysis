@@ -13,7 +13,7 @@ pkmerge <- function(x){
   
   # assert length and names of pkdata
   injec_ids <- x@samples_metadata |> 
-    dplyr::filter(type == "Analyte") |>
+    dplyr::filter(.data$type == "Analyte") |>
     dplyr::pull("injec_id") |>
     unique() 
   
@@ -44,7 +44,7 @@ pkmerge <- function(x){
         by = c("filename" = "filename")) |>
         dplyr::mutate(compound_id = i) |> 
         dplyr::rename(conc = "estimated_conc") |> 
-        dplyr::mutate(conc = conc * dil) |>
+        dplyr::mutate(conc = .data$conc * .data$dil) |>
         dplyr::mutate(nominal_time = as.numeric(.data$nominal_time))
 
     } else {

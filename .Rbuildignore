@@ -19,4 +19,5 @@
 ^test/testthat/test-process_chroms.R
 ^test/testthat/test-smoothing.R 
 ^test/testthat/test-update_RT.R 
+^DATABASE_HIERARCHY.md
 

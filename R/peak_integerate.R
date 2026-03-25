@@ -555,10 +555,10 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     for (i in all_sample_ids) {
       chrom_res <- .integrate_individual_slack(
         chrom_res,
-        compound_id,
-        i,
-        peak_start,
-        peak_end,
+        compound_id = compound_id,
+        sample_id = i,
+        peak_start = peak_start,
+        peak_end = peak_end,
         mode = mode
       )
     }
@@ -581,8 +581,8 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     obs_rt,
     compound_id,
     all_sample_ids,
-    peak_start,
-    peak_end,
+    peak_start = peak_start,
+    peak_end = peak_end,
     mode = mode
   )
 
@@ -893,6 +893,26 @@ check_chrom_cmpds <- function(chrom_res, method_id) {
     peak_end <- ai_result$peak_end
     comment <- ai_result$comment
     flag <- ai_result$flagged
+  }
+
+  # if peak_start or peak_end is NA, ensure flagged and skip integration
+  if (is.null(peak_start) || is.null(peak_end) || is.na(peak_start) || is.na(peak_end)) {
+    if(!flag){
+      warning("Peak start or end is NA but flag is not set to TRUE.")
+    }
+
+    chrom_res@peaks <- .update_observed_rt(
+      chrom_res@peaks,
+      obs_rt = NULL,
+      compound_id,
+      sample_id,
+      peak_start = NA,
+      peak_end = NA,
+      mode = mode,
+      comment = comment,
+      flag = flag
+    )
+    return(chrom_res)
   }
 
   # Find transition and filter peak data

@@ -144,15 +144,15 @@
     mutate(peak_start = NA, peak_end = NA) |>
     arrange(.data$filename, .data$compound) |>
     mutate(IS = "dopamine-d4") |>
-    write.csv(imported_peaks_path, row.names = F)
+    utils::write.csv(imported_peaks_path, row.names = F)
 }
 
 
 write_test_pkset <- function(){
 
   # load extdata 
-  d <- read.csv(system.file("extdata", "08122019_MTG_injeclist_parsed.csv", package = "PKbioanalysis"))
-  d <- d |> dplyr::filter(index != 1)
+  d <- utils::read.csv(system.file("extdata", "08122019_MTG_injeclist_parsed.csv", package = "PKbioanalysis"))
+  d <- d |> dplyr::filter(.data$index != 1)
 
   # clean and sanitize
 
@@ -181,8 +181,8 @@ write_test_pkset <- function(){
 
 
   subjectdf <- d |> 
-    dplyr::filter(type == "analyte") |> 
-    dplyr::mutate(dilution = as.numeric(gsub("X", "", dilution)))
+    dplyr::filter(.data$type == "analyte") |> 
+    dplyr::mutate(dilution = as.numeric(gsub("X", "", .data$dilution)))
 
   # create and write log PK dataset 
   log_ids <- add_sample_log(study$id, data.frame(
@@ -211,9 +211,9 @@ write_test_pkset <- function(){
   db <- .connect_to_db()
   on.exit(.close_db(db, TRUE), add = TRUE)
   injsq <- injec_seq$injec_list |> 
-    dplyr::filter(TYPE == "Analyte")
+    dplyr::filter(.data$TYPE == "Analyte")
   dd <- d |> 
-    dplyr::filter(type == "analyte")
+    dplyr::filter(.data$type == "analyte")
   stopifnot(nrow(injsq) == nrow(dd))
 
   for (i in seq_along(injsq$FILE_NAME)) {

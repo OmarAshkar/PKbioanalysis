@@ -213,11 +213,12 @@ run_linearity_df <- function(
 
   # check if set_linearity
 
-  if (model == "linear") {
-    model_func <- stats::lm
-  } else if (model == "quadratic") {
-    model_func <- stats::nls
-  }
+  # if (model == "linear") {
+  #   model_func <- stats::lm
+  # } else if (model == "quadratic") {
+  #   model_func <- stats::nls
+  # }
+  model_func <- stats::lm
 
   if (weight == "1/x") {
     weight_vec <- 1 / target_df$stdconc
@@ -253,9 +254,9 @@ run_linearity_df <- function(
       )
     } else if (model == "quadratic") {
       fit <- model_func(
-        response ~ I(stdconc^2) + stdconc,
-        data = target_df,
-        weights = weight_vec
+        stats::as.formula(paste0(response, " ~ I(stdconc^2) + stdconc")),
+        weights = weight_vec,
+        data = target_df
       )
     }
   } else {
@@ -267,9 +268,9 @@ run_linearity_df <- function(
       )
     } else if (model == "quadratic") {
       fit <- model_func(
-        response ~ I(stdconc^2) + 0,
-        data = target_df,
-        weights = weight_vec
+        stats::as.formula(paste0(response, " ~ I(stdconc^2) + stdconc - 1")),
+        weights = weight_vec,
+        data = target_df
       )
     }
   }
@@ -311,8 +312,22 @@ run_linearity_df <- function(
       )
     ) |>
     dplyr::mutate(residual_conc = .data$estimated_conc - .data$stdconc) |>
-    dplyr::mutate(dev_conc = rel_deviation(.data$stdconc, .data$estimated_conc)) |>
-    dplyr::mutate(passed = dplyr::case_when(abs(dev_conc) <= 0.20 ~ TRUE, TRUE ~ FALSE))
+    dplyr::mutate(dev_conc = rel_deviation(.data$stdconc, .data$estimated_conc, percent = FALSE)) 
+
+    lloq_assumed <- resdf |> 
+      dplyr::filter(.data$type == "Standard" & .data$include == TRUE) |>
+      dplyr::filter(.data$stdconc == min(.data$stdconc)) |>
+      dplyr::pull("stdconc")
+
+  
+  resdf <- resdf |>
+    dplyr::mutate(passed = dplyr::case_when(
+      .data$stdconc <= lloq_assumed & abs(.data$dev_conc) <= 0.20 ~ TRUE,
+      .data$stdconc > lloq_assumed & abs(.data$dev_conc) <= 0.15 ~ TRUE,
+      # if type not in standarard or QC, NA 
+      !(.data$type %in% c("Standard", "QC")) ~ NA,
+      TRUE ~ FALSE
+    ))
 
   resdfqc <- resdf |> 
     dplyr::filter(.data$type == "QC")
@@ -338,7 +353,6 @@ run_linearity_df <- function(
 
   sd_residuals <- stats::sd(stats::residuals(fit))
 
-  
   reslist <- list(
     modelobj = fit,
     model = model,
@@ -356,7 +370,7 @@ run_linearity_df <- function(
     slope = slope,
     see_weighted = sum((1 / weight_vec) * (fit$residuals**2)), # sum of squared residuals
     rse_weighted = summary(fit)$sigma, # weighted residual standard error
-    lloq_assumed = min(resdfstd$stdconc),
+    lloq_assumed = lloq_assumed,
     uloq_assumed = max(resdfstd$stdconc),
     lloq_passed = .find_passed_lloq(resdf),
     uloq_passed = .find_passed_uloq(resdf),
@@ -449,7 +463,7 @@ run_linearity_quantres <- function(
 .find_passed_lloq <- function(df) {
   df |>
     dplyr::mutate(passed = ifelse(abs(.data$dev_conc) <= 0.20, TRUE, FALSE)) |>
-    dplyr::filter(.data$passed) |>
+    dplyr::filter(.data$passed & .data$type == "Standard" & .data$include == TRUE) |>
     dplyr::mutate(stdconc = as.numeric(.data$stdconc)) |>
     dplyr::pull("stdconc") |>
     min()
@@ -461,7 +475,7 @@ run_linearity_quantres <- function(
 .find_passed_uloq <- function(df) {
   df |>
     dplyr::mutate(passed = ifelse(abs(.data$dev_conc) <= 0.15, TRUE, FALSE)) |>
-    dplyr::filter(.data$passed) |>
+    dplyr::filter(.data$passed & .data$type == "Standard" & .data$include == TRUE) |>
     dplyr::mutate(stdconc = as.numeric(.data$stdconc)) |>
     dplyr::pull("stdconc") |>
     max()

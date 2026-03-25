@@ -60,6 +60,22 @@ config_module_server <- function(id) {
           max = 1,
           step = 0.1
         ),
+        shiny::tags$hr(),
+        # skills path 
+        h4("AI Skills"),
+        p("The following skills are used by the AI assistant to perform specific tasks. You can customize the content of these skills by editing the corresponding markdown files in the config/skills folder."),
+        tags$ul(
+          tags$li("studydesign_skill.md: Provide feedback on study design based on best practices in PK"),
+          tags$li("plate_design_skill.md: Comment on plate design and layouts for bioanalytical assays."),
+          tags$li("injeclist_skill.md: Comment on injection list design for LC-MS/MS runs"),
+          tags$li("integration_skill.md: Integrate chromatographic peaks and provide feedback on peak quality and integration parameters."),
+          tags$li("suitability_skill.md: Used to assess suitability of bioanalysis run"),
+          tags$li("linearity_skill.md: Used to evaluate linearity of calibration curves in bioanalysis")
+        ),
+        # skills location in config_path()/skills
+        p(paste0("Skill files are located in the ", config_path(), "/skills folder.")),
+        p("If you edit any of the skill files, make sure to click the 'Refresh Skills Cache' button below."),
+        shiny::actionButton(ns("refresh_skills"), "Refresh Skills Cache", icon = icon("sync")),
         footer = tagList(
           modalButton("Cancel"),
           actionButton(
@@ -70,6 +86,24 @@ config_module_server <- function(id) {
         ),
         easyClose = TRUE
       ))
+    })
+
+    observeEvent(input$refresh_skills, {
+      tryCatch(
+        {
+          refresh_skill_environment()
+          showNotification(
+            "AI skills cache refreshed successfully.",
+            type = "message"
+          )
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error refreshing skills cache:", e$message),
+            type = "error"
+          )
+        }
+      )
     })
 
     observeEvent(input$save_btn, {
