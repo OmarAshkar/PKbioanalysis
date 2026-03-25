@@ -239,7 +239,7 @@ OPENAI_API_KEY=your_api_key_here
 #### Using Local Models (Privacy-First)
 
 For organizations requiring data privacy: 1. Install
-[Ollama](https://ollama.ai) or [LM Studio](https://lmstudio.ai) 2.
+[Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) 2.
 Download a model (e.g., `ollama pull llama3.1:70b`) 3. Configure
 PKbioanalysis:
 
@@ -278,6 +278,4 @@ integrity:
 
 ## License
 
-AGPL-3.0 or later. See
-[LICENSE](https://omarashkar.github.io/PKbioanalysis/LICENSE.md) for
-details.
+AGPL-3.0 or later. See details.

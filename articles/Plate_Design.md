@@ -7,11 +7,6 @@ for the study.
 
 ``` r
 library(PKbioanalysis)
-#> 
-#> Attaching package: 'PKbioanalysis'
-#> The following object is masked from 'package:stats':
-#> 
-#>     integrate
 ```
 
 ## Plate generation, reusing and managing plates
@@ -42,7 +37,7 @@ print(plate)
 #>  Last Fill: A,1 
 #>  Remaining Empty Spots: 96 
 #>  Description:  
-#>  Last Modified: 2026-02-17 17:40:56.714597 
+#>  Last Modified: 2026-03-25 15:29:42.292634 
 #>  Scheme h 
 #>  Plate ID: 1_1 
 #>  Registered: FALSE 
@@ -266,7 +261,7 @@ plates <- make_metabolic_study(
     n_NAD = 3, 
     n_noNAD = 2
 )
-#> ℹ Created study with ID: a853a75b-d569-4e8d-b3fa-2a9e6310a59c
+#> ℹ Created study with ID: 64ef137d-a1d1-49d1-9683-a1e55d8c9857
 #> ℹ Adding dosing and subjects information...
 #> ✔ Dosing information added.
 #> ℹ Adding subjects information...

@@ -4,11 +4,6 @@ PKbioanalysis supports interactive dilution scheme generation.
 
 ``` r
 library(PKbioanalysis)
-#> 
-#> Attaching package: 'PKbioanalysis'
-#> The following object is masked from 'package:stats':
-#> 
-#>     integrate
 ```
 
 Let’s generate fairly complex plate with multiple different standards,

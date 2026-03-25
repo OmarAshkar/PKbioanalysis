@@ -57,3 +57,16 @@ CRAN release: 2026-01-14
 - PKmerge to generate final PK datasets.
 
 - Export PK profiles to NONMEM format along with codebook.
+
+## Version 0.5.1
+
+- AI skills files are now stored in a separate folder under config
+  directory. This allows users to customize the skills and add new
+  skills without modifying the package code.
+- Bugfix: Tray selection in multiple protocols in study_app is now fixed
+  to be the same for all protocols, and it is selected by a single
+  input. This ensures that the tray is consistent across all protocols
+  in the study.
+- Bugfix: Interactive dilution graph in study_app is now fixed to
+  display correctly and show the correct labels for the nodes.
+- Bugfix: Chromatogram plotting and integration in chrom_app is fixed
