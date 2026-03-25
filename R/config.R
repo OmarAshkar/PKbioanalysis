@@ -74,6 +74,8 @@ config_module_server <- function(id) {
         ),
         # skills location in config_path()/skills
         p(paste0("Skill files are located in the ", config_path(), "/skills folder.")),
+        p("If you edit any of the skill files, make sure to click the 'Refresh Skills Cache' button below."),
+        shiny::actionButton(ns("refresh_skills"), "Refresh Skills Cache", icon = icon("sync")),
         footer = tagList(
           modalButton("Cancel"),
           actionButton(
@@ -84,6 +86,24 @@ config_module_server <- function(id) {
         ),
         easyClose = TRUE
       ))
+    })
+
+    observeEvent(input$refresh_skills, {
+      tryCatch(
+        {
+          refresh_skill_environment()
+          showNotification(
+            "AI skills cache refreshed successfully.",
+            type = "message"
+          )
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error refreshing skills cache:", e$message),
+            type = "error"
+          )
+        }
+      )
     })
 
     observeEvent(input$save_btn, {
