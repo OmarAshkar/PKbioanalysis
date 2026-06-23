@@ -6,10 +6,12 @@ bioanalytical purposes, but also the pharmacokinetic information needed
 for the study.
 
 ``` r
+
 library(PKbioanalysis)
 ```
 
 ``` r
+
 newstudy <- data.frame(
   type = "SD",
   pkstudy = TRUE,

@@ -17,9 +17,9 @@ AI-assisted quality control.
 
 ------------------------------------------------------------------------
 
-## ✨ Key Features
+## Key Features
 
-### 📊 Study Management & Design
+### Study Management & Design
 
 - **Comprehensive trial management system** with relational database
   architecture (DuckDB)
@@ -30,7 +30,7 @@ AI-assisted quality control.
   metadata management
 - **Sample log integration** linking bioanalytical data to study design
 
-### 🧪 Bioanalytical Workflows
+### Bioanalytical Workflows
 
 - **96-well plate design and visualization** with flexible filling
   schemes (horizontal/vertical)
@@ -45,7 +45,7 @@ AI-assisted quality control.
 - **Linearity evaluation** with interactive visualization and
   regulatory-compliant reporting
 
-### 📈 Data Analysis & Export
+### Data Analysis & Export
 
 - **Maximum likelihood estimation (MLE)** of additive and proportional
   errors
@@ -55,7 +55,7 @@ AI-assisted quality control.
 - **NONMEM-ready export** with numeric recoding and codebook generation
 - **Precision and accuracy** calculations per analytical batch
 
-### 🤖 AI Capabilities
+### AI Capabilities
 
 - **AI-assisted chromatogram integration** with automated peak boundary
   detection
@@ -68,7 +68,7 @@ AI-assisted quality control.
 
 ------------------------------------------------------------------------
 
-## 📦 Installation
+## Installation
 
 ### GUI-Only Installation (No Coding Required)
 
@@ -97,12 +97,14 @@ For users comfortable with R programming:
 **Stable Release (CRAN)**
 
 ``` r
+
 install.packages("PKbioanalysis")
 ```
 
 **Development Version (GitHub)**
 
 ``` r
+
 # Install remotes if needed
 install.packages("remotes")
 
@@ -115,6 +117,7 @@ remotes::install_github("OmarAshkar/PKbioanalysis")
 For advanced chromatography file parsing (Waters `.raw` files):
 
 ``` r
+
 PKbioanalysis::install_py_dep()
 ```
 
@@ -124,6 +127,7 @@ This creates a virtual environment with required Python packages
 ## 🚀 Quick Start
 
 ``` r
+
 library(PKbioanalysis)
 
 # Study design and management
@@ -136,7 +140,7 @@ chrom_app()
 quant_app()
 ```
 
-## 🤖 AI Capabilities & Configuration
+## AI Capabilities & Configuration
 
 PKbioanalysis integrates AI-powered quality assessment and decision
 support throughout the bioanalytical workflow.
@@ -206,6 +210,7 @@ via Ollama or cloud providers).
 #### Setup Programmatically
 
 ``` r
+
 # Update configuration
 PKbioanalysis::update_config(
   base_url = "https://api.openai.com/v1",
@@ -244,6 +249,7 @@ Download a model (e.g., `ollama pull llama3.1:70b`) 3. Configure
 PKbioanalysis:
 
 ``` r
+
 update_config(
   base_url = "http://localhost:11434/v1",  # Ollama default
   api_key = "not-needed",  # Local models don't need keys
@@ -264,6 +270,22 @@ update_config(
 ## Documentation & Resources
 
 - **Package Website**: <https://omarashkar.github.io/PKbioanalysis/>
+- **Vignettes**:
+  - [Study Design
+    Workflow](https://omarashkar.github.io/PKbioanalysis/articles/Study_Design.html)
+  - [Plate
+    Design](https://omarashkar.github.io/PKbioanalysis/articles/Plate_Design.html)
+  - [Injection
+    Sequences](https://omarashkar.github.io/PKbioanalysis/articles/InjectionSequences.html)
+  - [Chromatogram Visualization &
+    Integration](https://omarashkar.github.io/PKbioanalysis/articles/visualizeChromatograms.html)
+  - [Residual Error
+    Estimation](https://omarashkar.github.io/PKbioanalysis/articles/Estim_residuals.html)
+  - [Dilution
+    Schemes](https://omarashkar.github.io/PKbioanalysis/articles/DilutionScheme.html)
+- **Function Reference**:
+  <https://omarashkar.github.io/PKbioanalysis/reference/>
+- **Report Bugs**: <https://github.com/OmarAshkar/PKbioanalysis/issues>
 
 ## Architecture
 
@@ -275,6 +297,32 @@ integrity:
       Subjects      Samples           File List           Peak Data    Concentrations
          ↓              ↓                 ↓                   ↓              ↓
       Dosing         Metadata          Database           Linearity      PK Datasets
+
+All data persists in `tools::R_user_dir("PKbioanalysis", "data")` with
+automatic backups.
+
+## Contributing
+
+Contributions are welcome! If you’d like to contribute by reporting
+bugs, suggesting features, or submitting pull requests.
+
+Please file issues for bugs or feature requests at
+[github.com/OmarAshkar/PKbioanalysis/issues](https://github.com/OmarAshkar/PKbioanalysis/issues).
+
+## Citation
+
+If you use PKbioanalysis in your work, please cite it as:
+
+``` r
+
+citation("PKbioanalysis")
+```
+
+Or use the following reference:
+
+> Elashkar O. PKbioanalysis: An Integrated R Package for Pharmacokinetic
+> and Bioanalytical Workflows. R package version 0.1.0.
+> <https://github.com/OmarAshkar/PKbioanalysis>
 
 ## License
 

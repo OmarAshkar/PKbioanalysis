@@ -6,12 +6,14 @@ bioanalytical purposes, but also the pharmacokinetic information needed
 for the study.
 
 ``` r
+
 library(PKbioanalysis)
 ```
 
 ## Plate generation, reusing and managing plates
 
 ``` r
+
 plate <- generate_96() 
 plot(plate)
 #> Plate not registered. To register, use register_plate()
@@ -30,6 +32,7 @@ You can always use [`print()`](https://rdrr.io/r/base/print.html) on the
 created plate to see the metadata associated with it.
 
 ``` r
+
 print(plate)
 #> 96 Well Plate 
 #>  
@@ -37,7 +40,7 @@ print(plate)
 #>  Last Fill: A,1 
 #>  Remaining Empty Spots: 96 
 #>  Description:  
-#>  Last Modified: 2026-03-25 15:29:42.292634 
+#>  Last Modified: 2026-06-23 16:02:36.580149 
 #>  Scheme h 
 #>  Plate ID: 1_1 
 #>  Registered: FALSE 
@@ -60,6 +63,7 @@ to find it and retrieve it for reuse.
 Calibration study examples
 
 ``` r
+
 plate <- generate_96("Calibration study") |> 
     add_cs_curve(c(1, 3, 5, 10, 20, 50, 100, 200, 500)) |>
     add_DB() |> 
@@ -81,6 +85,7 @@ plot(plate, label_size = 1)
 ![](Plate_Design_files/figure-html/unnamed-chunk-5-1.png)
 
 ``` r
+
 plate <- register_plate(plate)
 plot(plate)
 ```
@@ -93,6 +98,7 @@ and
 [`add_QC()`](https://omarashkar.github.io/PKbioanalysis/reference/add_QC.md).
 
 ``` r
+
 plate <- generate_96() |> 
     add_suitability(conc = 10) |>
     make_calibration_study(
@@ -117,6 +123,7 @@ After you are satisfied with the design, you can register the plates in
 the database.
 
 ``` r
+
 plate <- register_plate(plate)
 ```
 
@@ -126,6 +133,7 @@ to further inspect the plates or to generate injection sequences and
 dilution schemes.
 
 ``` r
+
 study_app()
 ```
 
@@ -143,6 +151,7 @@ Route - CMT - Time - Factor (i.e strata)
 You might also specify the dilution factor for each sample with `dil`.
 
 ``` r
+
 plate <- generate_96() |> add_samples(1:20)
 plot(plate)
 #> Plate not registered. To register, use register_plate()
@@ -155,6 +164,7 @@ plot(plate)
 ### Adding samples manually
 
 ``` r
+
 plate <- generate_96()
 
 plate <- plate |> 
@@ -176,6 +186,7 @@ In this case, we don’t need to repeat time for each sample, hence we set
 `vtime = TRUE`.
 
 ``` r
+
 data(Indometh)
 plate <- generate_96() |> 
     add_samples(samples = Indometh$Subject, 
@@ -187,6 +198,7 @@ plot(plate, color = "samples")
 Time propagated automatically for each subject.
 
 ``` r
+
 plate <- generate_96() |> 
     # add_samples_c(c("subject1", "subject2"), time = c(0, 10, 30, 60, 120), factor = "Male") |>
     add_samples("subject1", time = c(0, 10, 30, 60, 120), 
@@ -207,6 +219,7 @@ the full design quickly. Here samples are not uniquely defined, but you
 can use prefix to prepend the sample name.
 
 ``` r
+
 plate <- generate_96() |> 
     add_samples_c(4, time = c(0, 10, 30, 60, 120), 
          factor = c("Fed", "Fast"), prefix = "subject") 
@@ -223,6 +236,7 @@ You might wish to position your samples in specific location on the
 plate, also you might want to fill either horizontally or vertically.
 
 ``` r
+
 plate2 <- generate_96("Dilution integerity") |> 
   add_DB() |>
   add_blank() |> 
@@ -243,6 +257,7 @@ plate2 <- generate_96("Dilution integerity") |>
 ```
 
 ``` r
+
 plot(plate2)
 #> Plate not registered. To register, use register_plate()
 #> Warning: Removed 3 rows containing missing values or values outside the scale range
@@ -254,6 +269,7 @@ plot(plate2)
 ## Metabolic study (Multiple plates)
 
 ``` r
+
 plates <- make_metabolic_study(
     cmpd = c("NE", "DA", "5HT", "HVA", 
              "DOPAC", "MHPG", "5HIAA", "VMA"),
@@ -261,7 +277,7 @@ plates <- make_metabolic_study(
     n_NAD = 3, 
     n_noNAD = 2
 )
-#> ℹ Created study with ID: 64ef137d-a1d1-49d1-9683-a1e55d8c9857
+#> ℹ Created study with ID: 6a2ac52f-250a-455b-9df0-fe06e70059ca
 #> ℹ Adding dosing and subjects information...
 #> ✔ Dosing information added.
 #> ℹ Adding subjects information...
@@ -271,11 +287,13 @@ plates <- make_metabolic_study(
 ```
 
 ``` r
+
 length(plates)
 #> [1] 8
 ```
 
 ``` r
+
 plot(plates[[1]], color = "samples", label_size = 1)
 plot(plates[[2]], color = "samples", label_size = 1)
 plot(plates[[3]], color = "samples", label_size = 1)
@@ -285,5 +303,6 @@ plot(plates[[6]], color = "samples", label_size = 1)
 ```
 
 ``` r
+
 register_plate(plates)
 ```

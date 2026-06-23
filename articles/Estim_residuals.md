@@ -1,6 +1,7 @@
 # Estimating Residual Variability and LLOQ
 
 ``` r
+
 library(PKbioanalysis)
 library(dplyr)
 ```
@@ -17,10 +18,12 @@ library(dplyr)
     ##     intersect, setdiff, setequal, union
 
 ``` r
+
 d <- read.csv(system.file("extdata", "GU_1.csv", package = "PKbioanalysis"))
 ```
 
 ``` r
+
 head(d)
 ```
 
@@ -33,6 +36,7 @@ head(d)
     ## 6 LLOQ 0.212     0.2
 
 ``` r
+
 only_qc <- d |> filter(TYPE %in% c("LLOQ", "LQC", "MQC", "HQC"))
 
 only_qc <- only_qc  |> 
@@ -53,6 +57,7 @@ only_qc <- only_qc  |>
     ##   (`?dplyr::dplyr_by`) instead.
 
 ``` r
+
 only_qc
 ```
 
@@ -66,12 +71,14 @@ only_qc
     ## 4 MQC     100   100.    2.07   2.06      6
 
 ``` r
+
 plot_var_pattern(only_qc)
 ```
 
 ![](Estim_residuals_files/figure-html/unnamed-chunk-5-1.png)
 
 ``` r
+
 fit <- fit_var(d)
 
 
@@ -86,6 +93,7 @@ formated_print(fit)
 ## Estimate LLOQ
 
 ``` r
+
 estim_lloq(add_err = 0.016, prop_err = 0.032, cv_lloq = 0.1 , cv_lqc = 0.05)
 ```
 
@@ -124,6 +132,7 @@ estim_lloq(add_err = 0.016, prop_err = 0.032, cv_lloq = 0.1 , cv_lqc = 0.05)
 Divide additive/proportional error
 
 ``` r
+
 estim_dil_limit(add_err = 0.016, prop_err = 0.032, lloq = 0.2)
 ```
 

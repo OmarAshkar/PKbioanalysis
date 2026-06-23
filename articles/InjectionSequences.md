@@ -1,10 +1,12 @@
 # Injection Sequences
 
 ``` r
+
 library(PKbioanalysis)
 ```
 
 ``` r
+
 plate <- generate_96("Dilution integerity") |> 
   fill_scheme("v") |>
   add_DB() |>
@@ -19,6 +21,7 @@ plate <- generate_96("Dilution integerity") |>
 ```
 
 ``` r
+
 plot(plate)
 #> Plate not registered. To register, use register_plate()
 #> Warning: Removed 39 rows containing missing values or values outside the scale range
@@ -28,10 +31,12 @@ plot(plate)
 ![](InjectionSequences_files/figure-html/unnamed-chunk-4-1.png)
 
 ``` r
+
 register_plate(plate)
 ```
 
 ``` r
+
 study_app()
 ```
 

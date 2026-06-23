@@ -3,6 +3,7 @@
 PKbioanalysis supports interactive dilution scheme generation.
 
 ``` r
+
 library(PKbioanalysis)
 ```
 
@@ -10,6 +11,7 @@ Let’s generate fairly complex plate with multiple different standards,
 QC and DQCs.
 
 ``` r
+
 x <- generate_96("Dilution integerity") |> 
   add_DB() |>
   add_blank() |> 
@@ -30,6 +32,7 @@ x <- generate_96("Dilution integerity") |>
 ```
 
 ``` r
+
 plot(x)
 #> Plate not registered. To register, use register_plate()
 #> Warning: Removed 3 rows containing missing values or values outside the scale range
@@ -39,6 +42,7 @@ plot(x)
 ![](DilutionScheme_files/figure-html/unnamed-chunk-4-1.png)
 
 ``` r
+
 register_plate(x)
 ```
 
@@ -48,6 +52,7 @@ function, which is same for historical plate navigation and generation
 of injection sequence.
 
 ``` r
+
 study_app()
 ```
 
