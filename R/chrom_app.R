@@ -1087,7 +1087,7 @@ chromapp_server <- function(input, output, session) {
       sample_name <- iloc_sample()
     }
 
-    browser()
+    
     # integrate peak(s)
     tryCatch(
       {

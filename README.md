@@ -13,15 +13,15 @@
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 📊 Study Management & Design
+### Study Management & Design
 - **Comprehensive trial management system** with relational database architecture (DuckDB)
 - **Study design tools** for common PK studies such as single-dose (SD), multiple-dose (MD), food-effect (FE), and bioequivalence (BE) studies along with In Vitro studies support
 - **Subject tracking** with dosing schedules, sampling timepoints, and metadata management
 - **Sample log integration** linking bioanalytical data to study design
 
-### 🧪 Bioanalytical Workflows
+### Bioanalytical Workflows
 - **96-well plate design and visualization** with flexible filling schemes (horizontal/vertical)
 - **Automated injection sequence generation** compatible with major LC-MS platforms
 - **Vendor support**: MassLynx, MassHunter, Analyst
@@ -30,14 +30,15 @@
 - **Suitability assessment** for instrument equilibration monitoring
 - **Linearity evaluation** with interactive visualization and regulatory-compliant reporting
 
-### 📈 Data Analysis & Export
+### Data Analysis & Export
 - **Maximum likelihood estimation (MLE)** of additive and proportional errors
 - **Interactive dilution scheme** with automatic unit conversion
 - **PKmerge functionality** to combine bioanalytical results with study metadata
 - **NONMEM-ready export** with numeric recoding and codebook generation
 - **Precision and accuracy** calculations per analytical batch
 
-### 🤖 AI Capabilities
+### AI Capabilities
+
 - **AI-assisted chromatogram integration** with automated peak boundary detection
 - **Intelligent quality assessment** for linearity, suitability, and study design
 - **Conversational AI assistant** for method troubleshooting and data interpretation
@@ -45,7 +46,7 @@
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### GUI-Only Installation (No Coding Required)
 
@@ -102,7 +103,7 @@ quant_app()
 ```
 
 
-## 🤖 AI Capabilities & Configuration
+## AI Capabilities & Configuration
 
 PKbioanalysis integrates AI-powered quality assessment and decision support throughout the bioanalytical workflow.
 
@@ -205,6 +206,15 @@ update_config(
 ## Documentation & Resources
 
 - **Package Website**: [https://omarashkar.github.io/PKbioanalysis/](https://omarashkar.github.io/PKbioanalysis/)
+- **Vignettes**:
+  - [Study Design Workflow](https://omarashkar.github.io/PKbioanalysis/articles/Study_Design.html)
+  - [Plate Design](https://omarashkar.github.io/PKbioanalysis/articles/Plate_Design.html)
+  - [Injection Sequences](https://omarashkar.github.io/PKbioanalysis/articles/InjectionSequences.html)
+  - [Chromatogram Visualization & Integration](https://omarashkar.github.io/PKbioanalysis/articles/visualizeChromatograms.html)
+  - [Residual Error Estimation](https://omarashkar.github.io/PKbioanalysis/articles/Estim_residuals.html)
+  - [Dilution Schemes](https://omarashkar.github.io/PKbioanalysis/articles/DilutionScheme.html)
+- **Function Reference**: [https://omarashkar.github.io/PKbioanalysis/reference/](https://omarashkar.github.io/PKbioanalysis/reference/)
+- **Report Bugs**: [https://github.com/OmarAshkar/PKbioanalysis/issues](https://github.com/OmarAshkar/PKbioanalysis/issues)
 
 ## Architecture
 
@@ -218,7 +228,25 @@ Study Design → Plate Design → Injection Sequences → Chromatography → Qua
   Dosing         Metadata          Database           Linearity      PK Datasets
 ```
 
-<!-- All data persists in `tools::R_user_dir("PKbioanalysis", "data")` with automatic backups. -->
+All data persists in `tools::R_user_dir("PKbioanalysis", "data")` with automatic backups.
+
+## Contributing
+
+Contributions are welcome! If you'd like to contribute by reporting bugs, suggesting features, or submitting pull requests. 
+
+Please file issues for bugs or feature requests at [github.com/OmarAshkar/PKbioanalysis/issues](https://github.com/OmarAshkar/PKbioanalysis/issues).
+
+## Citation
+
+If you use PKbioanalysis in your work, please cite it as:
+
+```R
+citation("PKbioanalysis")
+```
+
+Or use the following reference:
+
+> Elashkar O. PKbioanalysis: An Integrated R Package for Pharmacokinetic and Bioanalytical Workflows. R package version 0.1.0. https://github.com/OmarAshkar/PKbioanalysis
 
 ## License
 
